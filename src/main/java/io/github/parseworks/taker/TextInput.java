@@ -1,7 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.Input;
-
 /**
  * Extends {@link Input} with line, column, and error reporting information.
  */

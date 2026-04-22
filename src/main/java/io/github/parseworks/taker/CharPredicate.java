@@ -1,12 +1,10 @@
 package io.github.parseworks.taker;
 
-import java.util.function.Predicate;
-
 /**
  * A functional interface for character predicates.
  */
 @FunctionalInterface
-public interface CharPredicate extends Predicate<Character> {
+public interface CharPredicate {
 
     /**
      * Tests whether the given character satisfies this predicate.
@@ -15,11 +13,6 @@ public interface CharPredicate extends Predicate<Character> {
      * @return {@code true} if the character satisfies the predicate, {@code false} otherwise
      */
     boolean test(char c);
-
-    @Override
-    default boolean test(Character character) {
-        return character != null && test(character.charValue());
-    }
 
     /**
      * Returns a composed predicate that represents a short-circuiting logical AND

@@ -1,17 +1,12 @@
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.CharPredicate;
-
-import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.Input;
+import io.github.parseworks.taker.*;
 import io.github.parseworks.taker.impl.IntObjectMap;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
+import io.github.parseworks.taker.impl.result.PartialMatch;
 
-import java.nio.CharBuffer;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,35 +16,42 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
 /**
  * Common text parsers for characters, strings, and whitespace.
  * <pre>{@code
- * Taker<String> greeting =
- *     Lexical.take("Hello").thenSkip(Lexical.whitespace).then(Lexical.word);
+ * Parser<String> greeting =
+ *     Lexical.string("Hello").thenSkip(Lexical.whitespace).then(Lexical.word);
  * }</pre>
  */
 public class Lexical {
 
 
     /**
-     * Matches one of the characters in the given string.
+     * Matches a single alphabetical character (a-z, A-Z).
+     * <pre>{@code
+     * alpha.parse("abc").value(); // 'a'
+     * alpha.parse("123").matches(); // false
+     * }</pre>
      *
-     * @param chars string containing characters to match
-     * @return a parser matching any of the characters
+     * @see Numeric#numeric
+     * @see #alphaNumeric
      */
-    public static Taker<Character> oneOf(String chars) {
-        return chr(c -> chars.indexOf(c) >= 0);
-    }
+    public static final Parser<Character> alpha = satisfy("<alphabet>", (CharPredicate) Character::isLetter);
+
+    /**
+     * Matches a single alphanumeric character.
+     */
+    public static final Parser<Character> alphaNumeric = satisfy( "<alphanumeric>", (CharPredicate) Character::isLetterOrDigit);
 
     /**
      * Trims whitespace around the given parser.
      * <pre>{@code
-     * trim(take("foo")).parse("  foo  ").value(); // "foo"
+     * trim(string("foo")).parse("  foo  ").value(); // "foo"
      * }</pre>
      *
      * @param parser parser to wrap
      * @param <A>    result type
      * @return trimmed parser
      */
-    public static <A> Taker<A>  trim(Taker<A> parser) {
-        return new Taker<>(in -> {
+    public static <A> Parser<A>  trim(Parser<A> parser) {
+        return new Parser<>(in -> {
             Input trimmedInput = skipWhitespace(in);
             Result<A> result = parser.apply(trimmedInput);
             if (result.matches()) {
@@ -67,14 +69,26 @@ public class Lexical {
         return in;
     }
 
+    /**
+     * Matches a sequence of letters and returns them as a string.
+     * <pre>{@code
+     * word.parse("Hello123").value(); // "Hello"
+     * }</pre>
+     */
+    public static final Parser<String> word = alpha.oneOrMore().map(Lists::join);
+
+    /**
+     * Matches a single whitespace character.
+     */
+    public static final Parser<Character> whitespace = satisfy("<whitespace>", (CharPredicate) Character::isWhitespace);
 
     /**
      *  retrieves a single character that satisfies the given condition.
      * @param condition
      * @return matching char
      */
-    public static Taker<Character> take(CharPredicate condition){
-        return new Taker<>(input -> {
+    public static Parser<Character> take(CharPredicate condition){
+        return new Parser<>(input -> {
             var c = input.data().charAt(input.position());
             if (condition.test(c)) {
                 return new Match<>(c, input.skip(1));
@@ -82,6 +96,7 @@ public class Lexical {
             return new NoMatch<>(input,"to find char matching predicate");
         });
     }
+
 
     /**
      * Creates a parser that repeatedly applies this parser as long as the condition evaluates to true.
@@ -101,12 +116,12 @@ public class Lexical {
      * @return a parser that collects characters while the condition is true
      * @throws IllegalArgumentException if the condition predicate is null
      */
-    public static Taker<String> takeWhile(CharPredicate condition) {
+    public static Parser<String> takeWhile(CharPredicate condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition parser cannot be null");
         }
 
-        return new Taker<>(in -> {
+        return new Parser<>(in -> {
             CharSequence data = in.data();
             int start = in.position();
             int current = start;
@@ -115,20 +130,37 @@ public class Lexical {
             while (current < length && condition.test(data.charAt(current))) {
                 current++;
             }
+            if (current == start) {
+                return new NoMatch<String>(in, "condition to be true for at least one character");
+            }
             return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
         });
     }
 
     /**
-     * Collects characters until the condition is met.
+     * Consumes characters until the given predicate matches.
+     * The character that matches the predicate is NOT consumed.
+     * If the predicate never matches, all characters until EOF are consumed.
      *
-     * @param condition the condition that stops the collection
-     * @return characters until the condition is met
+     * @param predicate the predicate to stop at
+     * @return characters before the predicate match
      */
-    public static Taker<String> takeUntil(CharPredicate condition) {
-        return takeWhile(condition.negate());
+    public static Parser<String> takeUntil(CharPredicate predicate) {
+        Objects.requireNonNull(predicate, "predicate");
+        return new Parser<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int len = data.length();
+            for (int i = start; i < len; i++) {
+                if (predicate.test(data.charAt(i))) {
+                    String out = data.subSequence(start, i).toString();
+                    return new Match<>(out, in.skip(i - start));
+                }
+            }
+            String out = data.subSequence(start, len).toString();
+            return new Match<>(out, in.skip(len - start));
+        });
     }
-
 
     /**
      * Collects characters until the first occurrence of the given needle.
@@ -139,57 +171,35 @@ public class Lexical {
      * @param needle delimiter string
      * @return characters before the needle
      */
-    public static Taker<String> takeUntil(String needle) {
+    public static Parser<String> takeUntil(String needle) {
         Objects.requireNonNull(needle, "needle");
         if (needle.isEmpty()) {
-            return new Taker<>(in -> new Match<>("", in));
+            // Edge-case: empty delimiter – always succeed with empty string
+            return new Parser<>(in -> new Match<>("", in));
         }
+        final char first = needle.charAt(0);
 
-        return new Taker<>(in -> {
+        return new Parser<>(in -> {
             CharSequence data = in.data();
-            int from = in.position();
-            int idx = indexOf(data, needle, from);
-
+            int start = in.position();
+            int idx = indexOf(data, needle, start);
             if (idx < 0) {
                 // Not found: consume to EOF
-                String out = data.subSequence(from, data.length()).toString();
-                return new Match<>(out, in.skip(data.length() - from));
+                String out = data.subSequence(start, data.length()).toString();
+                return new Match<>(out, in.skip(data.length() - start));
             } else {
-                String out = data.subSequence(from, idx).toString();
-                return new Match<>(out, in.skip(idx - from));
+                String out = data.subSequence(start, idx).toString();
+                return new Match<>(out, in.skip(idx - start));
             }
         });
     }
 
     private static int indexOf(CharSequence haystack, String needle, int from) {
+        // Use the platform’s indexOf for CharSequence (via toString() only if necessary)
         if (haystack instanceof String s) {
             return s.indexOf(needle, from);
         }
-        if (haystack instanceof CharBuffer cb && cb.hasArray()) {
-            char[] array = cb.array();
-            int offset = cb.arrayOffset();
-            int start = Math.max(0, from);
-            int n = cb.length();
-            int m = needle.length();
-            if (m == 0) return start;
-            if (n < m) return -1;
-            
-            char first = needle.charAt(0);
-            int max = n - m;
-            for (int i = start; i <= max; i++) {
-                if (array[offset + i] != first) {
-                    while (++i <= max && array[offset + i] != first);
-                }
-                if (i <= max) {
-                    int j = i + 1;
-                    int end = j + m - 1;
-                    for (int k = 1; j < end && array[offset + j] == needle.charAt(k); j++, k++);
-                    if (j == end) return i;
-                }
-            }
-            return -1;
-        }
-
+        // Avoid copying when possible: manual scan using first-char filter
         char c0 = needle.charAt(0);
         int max = haystack.length() - needle.length();
         outer: for (int i = Math.max(0, from); i <= max; i++) {
@@ -203,10 +213,12 @@ public class Lexical {
     }
 
 
+
+
     /**
      * Matches an exact string of characters.
      * <pre>{@code
-     * take("if").parse("if").value(); // "if"
+     * string("if").parse("if").value(); // "if"
      * }</pre>
      *
      * @param str exact string to match
@@ -214,16 +226,66 @@ public class Lexical {
      * @see #regex(String)
      * @see #chr(char)
      */
-    public static Taker<String> take(String str) {
-        if (str.isEmpty()) return pure("");
-        return new Taker<>(in -> {
-            if (in.data().toString().startsWith(str, in.position())) {
-                return new Match<>(str, in.skip(str.length()));
+    public static Parser<String> string(String str) {
+        return new Parser<>(in -> {
+            if (str.isEmpty()) {
+                return new Match<>("", in);
             }
-            return new NoMatch<>(in, str);
+
+            CharSequence data = in.data();
+            int start = in.position();
+            int strLen = str.length();
+
+            if (start + strLen > data.length()) {
+                Failure<String> noMatch = new NoMatch<>(in, str.substring(0, 1));
+                // Find how many characters matched
+                int matched = 0;
+                while (matched < data.length() - start && str.charAt(matched) == data.charAt(start + matched)) {
+                    matched++;
+                }
+                if (matched > 0) {
+                    return new PartialMatch<>(in.skip(matched), noMatch);
+                }
+                return noMatch;
+            }
+
+            for (int i = 0; i < strLen; i++) {
+                if (str.charAt(i) != data.charAt(start + i)) {
+                    Failure<String> noMatch = new NoMatch<>(in.skip(i), str.substring(i, i + 1));
+                    if (i > 0) {
+                        return new PartialMatch<>(in.skip(i), noMatch);
+                    }
+                    return noMatch;
+                }
+            }
+
+            return new Match<>(str, in.skip(strLen));
         });
     }
 
+    /**
+     * Matches any single character from the provided string.
+     * <pre>{@code
+     * oneOf("aeiou").parse("e").value(); // 'e'
+     * }</pre>
+     *
+     * @param str acceptable characters
+     * @return a parser matching any character in the string
+     */
+    public static Parser<Character> oneOf(String str) {
+        // For small strings (under 10 chars), this approach is efficient
+        if (str.length() < 10) {
+            return satisfy("<oneOf> " + str, (CharPredicate) (c -> str.indexOf(c) != -1));
+        }
+
+        // For larger character sets, use a Set for O(1) lookups
+        Set<Character> charSet = new HashSet<>();
+        for (int i = 0; i < str.length(); i++) {
+            charSet.add(str.charAt(i));
+        }
+
+        return satisfy("character in set [" + str + "]", (CharPredicate) charSet::contains);
+    }
 
     /**
      * Matches input against a regular expression pattern.
@@ -236,22 +298,21 @@ public class Lexical {
      * @return a parser matching the regex
      * @see Pattern
      */
-    public static Taker<String> regex(String regex, int flags) {
+    public static Parser<String> regex(String regex, int flags) {
         Pattern pattern = Pattern.compile(regex, flags);
 
-        return new Taker<>(in -> {
+        return new Parser<>(in -> {
             CharSequence data = in.data();
-            int pos = in.position();
-
+            int start = in.position();
             Matcher matcher = pattern.matcher(data);
-            matcher.region(pos, data.length());
+            matcher.region(start, data.length());
 
             if (matcher.lookingAt()) {
                 String match = matcher.group();
                 return new Match<>(match, in.skip(match.length()));
             }
 
-            return new NoMatch<>(in, regex);
+            return new NoMatch<String>(in, regex);
         });
     }
 
@@ -265,23 +326,10 @@ public class Lexical {
      * @return a parser matching the regex
      * @see #regex(String, int)
      */
-    public static Taker<String> regex(String regex) {
+    public static Parser<String> regex(String regex) {
         return regex(regex, 0);
     }
 
-    /**
-     * Matches a specific character.
-     * <pre>{@code
-     * chr(',').parse(",").value(); // ','
-     * }</pre>
-     *
-     * @param c character to match
-     * @return a parser matching the character
-     * @see Combinators#is
-     */
-    public static Taker<Character> chr(char c) {
-        return Combinators.is(c);
-    }
 
     /**
      * Parses a string enclosed in quotes with support for escape sequences.
@@ -293,10 +341,11 @@ public class Lexical {
      * @param escapes an {@link IntObjectMap} of escape characters to their literal values
      * @return a parser that matches an escaped string and returns its unescaped content
      */
-    public static Taker<String> escapedString(char quote, char escape, IntObjectMap<Character> escapes) {
-        return new Taker<>(in -> {
+    private static Parser<String> escapedString(char quote, char escape, IntObjectMap<Character> escapes) {
+
+        return new Parser<>(in -> {
             if (in.isEof() || in.current() != quote) {
-                return new NoMatch<>(in, String.valueOf(quote));
+                return new NoMatch<String>(in, String.valueOf(quote));
             }
 
             CharSequence data = in.data();
@@ -308,24 +357,34 @@ public class Lexical {
 
             while (currentPos < dataLen) {
                 char c = data.charAt(currentPos);
-                if (c == quote) {
-                    sb.append(data, lastCopiedPos, currentPos);
-                    return new Match<>(sb.toString(), in.skip(currentPos - startPos + 1));
-                }
                 if (c == escape) {
-                    sb.append(data, lastCopiedPos, currentPos);
+                    int escapePos = currentPos;
                     currentPos++;
                     if (currentPos >= dataLen) {
+                        if (escape == quote) {
+                            sb.append(data, lastCopiedPos, escapePos);
+                            return new Match<>(sb.toString(), in.skip(escapePos - startPos + 1));
+                        }
                         return new NoMatch<>(in.skip(currentPos - startPos), "closing quote after escape");
                     }
                     char escapedChar = data.charAt(currentPos);
                     Character replacement = escapes.get(escapedChar);
                     if (replacement != null) {
+                        sb.append(data, lastCopiedPos, escapePos);
                         sb.append(replacement);
+                        lastCopiedPos = currentPos + 1;
+                    } else if (escape == quote) {
+                        // Rollback and treat as closing quote
+                        sb.append(data, lastCopiedPos, escapePos);
+                        return new Match<>(sb.toString(), in.skip(escapePos - startPos + 1));
                     } else {
+                        sb.append(data, lastCopiedPos, escapePos);
                         sb.append(escapedChar);
+                        lastCopiedPos = currentPos + 1;
                     }
-                    lastCopiedPos = currentPos + 1;
+                } else if (c == quote) {
+                    sb.append(data, lastCopiedPos, currentPos);
+                    return new Match<>(sb.toString(), in.skip(currentPos - startPos + 1));
                 }
                 currentPos++;
             }
@@ -351,10 +410,26 @@ public class Lexical {
      * @param escapes a map of escape characters to their literal values (e.g., 'n' -> '\n')
      * @return a parser that matches an escaped string and returns its unescaped content
      */
-    public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
+    public static Parser<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
         IntObjectMap<Character> map = new IntObjectMap<>();
         escapes.forEach(map::put);
         return escapedString(quote, escape, map);
+    }
+
+
+
+    /**
+     * Matches a specific character.
+     * <pre>{@code
+     * chr(',').parse(",").value(); // ','
+     * }</pre>
+     *
+     * @param c character to match
+     * @return a parser matching the character
+     * @see Combinators#is
+     */
+    public static Parser<Character> chr(char c) {
+        return Combinators.is(c);
     }
 
     /**
@@ -367,30 +442,7 @@ public class Lexical {
      * @return a parser matching characters by predicate
      * @see Combinators#satisfy
      */
-    public static Taker<Character> chr(CharPredicate predicate) {
+    public static Parser<Character> chr(Predicate<Character> predicate) {
         return satisfy("<character>", predicate);
     }
-
-    /**
-     * Creates a parser that always succeeds with the given value without consuming input.
-     * <pre>{@code
-     * Taker.pure(42).parse("any").value(); // 42
-     * }</pre>
-     *
-     * @param value value to return
-     * @param <A>   result type
-     * @return a parser that always succeeds with the given value
-     */
-    public static <A> Taker<A> pure(A value) {
-        return new Taker<>(input -> new Match<>(value, input));
-    }
-
-    /** Matches any alphanumeric character. */
-    public static final Taker<Character> alphaNumeric = satisfy("<alphanumeric>", Character::isLetterOrDigit);
-
-    /** Matches a sequence of one or more letters. */
-    public static final Taker<String> word = satisfy("<word>", Character::isLetter).oneOrMore().map(io.github.parseworks.taker.Lists::join);
-
-    /** Matches one or more whitespace characters. */
-    public static final Taker<String> whitespace = satisfy("<whitespace>", Character::isWhitespace).oneOrMore().map(io.github.parseworks.taker.Lists::join);
 }

@@ -1,256 +1,591 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.impl.result.Match;
-import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.impl.result.PartialMatch;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static io.github.parseworks.taker.parsers.Combinators.attempt;
+
 /**
  * Fluent builder for combining multiple parsers sequentially.
+ * <p>
+ * Created by {@link Parser#then(Parser)}. Chain with {@code .then()}, {@code .thenSkip()},
+ * or {@code .skipThen()}, and conclude with {@code .map()}.
+ * <pre>{@code
+ * Parser<Integer> sum =
+ *     Numeric.number.thenSkip(Lexical.chr('+'))
+ *                   .then(Numeric.number)
+ *                   .map((a, b) -> a + b);
+ * }</pre>
+
+ * @param <A> first parser result type
+ * @param <B> second parser result type
  */
-abstract class BaseApplyBuilder {
-    protected final List<Taker<Object>> ps;
+public class ApplyBuilder<A, B> {
 
-    protected BaseApplyBuilder(List<Taker<Object>> ps) {
-        this.ps = ps;
+    protected final Parser<A> pa;
+    protected final Parser<B> pb;
+
+    public ApplyBuilder(Parser<A> pa, Parser<B> pb) {
+        this.pa = pa;
+        this.pb = pb;
     }
 
-    protected <R> Result<R> applyAll(Input in, Function<Object[], R> f) {
-        Object[] results = new Object[ps.size()];
-        Input current = in;
-        for (int i = 0; i < ps.size(); i++) {
-            Result<Object> r = ps.get(i).apply(current);
-            if (!r.matches()) return r.cast();
-            results[i] = r.value();
-            current = r.input();
-        }
-        return new Match<>(f.apply(results), current);
-    }
-
-    protected <J> List<Taker<Object>> append(Taker<J> pj) {
-        List<Taker<Object>> next = new ArrayList<>(ps);
-        next.add((Taker<Object>) pj);
-        return next;
-    }
-
-    protected <J> List<Taker<Object>> updateLast(Taker<J> pj) {
-        List<Taker<Object>> next = new ArrayList<>(ps);
-        int last = next.size() - 1;
-        next.set(last, next.get(last).thenSkip(pj));
-        return next;
-    }
-
-    public <J> Taker<J> skipThen(Taker<J> pj) {
-        Taker<Object> combined = ps.get(0);
-        for (int i = 1; i < ps.size(); i++) {
-            combined = combined.thenSkip(ps.get(i));
-        }
-        return combined.skipThen(pj);
-    }
-}
-
-public class ApplyBuilder<A, B> extends BaseApplyBuilder {
-
-    @SuppressWarnings("unchecked")
-    public ApplyBuilder(Taker<A> pa, Taker<B> pb) {
-        super(List.of((Taker<Object>) pa, (Taker<Object>) pb));
-    }
-
-    protected ApplyBuilder(List<Taker<Object>> parsers) {
-        super(parsers);
-    }
-
-    public static <A, B> ApplyBuilder<A, B> of(Taker<A> pa, Taker<B> pb) {
+    /**
+     * Creates a new {@code ApplyBuilder} instance with the given parsers.
+     *
+     * @param pa  the first parser
+     * @param pb  the second parser
+     * @param <A> the type of the result of the first parser
+     * @param <B> the type of the result of the second parser
+     * @return a new {@code ApplyBuilder} instance with the given parsers
+     */
+    public static <A, B> ApplyBuilder<A, B> of(Parser<A> pa, Parser<B> pb) {
         return new ApplyBuilder<>(pa, pb);
     }
 
-    public static <A, B> Taker<B> apply(Taker<Function<A, B>> pf, Taker<A> pa) {
-        return new Taker<>(in -> {
-            Result<Function<A, B>> rf = pf.apply(in);
-            if (!rf.matches()) return rf.cast();
-            Result<A> ra = pa.apply(rf.input());
-            if (!ra.matches()) return ra.cast();
-            return ra.map(rf.value());
+    /**
+     * Applies a function provided by one parser to the result of another parser.
+     *
+     * @param functionProvider the parser that provides the function
+     * @param valueParser      the parser that provides the value
+     * @param <A>              the type of the parsed value
+     * @param <B>              the type of the result of the function
+     * @return a parser that applies the function to the value
+     */
+    public static <A, B> Parser<B> apply(Parser<Function<A, B>> functionProvider, Parser<A> valueParser) {
+        return new Parser<>(in -> {
+            Result<Function<A, B>> functionResult = functionProvider.apply(in);
+            if (!functionResult.matches()) {
+                return functionResult.cast();
+            }
+            Function<A, B> func = functionResult.value();
+            Input in2 = functionResult.input();
+            Result<A> valueResult = valueParser.apply(in2);
+            if (!valueResult.matches()) {
+                if (valueResult.input().position() > in.position()) {
+                    return new PartialMatch<>(valueResult.input(), (Failure<A>) valueResult).cast();
+                }
+                return valueResult.cast();
+            }
+            return valueResult.map(func);
         });
     }
 
-    public static <A, B> Taker<B> apply(Function<A, B> f, Taker<A> pa) {
-        return apply(Lexical.pure(f), pa);
+    /**
+     * Applies a function to a parser's result (applicative functor pattern).
+     * <pre>{@code
+     * Function<Integer, Integer> doubleIt = n -> n * 2;
+     * Parser<Integer> doubled = ApplyBuilder.apply(doubleIt, Numeric.integer);
+     * doubled.parse("42").value();  // 84
+     * }</pre>
+     *
+     * @param f   function to apply
+     * @param pa  parser providing the value
+     * @return parser applying the function to the parsed value
+     * @see Parser#map(Function) for simpler transformation
+     */
+    public static <A, B> Parser<B> apply(Function<A, B> f, Parser<A> pa) {
+        return ApplyBuilder.apply(Parser.pure(f), pa);
     }
 
-    public static <A, B> Taker<B> apply(Taker<Function<A, B>> pf, A a) {
-        return apply(pf, Lexical.pure(a));
+    /**
+     * Applies a parser-produced function to a constant value.
+     * <pre>{@code
+     * Parser<Function<Integer, Integer>> opParser =
+     *     Lexical.chr('+').as(n -> n + 1);
+     * Parser<Integer> result = ApplyBuilder.apply(opParser, 10);
+     * result.parse("+").value();  // 11
+     * }</pre>
+     *
+     * @param pf  parser providing the function
+     * @param a   constant value
+     * @return parser applying the parsed function to the constant
+     */
+    public static <A, B> Parser<B> apply(Parser<Function<A, B>> pf, A a) {
+        return ApplyBuilder.apply(pf, Parser.pure(a));
     }
 
-    public <R> Taker<R> map2(Function<A, Function<B, R>> f) {
-        return apply(pa().map(f), pb());
+    /**
+     * Maps the results of the parsers to a new result using the provided function.
+     *
+     * @param f   the function to map the results
+     * @param <R> the result type
+     * @return a new parser with the mapped result
+     */
+    public <R> Parser<R> map(Function<A, Function<B, R>> f) {
+        return apply(pa.map(f), pb);
     }
 
-    @SuppressWarnings("unchecked")
-    private Taker<A> pa() { return (Taker<A>) ps.get(0); }
-    @SuppressWarnings("unchecked")
-    private Taker<B> pb() { return (Taker<B>) ps.get(1); }
-
-    @SuppressWarnings("unchecked")
-    public <R> Taker<R> map2(BiFunction<A, B, R> f) {
-        return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1])));
+    /**
+     * Maps the results of the parsers to a new result using the provided bi-function.
+     *
+     * @param f   the bi-function to map the results
+     * @param <R> the result type
+     * @return a new parser with the mapped result
+     */
+    public <R> Parser<R> map(BiFunction<A, B, R> f) {
+        Parser<Function<B, R>> pf = pa.map(a -> b -> f.apply(a, b));
+        return apply(pf, pb);
     }
 
-    @SuppressWarnings("unchecked")
-    public <C> ApplyBuilder<A, B> thenSkip(Taker<C> pc) {
-        return new ApplyBuilder<>(updateLast(pc));
+    /**
+     * Adds a parser to be skipped after the current parser.
+     *
+     * @param pc  the parser to be skipped
+     * @param <C> the type of the skipped parser's result
+     * @return a new {@code ApplyBuilder} instance with the skipped parser
+     */
+    public <C> ApplyBuilder<A, B> thenSkip(Parser<C> pc) {
+        return new ApplyBuilder<>(pa, pb.thenSkip(pc));
     }
 
-    @SuppressWarnings("unchecked")
-    public <C> ApplyBuilder3<C> then(Taker<C> pc) {
-        return new ApplyBuilder3<>(append(pc));
+    /**
+     * Adds a parser to be applied after the current parser, DISCARDING the results
+     * of the current builder after validating they are correct and returning only
+     * the result of the next parser.
+     *
+     * @return a {@link Parser} (not chainable in a builder pattern)
+     */
+    public <C> Parser<C> skipThen(Parser<C> pc) {
+        return attempt(allSkipped().skipThen(pc));
     }
 
-    public class ApplyBuilder3<C> extends BaseApplyBuilder {
-
-        protected ApplyBuilder3(List<Taker<Object>> ps) {
-            super(ps);
-        }
-
-        public <R> Taker<R> map3(Function<A, Function<B, Function<C, R>>> f) {
-            return map3(a -> b -> c -> f.apply(a).apply(b).apply(c));
-        }
-
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map3(Functions.Func3<A, B, C, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2])));
-        }
-
-        @SuppressWarnings("unchecked")
-        public <D> ApplyBuilder4<C, D> then(Taker<D> pd) {
-            return new ApplyBuilder4<>(append(pd));
-        }
-
-        public <D> ApplyBuilder3<C> thenSkip(Taker<D> pd) {
-            return new ApplyBuilder3<>(updateLast(pd));
-        }
+    private Parser<Void> allSkipped() {
+        return pa.thenSkip(pb).map(any -> null);
     }
 
-    public class ApplyBuilder4<C, D> extends BaseApplyBuilder {
-
-        protected ApplyBuilder4(List<Taker<Object>> ps) {
-            super(ps);
-        }
-
-        public <R> Taker<R> map4(Function<A, Function<B, Function<C, Function<D, R>>>> f) {
-            return map4(a -> b -> c -> d -> f.apply(a).apply(b).apply(c).apply(d));
-        }
-
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map4(Functions.Func4<A, B, C, D, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2], (D) res[3])));
-        }
-
-        @SuppressWarnings("unchecked")
-        public <E> ApplyBuilder5<C, D, E> then(Taker<E> pe) {
-            return new ApplyBuilder5<>(append(pe));
-        }
-
-        public <E> ApplyBuilder4<C, D> thenSkip(Taker<E> pe) {
-            return new ApplyBuilder4<>(updateLast(pe));
-        }
+    /**
+     * Adds a parser to the chain of parsers, allowing for further chaining.
+     *
+     * @param pc  the parser to be applied
+     * @param <C> the type of the next parser's result
+     * @return a new {@code ApplyBuilder3} instance with the next parser
+     */
+    public <C> ApplyBuilder3<C> then(Parser<C> pc) {
+        return new ApplyBuilder3<>(pc);
     }
 
-    public class ApplyBuilder5<C, D, E> extends BaseApplyBuilder {
+    /**
+     * {@code ApplyBuilder3} is a builder class for combining parsers with three levels of parsing.
+     * <p>
+     * This class allows for the sequential combination of parsers, where each parser can be followed
+     * by another parser or skipped. The results of the parsers can be mapped to a new result using
+     * a function that takes three arguments.
+     *
+     * @param <C> the type of the third parser's result
+     */
+    public class ApplyBuilder3<C> {
+        private final Parser<C> pc;
 
-        protected ApplyBuilder5(List<Taker<Object>> ps) {
-            super(ps);
+        private ApplyBuilder3(Parser<C> pc) {
+            this.pc = pc;
         }
 
-        public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, R>>>>> f) {
-            return map(a -> b -> c -> d -> e -> f.apply(a).apply(b).apply(c).apply(d).apply(e));
+        /**
+         * Maps the results of the parsers to a new result using the provided function.
+         *
+         * @param f   the function to map the results
+         * @param <R> the result type
+         * @return a new parser with the mapped result
+         */
+        public <R> Parser<R> map(Function<A, Function<B, Function<C, R>>> f) {
+            return apply(ApplyBuilder.this.map(f), pc);
         }
 
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map(Functions.Func5<A, B, C, D, E, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2], (D) res[3], (E) res[4])));
+        /**
+         * Maps the results of the parsers to a new result using the provided function with three arguments.
+         *
+         * @param f   the function to map the results
+         * @param <R> the result type
+         * @return a new parser with the mapped result
+         */
+        public <R> Parser<R> map(Functions.Func3<A, B, C, R> f) {
+            return map(a -> b -> c -> f.apply(a, b, c));
         }
 
-        @SuppressWarnings("unchecked")
-        public <G> ApplyBuilder6<C, D, E, G> then(Taker<G> pg) {
-            return new ApplyBuilder6<>(append(pg));
+        /**
+         * Adds a parser to be skipped after the current parser.
+         *
+         * @param pd  the parser to be skipped
+         * @param <D> the type of the skipped parser's result
+         * @return a new {@code ApplyBuilder3} instance with the skipped parser
+         */
+        public <D> ApplyBuilder3<C> thenSkip(Parser<D> pd) {
+            return new ApplyBuilder3<>(pc.thenSkip(pd));
         }
 
-        public <G> ApplyBuilder5<C, D, E> thenSkip(Taker<G> pg) {
-            return new ApplyBuilder5<>(updateLast(pg));
-        }
-    }
-
-    public class ApplyBuilder6<C, D, E, G> extends BaseApplyBuilder {
-
-        protected ApplyBuilder6(List<Taker<Object>> ps) {
-            super(ps);
-        }
-
-        public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, R>>>>>> f) {
-            return map(a -> b -> c -> d -> e -> g -> f.apply(a).apply(b).apply(c).apply(d).apply(e).apply(g));
+        /**
+         * Adds a parser to be applied after the current parser, DISCARDING the results
+         * of the current builder after validating they are correct and returning only
+         * the result of the next parser.
+         *
+         * @return a {@link Parser} (not chainable in a builder pattern)
+         */
+        public <D> Parser<D> skipThen(Parser<D> pd) {
+            return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).skipThen(pd));
         }
 
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map(Functions.Func6<A, B, C, D, E, G, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2], (D) res[3], (E) res[4], (G) res[5])));
+        /**
+         * Adds a parser to be applied after the current parser.
+         *
+         * @param pd  the parser to be applied
+         * @param <D> the type of the next parser's result
+         * @return a new {@code ApplyBuilder4} instance with the next parser
+         */
+        public <D> ApplyBuilder4<D> then(Parser<D> pd) {
+            return new ApplyBuilder4<>(pd);
         }
 
-        @SuppressWarnings("unchecked")
-        public <H> ApplyBuilder7<C, D, E, G, H> then(Taker<H> ph) {
-            return new ApplyBuilder7<>(append(ph));
-        }
+        /**
+         * {@code ApplyBuilder4} is a builder class for combining parsers with four levels of parsing.
+         * <p>
+         * This class allows for the sequential combination of parsers, where each parser can be followed
+         * by another parser or skipped. The results of the parsers can be mapped to a new result using
+         * a function that takes four arguments.
+         *
+         * @param <D> the type of the fourth parser's result
+         */
+        public class ApplyBuilder4<D> {
+            private final Parser<D> pd;
 
-        public <H> ApplyBuilder6<C, D, E, G> thenSkip(Taker<H> ph) {
-            return new ApplyBuilder6<>(updateLast(ph));
-        }
-    }
+            private ApplyBuilder4(Parser<D> pd) {
+                this.pd = pd;
+            }
 
-    public class ApplyBuilder7<C, D, E, G, H> extends BaseApplyBuilder {
+            /**
+             * Maps the results of the parsers to a new result using the provided function.
+             *
+             * @param f   the function to map the results
+             * @param <R> the result type
+             * @return a new parser with the mapped result
+             */
+            public <R> Parser<R> map(Function<A, Function<B, Function<C, Function<D, R>>>> f) {
+                return apply(ApplyBuilder3.this.map(f), pd);
+            }
 
-        protected ApplyBuilder7(List<Taker<Object>> ps) {
-            super(ps);
-        }
+            /**
+             * Maps the results of the parsers to a new result using the provided function with four arguments.
+             *
+             * @param f   the function to map the results
+             * @param <R> the result type
+             * @return a new parser with the mapped result
+             */
+            public <R> Parser<R> map(Functions.Func4<A, B, C, D, R> f) {
+                return map(a -> b -> c -> d -> f.apply(a, b, c, d));
+            }
 
-        public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, R>>>>>>> f) {
-            return map(a -> b -> c -> d -> e -> g -> h -> f.apply(a).apply(b).apply(c).apply(d).apply(e).apply(g).apply(h));
-        }
+            /**
+             * Adds a parser to be skipped after the current parser.
+             *
+             * @param pe  the parser to be skipped
+             * @param <E> the type of the skipped parser's result
+             * @return a new {@code ApplyBuilder4} instance with the skipped parser
+             */
+            public <E> ApplyBuilder4<D> thenSkip(Parser<E> pe) {
+                return new ApplyBuilder4<>(pd.thenSkip(pe));
+            }
 
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map(Functions.Func7<A, B, C, D, E, G, H, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2], (D) res[3], (E) res[4], (G) res[5], (H) res[6])));
-        }
+            /**
+             * Adds a parser to be applied after the current parser, DISCARDING the results
+             * of the current builder after validating they are correct and returning only
+             * the result of the next parser.
+             *
+             * @return a {@link Parser} (not chainable in a builder pattern)
+             */
+            public <E> Parser<E> skipThen(Parser<E> pe) {
+                return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).thenSkip(pd).skipThen(pe));
+            }
 
-        @SuppressWarnings("unchecked")
-        public <J> ApplyBuilder8<C, D, E, G, H, J> then(Taker<J> pj) {
-            return new ApplyBuilder8<>(append(pj));
-        }
+            /**
+             * Adds a parser to be applied after the current parser.
+             *
+             * @param pe  the parser to be applied
+             * @param <E> the type of the next parser's result
+             * @return a new {@code ApplyBuilder5} instance with the next parser
+             */
+            public <E> ApplyBuilder5<E> then(Parser<E> pe) {
+                return new ApplyBuilder5<>(pe);
+            }
 
-        public <J> ApplyBuilder7<C, D, E, G, H> thenSkip(Taker<J> pj) {
-            return new ApplyBuilder7<>(updateLast(pj));
-        }
-    }
+            /**
+             * {@code ApplyBuilder5} is a builder class for combining parsers with five levels of parsing.
+             * <p>
+             * This class allows for the sequential combination of parsers, where each parser can be followed
+             * by another parser or skipped. The results of the parsers can be mapped to a new result using
+             * a function that takes five arguments.
+             *
+             * @param <E> the type of the fifth parser's result
+             */
+            public class ApplyBuilder5<E> {
+                private final Parser<E> pe;
 
-    public class ApplyBuilder8<C, D, E, G, H, J> extends BaseApplyBuilder {
+                private ApplyBuilder5(Parser<E> pe) {
+                    this.pe = pe;
+                }
 
-        protected ApplyBuilder8(List<Taker<Object>> ps) {
-            super(ps);
-        }
+                /**
+                 * Maps the results of the parsers to a new result using the provided function.
+                 *
+                 * @param f   the function to map the results
+                 * @param <R> the result type
+                 * @return a new parser with the mapped result
+                 */
+                public <R> Parser<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, R>>>>> f) {
+                    return apply(ApplyBuilder4.this.map(f), pe);
+                }
 
-        public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, Function<J, R>>>>>>>> f) {
-            return map(a -> b -> c -> d -> e -> g -> h -> j -> f.apply(a).apply(b).apply(c).apply(d).apply(e).apply(g).apply(h).apply(j));
-        }
+                /**
+                 * Maps the results of the parsers to a new result using the provided function with five arguments.
+                 *
+                 * @param f   the function to map the results
+                 * @param <R> the result type
+                 * @return a new parser with the mapped result
+                 */
+                public <R> Parser<R> map(Functions.Func5<A, B, C, D, E, R> f) {
+                    return map(a -> b -> c -> d -> e -> f.apply(a, b, c, d, e));
+                }
 
-        @SuppressWarnings("unchecked")
-        public <R> Taker<R> map(Functions.Func8<A, B, C, D, E, G, H, J, R> f) {
-            return new Taker<>(in -> applyAll(in, res -> f.apply((A) res[0], (B) res[1], (C) res[2], (D) res[3], (E) res[4], (G) res[5], (H) res[6], (J) res[7])));
-        }
+                /**
+                 * Adds a parser to be skipped after the current parser.
+                 *
+                 * @param pg  the parser to be skipped
+                 * @param <G> the type of the skipped parser's result
+                 * @return a new {@code ApplyBuilder5} instance with the skipped parser
+                 */
+                public <G> ApplyBuilder5<E> thenSkip(Parser<G> pg) {
+                    return new ApplyBuilder5<>(pe.thenSkip(pg));
+                }
 
-        public <K> ApplyBuilder8<C, D, E, G, H, J> thenSkip(Taker<K> pk) {
-            return new ApplyBuilder8<>(updateLast(pk));
+                /**
+                 * Adds a parser to be applied after the current parser, DISCARDING the results
+                 * of the current builder after validating they are correct and returning only
+                 * the result of the next parser.
+                 *
+                 * @return a {@link Parser} (not chainable in a builder pattern)
+                 */
+                public <G> Parser<G> skipThen(Parser<G> pg) {
+                    return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).thenSkip(pd).thenSkip(pe).skipThen(pg));
+                }
+
+                /**
+                 * Adds a parser to be applied after the current parser.
+                 *
+                 * @param pg  the parser to be applied
+                 * @param <G> the type of the next parser's result
+                 * @return a new {@code ApplyBuilder6} instance with the next parser
+                 */
+                public <G> ApplyBuilder6<G> then(Parser<G> pg) {
+                    return new ApplyBuilder6<>(pg);
+                }
+
+                /**
+                 * {@code ApplyBuilder6} is a builder class for combining parsers with six levels of parsing.
+                 * <p>
+                 * This class allows for the sequential combination of parsers, where each parser can be followed
+                 * by another parser or skipped. The results of the parsers can be mapped to a new result using
+                 * a function that takes six arguments.
+                 *
+                 * @param <G> the type of the sixth parser's result
+                 */
+                public class ApplyBuilder6<G> {
+                    private final Parser<G> pg;
+
+                    private ApplyBuilder6(Parser<G> pg) {
+                        this.pg = pg;
+                    }
+
+                    /**
+                     * Maps the results of the parsers to a new result using the provided function.
+                     *
+                     * @param f   the function to map the results
+                     * @param <R> the result type
+                     * @return a new parser with the mapped result
+                     */
+                    public <R> Parser<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, R>>>>>> f) {
+                        return apply(ApplyBuilder5.this.map(f), pg);
+                    }
+
+                    /**
+                     * Maps the results of the parsers to a new result using the provided function with six arguments.
+                     *
+                     * @param f   the function to map the results
+                     * @param <R> the result type
+                     * @return a new parser with the mapped result
+                     */
+                    public <R> Parser<R> map(Functions.Func6<A, B, C, D, E, G, R> f) {
+                        return map(a -> b -> c -> d -> e -> g -> f.apply(a, b, c, d, e, g));
+                    }
+
+                    /**
+                     * Adds a parser to be skipped after the current parser.
+                     *
+                     * @param ph  the parser to be skipped
+                     * @param <H> the type of the skipped parser's result
+                     * @return a new {@code ApplyBuilder6} instance with the skipped parser
+                     */
+                    public <H> ApplyBuilder6<G> thenSkip(Parser<H> ph) {
+                        return new ApplyBuilder6<>(pg.thenSkip(ph));
+                    }
+
+                    /**
+                     * Adds a parser to be applied after the current parser, skipping the results of the current builder.
+                     *
+                     * @param ph  the parser to be applied
+                     * @param <H> the type of the next parser's result
+                     * @return a new parser that applies the current parsers and then the next parser, returning only the result of the next parser
+                     */
+                    public <H> Parser<H> skipThen(Parser<H> ph) {
+                        return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).thenSkip(pd).thenSkip(pe).thenSkip(pg).skipThen(ph));
+                    }
+
+                    /**
+                     * Adds a parser to be applied after the current parser.
+                     *
+                     * @param ph  the parser to be applied
+                     * @param <H> the type of the next parser's result
+                     * @return a new {@code ApplyBuilder7} instance with the next parser
+                     */
+                    public <H> ApplyBuilder7<H> then(Parser<H> ph) {
+                        return new ApplyBuilder7<>(ph);
+                    }
+
+                    /**
+                     * {@code ApplyBuilder7} is a builder class for combining parsers with seven levels of parsing.
+                     * <p>
+                     * This class allows for the sequential combination of parsers, where each parser can be followed
+                     * by another parser or skipped. The results of the parsers can be mapped to a new result using
+                     * a function that takes seven arguments.
+                     *
+                     * @param <H> the type of the seventh parser's result
+                     */
+                    public class ApplyBuilder7<H> {
+                        private final Parser<H> ph;
+
+                        private ApplyBuilder7(Parser<H> ph) {
+                            this.ph = ph;
+                        }
+
+                        /**
+                         * Maps the results of the parsers to a new result using the provided function.
+                         *
+                         * @param f   the function to map the results
+                         * @param <R> the result type
+                         * @return a new parser with the mapped result
+                         */
+                        public <R> Parser<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, R>>>>>>> f) {
+                            return apply(ApplyBuilder6.this.map(f), ph);
+                        }
+
+                        /**
+                         * Maps the results of the parsers to a new result using the provided function with seven arguments.
+                         *
+                         * @param f   the function to map the results
+                         * @param <R> the result type
+                         * @return a new parser with the mapped result
+                         */
+                        public <R> Parser<R> map(Functions.Func7<A, B, C, D, E, G, H, R> f) {
+                            return map(a -> b -> c -> d -> e -> g -> h -> f.apply(a, b, c, d, e, g, h));
+                        }
+
+                        /**
+                         * Adds a parser to be skipped after the current parser.
+                         *
+                         * @param pj  the parser to be skipped
+                         * @param <J> the type of the skipped parser's result
+                         * @return a new {@code ApplyBuilder7} instance with the skipped parser
+                         */
+                        public <J> ApplyBuilder7<H> thenSkip(Parser<J> pj) {
+                            return new ApplyBuilder7<>(ph.thenSkip(pj));
+                        }
+
+                        /**
+                         * Adds a parser to be applied after the current parser, skipping the results of the current builder.
+                         *
+                         * @param pj  the parser to be applied
+                         * @param <J> the type of the next parser's result
+                         * @return a new parser that applies the current parsers and then the next parser, returning only the result of the next parser
+                         */
+                        public <J> Parser<J> skipThen(Parser<J> pj) {
+                            return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).thenSkip(pd).thenSkip(pe).thenSkip(pg).thenSkip(ph).skipThen(pj));
+                        }
+
+                        /**
+                         * Adds a parser to be applied after the current parser.
+                         *
+                         * @param pj  the parser to be applied
+                         * @param <J> the type of the next parser's result
+                         * @return a new {@code ApplyBuilder8} instance with the next parser
+                         */
+                        public <J> ApplyBuilder8<J> then(Parser<J> pj) {
+                            return new ApplyBuilder8<>(pj);
+                        }
+
+                        /**
+                         * {@code ApplyBuilder8} is a builder class for combining parsers with eight levels of parsing.
+                         * <p>
+                         * This class allows for the sequential combination of parsers, where each parser can be followed
+                         * by another parser or skipped. The results of the parsers can be mapped to a new result using
+                         * a function that takes eight arguments.</p>
+                         *
+                         * @param <J> the type of the eighth parser's result
+                         */
+                        public class ApplyBuilder8<J> {
+                            private final Parser<J> pj;
+
+                            private ApplyBuilder8(Parser<J> pj) {
+                                this.pj = pj;
+                            }
+
+                            /**
+                             * Maps the results of the parsers to a new result using the provided function.
+                             *
+                             * @param f   the function to map the results
+                             * @param <R> the result type
+                             * @return a new parser with the mapped result
+                             */
+                            public <R> Parser<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, Function<J, R>>>>>>>> f) {
+                                return apply(ApplyBuilder7.this.map(f), pj);
+                            }
+
+                            /**
+                             * Maps the results of the parsers to a new result using the provided function with eight arguments.
+                             *
+                             * @param f   the function to map the results
+                             * @param <R> the result type
+                             * @return a new parser with the mapped result
+                             */
+                            public <R> Parser<R> map(Functions.Func8<A, B, C, D, E, G, H, J, R> f) {
+                                return map(a -> b -> c -> d -> e -> g -> h -> j -> f.apply(a, b, c, d, e, g, h, j));
+                            }
+
+                            /**
+                             * Adds a parser to be skipped after the current parser.
+                             *
+                             * @param pk  the parser to be skipped
+                             * @param <K> the type of the skipped parser's result
+                             * @return a new {@code ApplyBuilder8} instance with the skipped parser
+                             */
+                            public <K> ApplyBuilder8<J> thenSkip(Parser<K> pk) {
+                                return new ApplyBuilder8<>(pj.thenSkip(pk));
+                            }
+
+                            /**
+                             * Adds a parser to be applied after the current parser, skipping the results of the current builder.
+                             *
+                             * @param pk  the parser to be applied
+                             * @param <K> the type of the next parser's result
+                             * @return a new parser that applies the current parsers and then the next parser, returning only the result of the next parser
+                             */
+                            public <K> Parser<K> skipThen(Parser<K> pk) {
+                                return attempt(ApplyBuilder.this.allSkipped().thenSkip(pc).thenSkip(pd).thenSkip(pe).thenSkip(pg).thenSkip(ph).thenSkip(pj).skipThen(pk));
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

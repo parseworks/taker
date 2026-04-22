@@ -1,7 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.Input;
-
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -23,10 +21,10 @@ public interface Result<A> {
     boolean matches();
 
     /** Returns the parsed value. Throws if this is a NoMatch. */
-     A value();
+    A value();
 
     /** Returns the input position after parsing. */
-     Input input();
+    Input input();
 
     /**
      * Casts this result to a result of a different type.
@@ -34,13 +32,13 @@ public interface Result<A> {
      * @param <B> the new type of the parsed value
      * @return this result cast to the new type
      */
-     <B> Result<B> cast();
+    <B> Result<B> cast();
 
     /** Transforms the result value using the given function. */
-     <B> Result<B> map(Function<A, B> mapper);
+    <B> Result<B> map(java.util.function.Function<A, B> mapper);
 
     /** Returns the error message if this is a NoMatch. */
-     String error();
+    String error();
 
     /**
      * Returns an Optional containing the parsed value if this result is a Match.

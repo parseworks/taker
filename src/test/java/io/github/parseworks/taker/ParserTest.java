@@ -1,0 +1,646 @@
+package io.github.parseworks.taker;
+
+import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.parsers.Numeric;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BinaryOperator;
+
+import static io.github.parseworks.taker.parsers.Combinators.isNot;
+import static io.github.parseworks.taker.parsers.Combinators.not;
+import static io.github.parseworks.taker.parsers.Lexical.*;
+import static io.github.parseworks.taker.parsers.Numeric.numeric;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ParserTest {
+
+    @Test
+    public void testParserRef() {
+        Parser<Character> ref = Parser.ref();
+        Parser<Character> realParser = Lexical.chr('a');
+        ref.set(realParser);
+
+        Result<Character> result = ref.parse("a");
+        assertTrue(result.matches());
+        assertEquals('a', result.value());
+    }
+
+    @Test
+    public void testParseAllWithPartialConsumption() {
+        Parser<Character> parser = Lexical.chr('a');
+        Result<Character> result = parser.parseAll("ab");
+        assertTrue(!result.matches()); // Should fail as not all input is consumed
+    }
+
+    @Test
+    public void testParseWithoutFullConsumption() {
+        Parser<Character> parser = Lexical.chr('a');
+        Result<Character> result = parser.parse("ab");
+        assertTrue(result.matches()); // Should succeed as partial consumption is allowed
+        assertEquals('a', result.value());
+    }
+
+    @Test
+    public void testBetweenSameBracket() {
+        // Create a parser for content (letters)
+        Parser<String> content = Lexical.chr(Character::isLetter).oneOrMore().map(chars -> {
+            StringBuilder sb = new StringBuilder();
+            for (var c : chars) {
+                sb.append(c);
+            }
+            return sb.toString();
+        });
+
+        // Create a parser that parses content between matching quote characters
+        Parser<String> quotedParser = content.between('"');
+
+        // Test with properly quoted input
+        String test = "hello";
+        Result<String> result = quotedParser.parse("\"" + test + "\"");
+
+        assertTrue(result.matches());
+        assertEquals(test, result.value());
+
+        // Test with mismatched or missing quotes
+        Result<String> resultMissingClosing = quotedParser.parse("\"" + test);
+        assertTrue(!resultMissingClosing.matches());
+
+        Result<String> resultMissingOpening = quotedParser.parse(test + "\"");
+        assertTrue(!resultMissingOpening.matches());
+
+        Result<String> resultNoQuotes = quotedParser.parse(test);
+        assertTrue(!resultNoQuotes.matches());
+    }
+
+    @Test
+    public void testBetweenWithParsers() {
+        Parser<Character> open = Lexical.chr('[');
+        Parser<Character> close = Lexical.chr(']');
+        Parser<Character> content = Lexical.chr('a');
+
+        Parser<Character> parser = content.between(open, close);
+        Result<Character> result = parser.parse("[a]");
+
+        assertTrue(result.matches());
+        assertEquals('a', result.value());
+    }
+
+    @Test
+    public void testAs() {
+        Parser<String> parser = Lexical.chr('a').as("constant");
+        Result<String> result = parser.parse("a");
+
+        assertTrue(result.matches());
+        assertEquals("constant", result.value());
+    }
+
+    @Test
+    public void testMap() {
+        Parser<Integer> parser = Lexical.chr('a').map(c -> (int)c);
+        Result<Integer> result = parser.parse("a");
+
+        assertTrue(result.matches());
+        assertEquals(Integer.valueOf('a'), result.value());
+    }
+
+    @Test
+    public void testFlatMapDependentCount() {
+        Parser<String> parser = Numeric.unsignedInteger.flatMap(n ->
+            Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n)).map(Lists::join)
+        );
+
+        Result<String> result = parser.parse("3,aaa");
+        assertTrue(result.matches());
+        assertEquals("aaa", result.value());
+    }
+
+    @Test
+    public void testMultipleThen() {
+        Parser<Character> a = Lexical.chr('a');
+        Parser<Character> b = Lexical.chr('b');
+        Parser<Character> c = Lexical.chr('c');
+
+        Parser<String> parser = a.then(b).then(c)
+                .map((first, second, third) -> String.valueOf(first) + second + third);
+
+        Result<String> result = parser.parse("abc");
+        assertTrue(result.matches());
+        assertEquals("abc", result.value());
+    }
+
+
+    @Test
+    public void testPure() {
+        Parser<String> parser = Parser.pure("test");
+        Input input = Input.of("");
+        Result<String> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals("test", result.value());
+    }
+
+    @Test
+    public void testZeroOrMore() {
+        Parser<List<Character>> parser = Lexical.chr(Character::isLetter).zeroOrMore().then(Lexical.chr(Character::isDigit).zeroOrMore()).map(Lists::appendAll);
+        Input input = Input.of("abc123");
+        Result<List<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(6, result.value().size());
+    }
+
+    @Test
+    public void testChainr1() {
+        Parser<Long> number = Numeric.number;
+        Parser<BinaryOperator<Long>> plus = Lexical.chr('+').map(op -> Long::sum);
+        Parser<Long> parser = number.chainRightOneOrMore(plus);
+        Input input = Input.of("1+2+3");
+        Result<Long> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(6, result.value());
+    }
+
+
+    @Test
+    public void testBetween() {
+        Parser<String> content = Lexical.chr(Character::isLetter).oneOrMore().map(chars -> {
+            StringBuilder sb = new StringBuilder();
+            for (var c : chars) {
+                sb.append(c);
+            }
+            return sb.toString();
+        });
+        String test = "compute";
+        Parser<String> parser = content.between('(', ')');
+        Input input = Input.of("(" + test + ")");
+        Result<String> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(test, result.value());
+    }
+
+    @Test
+    public void testDigit() {
+        Input input = Input.of("5");
+        Result<Character> result = numeric.parse(input);
+        assertTrue(result.matches());
+        assertEquals('5', result.value());
+    }
+
+    @Test
+    public void testNumber() {
+        Parser<Long> parser = Numeric.number;
+        Input input = Input.of("12345");
+        Result<Long> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(12345, result.value());
+    }
+
+    @Test
+    public void testFailure() {
+        Parser<Character> parser = Lexical.chr('a');
+        Input input = Input.of("b");
+        Result<Character> result = parser.parse(input);
+        assertFalse(result.matches());
+    }
+
+    @Test
+    public void testChoice() {
+        Parser<Character> parser = Lexical.chr('a').or(Lexical.chr('b'));
+        Input input = Input.of("b");
+        Result<Character> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals('b', result.value());
+    }
+
+    @Test
+    public void testChainl() {
+        Parser<Long> number = Numeric.number;
+        Parser<BinaryOperator<Long>> plus = Lexical.chr('-').map(op -> (a, b) -> a - b);
+        Parser<Long> parser = number.chainLeftOneOrMore(plus);
+        Input input = Input.of("1-2-3");
+        Result<Long> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(-4, result.value());
+    }
+
+    // Note: additional chain-right tests pruned; behavior covered by testChainr1 and AssociativityTest
+
+    @Test
+    public void testZeroOrMoreSeparatedBy() {
+        Parser<List<Character>> parser = Lexical.chr(Character::isLetter).zeroOrMoreSeparatedBy(Lexical.chr(','));
+        Input input = Input.of("a,b,c");
+        Result<List<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(3, result.value().size());
+    }
+
+    @Test
+    public void testOptional() {
+        Parser<Optional<Character>> parser = Lexical.chr('a').optional();
+        Input input = Input.of("a");
+        Result<Optional<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertTrue(result.value().isPresent());
+        assertEquals('a', result.value().get());
+    }
+
+    @Test
+    public void testBetweenDifferentContent() {
+        Parser<Character> open = Lexical.chr('[');
+        Parser<Character> close = Lexical.chr(']');
+        Parser<String> content = Lexical.chr(Character::isLetter).oneOrMore().map(chars -> {
+            StringBuilder sb = new StringBuilder();
+            for (var c : chars) {
+                sb.append(c);
+            }
+            return sb.toString();
+        });
+        String test = "example";
+        Parser<String> parser = content.between(open, close);
+        Input input = Input.of("[" + test + "]");
+        Result<String> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(test, result.value());
+    }
+
+    @Test
+    public void testRepeat() {
+        Parser<List<Character>> parser = Lexical.chr('a').repeat(3);
+        Input input = Input.of("aaa");
+        Result<List<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(3, result.value().size());
+    }
+
+    @Test
+    public void testRepeatAtLeast() {
+        Parser<List<Character>> parser = Lexical.chr('a').repeatAtLeast(2);
+        Input input = Input.of("aaa");
+        Result<List<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(3, result.value().size());
+    }
+
+    @Test
+    public void testRepeatBetween() {
+        Parser<List<Character>> parser = Lexical.chr('a').repeat(2, 4);
+        Input input = Input.of("aaa");
+        Result<List<Character>> result = parser.parse(input);
+        assertTrue(result.matches());
+        assertEquals(3, result.value().size());
+    }
+
+    @Test
+    public void testTakeWhile() {
+        // Create a parser that parses digits
+        Parser<Character> digitParser = Lexical.chr(Character::isDigit);
+
+        // Create a condition that checks if a character is a digit
+        Parser<Boolean> isDigit = digitParser.map(c -> true).orElse(false);
+
+        // Create a parser that takes digits while they are present
+        Parser<String> takeWhileParser = takeWhile(CharPredicate.digit);
+
+        // Test case 1: Only digits
+        Result<String> result1 = takeWhileParser.parse("12345");
+        assertTrue(result1.matches());
+        assertEquals(5, result1.value().length());
+        assertEquals("12345", result1.value());
+
+        // Test case 2: Digits followed by letters
+        Result<String> result2 = takeWhileParser.parse("123abc");
+        assertTrue(result2.matches());
+        assertEquals(3, result2.value().length());
+        assertEquals("123", result2.value());
+
+        // Test case 3: Starts with letters
+        Result<String> result3 = takeWhileParser.parse("abc123");
+        assertFalse(result3.matches());
+
+        // Test case 4: Empty input
+        Result<String> result4 = takeWhileParser.parse("");
+        assertFalse(result4.matches());
+
+        // Test case 5: Mixed content with digits returning
+        Result<String> result5 = takeWhileParser.parse("123abc456");
+        assertTrue(result5.matches());
+        assertEquals(3, result5.value().length());
+        assertEquals("123", result5.value());
+    }
+
+    @Test
+    public void testRepeatAtMost() {
+        Parser<List<Character>> parser = Lexical.chr('a').repeatAtMost(3);
+
+        // Test case 1: Less than max
+        Result<List<Character>> result1 = parser.parse("aa");
+        assertTrue(result1.matches());
+        assertEquals(2, result1.value().size());
+
+        // Test case 2: Exactly max
+        Result<List<Character>> result2 = parser.parse("aaa");
+        assertTrue(result2.matches());
+        assertEquals(3, result2.value().size());
+
+        // Test case 3: More than max (should only take max)
+        Result<List<Character>> result3 = parser.parse("aaaaa");
+        assertTrue(result3.matches());
+        assertEquals(3, result3.value().size());
+
+        // Test case 4: Zero matches
+        Result<List<Character>> result4 = parser.parse("bbb");
+        assertTrue(result4.matches());
+        assertEquals(0, result4.value().size());
+    }
+
+    @Test
+    public void testZeroOrMoreUntil() {
+        Parser<List<Character>> parser = Lexical.chr('a').zeroOrMoreUntil(Lexical.chr(';'));
+
+        // Test case 1: Zero matches with terminator
+        Result<List<Character>> result1 = parser.parse(";");
+        assertTrue(result1.matches());
+        assertEquals(0, result1.value().size());
+
+        // Test case 2: Multiple matches with terminator
+        Result<List<Character>> result2 = parser.parse("aaa;");
+        assertTrue(result2.matches());
+        assertEquals(3, result2.value().size());
+
+        // Test case 3: No terminator (should fail)
+        Result<List<Character>> result3 = parser.parse("aaa");
+        assertTrue(!result3.matches());
+    }
+
+    @Test
+    public void testOneOrManyUntil() {
+        Parser<List<Character>> parser = Lexical.chr('a').oneOrMoreUntil(Lexical.chr(';'));
+
+        // Test case 1: Multiple matches with terminator
+        Result<List<Character>> result1 = parser.parse("aaa;");
+        assertTrue(result1.matches());
+        assertEquals(3, result1.value().size());
+
+        // Test case 2: Zero matches with terminator (should fail)
+        Result<List<Character>> result2 = parser.parse(";");
+        assertTrue(!result2.matches());
+    }
+
+    @Test
+    public void testThenSkipAndSkipThen() {
+        // Test thenSkip - keep first result, skip second
+        Parser<Character> thenSkipParser = Lexical.chr('a').thenSkip(Lexical.chr('b'));
+        Result<Character> result1 = thenSkipParser.parse("ab");
+        assertTrue(result1.matches());
+        assertEquals('a', result1.value());
+
+        // Test skipThen - skip first result, keep second
+        Parser<Character> skipThenParser = Lexical.chr('a').skipThen(Lexical.chr('b'));
+        Result<Character> result2 = skipThenParser.parse("ab");
+        assertTrue(result2.matches());
+        assertEquals('b', result2.value());
+    }
+
+    @Test
+    public void testOrElse() {
+        Parser<Character> parser = Lexical.chr('a').orElse('x');
+
+        // Test case 1: Match
+        Result<Character> result1 = parser.parse("a");
+        assertTrue(result1.matches());
+        assertEquals('a', result1.value());
+
+        // Test case 2: NoMatch but returns default
+        Result<Character> result2 = parser.parse("b");
+        assertTrue(result2.matches());
+        assertEquals('x', result2.value());
+    }
+
+    @Test
+    public void testIsNot() {
+        Parser<Character> parser = Lexical.chr(Character::isLetter).onlyIf(isNot('b'));
+
+        // Should succeed when current character is 'a'
+        Result<Character> result1 = parser.parse("a");
+        assertTrue(result1.matches());
+        assertEquals('a', result1.value());
+
+        // Should fail when current character is 'b'
+        Result<Character> result2 = parser.parse("b");
+        assertTrue(!result2.matches());
+    }
+
+    @Test
+    public void testTrim() {
+        Parser<Character> parser = trim(Lexical.chr('a'));
+
+        // Test with whitespace before and after
+        Result<Character> result = parser.parse("  a  ");
+        assertTrue(result.matches());
+        assertEquals('a', result.value());
+        assertTrue(result.input().isEof());
+    }
+
+    @Test
+    public void testOneOrMoreSeparatedBy() {
+        Parser<List<Character>> parser = Lexical.chr('a').oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test with multiple separated elements
+        Result<List<Character>> result1 = parser.parse("a,a,a");
+        assertTrue(result1.matches());
+        assertEquals(3, result1.value().size());
+
+        // Test with single element (no separators)
+        Result<List<Character>> result2 = parser.parse("a");
+        assertTrue(result2.matches());
+        assertEquals(1, result2.value().size());
+
+        // Test with no elements (should fail)
+        Result<List<Character>> result3 = parser.parse("");
+        assertTrue(!result3.matches());
+    }
+
+    @Test
+    public void testChainZeroOrMore() {
+        Parser<Integer> number = Numeric.integer;
+        Parser<BinaryOperator<Integer>> plus = Lexical.chr('+').map(op -> Integer::sum);
+
+        // Test chainLeftZeroOrMany
+        Parser<Integer> leftParser = number.chainLeftZeroOrMore(plus, 0);
+        Result<Integer> leftResult = leftParser.parse("");
+        assertTrue(leftResult.matches());
+        assertEquals(0, leftResult.value());  // Should return default value for empty input
+
+        // Test chainRightZeroOrMany
+        Parser<Integer> rightParser = number.chainRightZeroOrMore(plus, 0);
+        Result<Integer> rightResult = rightParser.parse("");
+        assertTrue(rightResult.matches());
+        assertEquals(0, rightResult.value());  // Should return the default value for empty input
+    }
+
+    @Test
+    public void testNot() {
+        // Create a parser that recognizes the letter 'a'
+        Parser<Character> aParser = Lexical.chr('a');
+
+        // Create a parser that recognizes digits
+        Parser<Character> digitParser = Lexical.chr(Character::isDigit);
+
+        // Create a parser that recognizes 'a' followed by a non-digit
+        Parser<Character> aNotDigitParser = aParser.peek(not(digitParser));
+
+        // Test case 1: Input 'a' - should fail because there's no character after 'a' for not(digitParser) to check
+        Result<Character> result1 = aNotDigitParser.parse("a");
+        assertFalse(result1.matches());
+
+        // Test case 2: Input '5' - should fail because it doesn't start with 'a'
+        Result<Character> result2 = aNotDigitParser.parse("5");
+        assertFalse(result2.matches());
+        //assertEquals("Parser to fail", result2.fullErrorMessage());
+
+        // Test case 3: Input 'a5' - should fail because '5' is a digit
+        Result<Character> result3 = aNotDigitParser.parse("a5");
+        assertFalse(result3.matches());
+
+        // Test case 4: Multiple negations - parser that matches 'a' but not 'a' followed by 'b'
+        Parser<Character> abParser = Lexical.chr('a').then(Lexical.chr('b')).map((a, b) -> a);
+        Parser<Character> aNotAbParser = aParser.onlyIf(not(abParser));
+
+        // Should fail on "ab" because abParser succeeds
+        Result<Character> result4 = aNotAbParser.parse("ab");
+        assertFalse(result4.matches());
+
+        // Should succeed on "ac" because abParser fails
+        Result<Character> result5 = aNotAbParser.parse("ac");
+        assertTrue(result5.matches());
+        assertEquals('a', result5.value());
+    }
+
+    @Test
+    public void testBetweenParsers() {
+        // Define a parser for the bracketed content (digits)
+        Parser<Integer> contentParser = numeric.map(Character::getNumericValue);
+
+        // Define parsers for the opening and closing brackets
+        Parser<Character> openBracketParser = Lexical.chr('[');
+        Parser<Character> closeBracketParser = Lexical.chr(']');
+
+        // Create a parser that parses content between brackets
+        Parser<Integer> betweenParser = contentParser.between(openBracketParser, closeBracketParser);
+
+        // Test input
+        String input = "[5]";
+        Integer result = betweenParser.parse(Input.of(input)).value();
+
+        // Verify the result
+        assertEquals(5, result);
+    }
+
+    @Test
+    public void testBetweenParsersEmptyContent() {
+        // Define a parser for the bracketed content (digits)
+        Parser<Integer> contentParser = numeric.map(Character::getNumericValue);
+
+        // Define parsers for the opening and closing brackets
+        Parser<Character> openBracketParser = Lexical.chr('[');
+        Parser<Character> closeBracketParser = Lexical.chr(']');
+
+        // Create a parser that parses content between brackets
+        Parser<Integer> betweenParser = contentParser.between(openBracketParser, closeBracketParser);
+
+        // Test input with empty content
+        String input = "[]";
+        var result = betweenParser.parse(Input.of(input));
+
+        // Verify the result
+        assertTrue(!result.matches());
+    }
+
+    @Test
+    public void testBetweenParsersNonNumericContent() {
+        // Define a parser for the bracketed content (digits)
+        Parser<Integer> contentParser = numeric.map(Character::getNumericValue);
+
+        // Create a parser that parses content between brackets
+        Parser<Integer> betweenParser = contentParser.between('[', ']');
+
+        // Test input with non-numeric content
+        String input = "[a]";
+        var result = betweenParser.parse(Input.of(input));
+
+        // Verify the result
+        assertTrue(!result.matches());
+    }
+
+
+    @Test
+    public void testOneOrMoreSeparatedByEmptyInput() {
+        // Define a parser for comma-separated integers
+        Parser<Integer> integerParser = numeric.map(Character::getNumericValue);
+        Parser<List<Integer>> separatedByManyParser = integerParser.oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test input\
+        String input = "fish";
+        var result = separatedByManyParser.parse(Input.of(input));
+
+
+        // Verify the result (avoid detailed error text checks outside error-focused suites)
+        assertTrue(!result.matches());
+    }
+
+    @Test
+    public void testOneOrMoreSeparatedBySingleElement() {
+        // Define a parser for comma-separated integers
+        Parser<Integer> integerParser = numeric.map(Character::getNumericValue);
+        Parser<List<Integer>> separatedByManyParser = integerParser.oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test input
+        String input = "7";
+        List<Integer> result = separatedByManyParser.parse(Input.of(input)).value();
+
+        // Verify the result
+        assertEquals(List.of(7), result);
+    }
+
+    @Test
+    public void testOneOrMoreSeparatedByTrailingSeparator() {
+        // Define a parser for comma-separated integers
+        Parser<Integer> integerParser = numeric.map(Character::getNumericValue);
+        Parser<List<Integer>> separatedByManyParser = integerParser.oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test input
+        String input = "1,2,3,";
+        Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
+
+        // Verify the result
+        assertTrue(!result.matches());
+    }
+
+    @Test
+    public void testOneOrMoreSeparatedByMultipleSeparators() {
+        // Define a parser for comma-separated integers
+        Parser<Integer> integerParser = numeric.map(Character::getNumericValue);
+        Parser<List<Integer>> separatedByManyParser = integerParser.oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test input
+        String input = "1,,2,3";
+        Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
+        //this would return the list on the case of an optional number.
+        // Verify the result
+        assertTrue(!result.matches(),"result should be an error");
+    }
+
+    @Test
+    public void testOneOrMoreSeparatedByNonNumericInput() {
+        // Define a parser for comma-separated integers
+        Parser<Integer> integerParser = numeric.map(Character::getNumericValue);
+        Parser<List<Integer>> separatedByManyParser = integerParser.oneOrMoreSeparatedBy(Lexical.chr(','));
+
+        // Test input
+        String input = "a,b,c";
+        Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
+
+        // Verify the result
+        assertTrue(!result.matches());
+    }
+}

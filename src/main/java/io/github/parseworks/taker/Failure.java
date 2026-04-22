@@ -21,19 +21,35 @@ public interface Failure<A> extends Result<A> {
     /** Returns a formatted error message. */
     @Override
     default String error() {
-        List<Failure<A>> failures = combinedFailures();
-        if (failures == null || failures.isEmpty()) {
+        List<Failure<A>> failures;
+        var combinedFailures = this.combinedFailures();
+        if (combinedFailures != null && !combinedFailures.isEmpty()) {
+            failures = combinedFailures;
+        } else {
             failures = List.of(this);
         }
 
-        Input errorInput = failures.stream()
-                .map(Result::input)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(input());
+        Failure<A> first = failures.get(0);
+        Input errorInput = first.input();
 
-        StringBuilder sb = new StringBuilder("Error:");
-        if (errorInput instanceof TextInput text) {
+        if (errorInput == null) {
+            for (Failure<A> f : failures) {
+                if (f.input() != null) {
+                    errorInput = f.input();
+                    break;
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (this.type() == ResultType.PARTIAL) {
+            sb.append("Partial match failed: ");
+        } else {
+            sb.append("Error:");
+        }
+        TextInput text = (errorInput instanceof TextInput ti) ? ti : null;
+
+        if (text != null) {
             sb.append(" line ").append(text.line())
                 .append(" position ").append(text.column())
                 .append('\n')
@@ -55,22 +71,39 @@ public interface Failure<A> extends Result<A> {
 
     /**
      * Returns a human-friendly error message for this failure with indentation based on depth.
+     *
+     * @param depth the depth of the failure in the chain
+     * @return the indented error message
      */
     default String error(int depth) {
+        String indent = "  ".repeat(depth);
+        StringBuilder builder = new StringBuilder(indent);
+        builder.append("- ");
         var expected = this.expected();
         var cause = this.cause();
 
+        // If this failure has the same expectation as its cause, skip this level to reduce nesting
         if (cause != null && Objects.equals(expected, cause.expected())) {
             return cause.error(depth);
         }
 
-        StringBuilder builder = new StringBuilder("  ".repeat(depth)).append("- ");
         if (depth > 0) builder.append("caused by: ");
-        builder.append(expected != null && !expected.isEmpty() ? "expected " + expected : "expected correct input");
+        if (expected != null && !expected.isEmpty()) {
+            builder.append("expected ").append(expected);
+        } else {
+            builder.append("expected correct input");
+        }
 
-        Input in = input();
-        if (in != null) {
-            builder.append(in.hasMore() ? " found " + in.current() : " reached end of input");
+        String foundValue = null;
+        var input = this.input();
+        if (input != null && input.hasMore()) {
+            foundValue = String.valueOf(input.current());
+        }
+
+        if (foundValue != null) {
+            builder.append(" found ").append(foundValue);
+        } else if (input != null && !input.hasMore()) {
+            builder.append(" reached end of input");
         } else {
             builder.append(" found unknown input");
         }
@@ -82,4 +115,5 @@ public interface Failure<A> extends Result<A> {
 
         return builder.toString();
     }
+
 }

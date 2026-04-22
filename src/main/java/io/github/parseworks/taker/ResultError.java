@@ -1,10 +1,8 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.Result;
-
 import java.util.List;
 
-public interface ResultError<A> extends Result<A> {
+public interface ResultError<A> extends Result<A>{
 
     String message();
 

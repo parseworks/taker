@@ -1,7 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.Lists;
-import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.Parser;
 import io.github.parseworks.taker.impl.Pair;
 
 import java.util.function.BinaryOperator;
@@ -20,16 +20,16 @@ public class Chains {
      * @param associativity LEFT or RIGHT
      * @return an operator chain parser
      */
-    public static <A> Taker<A> chain(Taker<A> parser, Taker<BinaryOperator<A>> op, Associativity associativity) {
+    public static <A> Parser<A> chain(Parser<A> parser, Parser<BinaryOperator<A>> op, Associativity associativity) {
         if (associativity == Associativity.LEFT) {
-            final Taker<UnaryOperator<A>> plo =
+            final Parser<UnaryOperator<A>> plo =
                 op.then(parser)
-                    .map2((f, y) -> x -> f.apply(x, y));
+                    .map((f, y) -> x -> f.apply(x, y));
             return parser.then(plo.zeroOrMore())
-                .map2((a, lf) -> Lists.foldLeft(lf, a, (acc, f) -> f.apply(acc)));
+                .map((a, lf) -> Lists.foldLeft(lf, a, (acc, f) -> f.apply(acc)));
         } else {
-            return parser.then(op.then(parser).map2(Pair::new).zeroOrMore())
-                .map2((a, pairs) -> pairs.stream().reduce(a, (acc, tuple) -> tuple.left().apply(tuple.right(), acc), (a1, a2) -> a1));
+            return parser.then(op.then(parser).map(Pair::new).zeroOrMore())
+                .map((a, pairs) -> pairs.stream().reduce(a, (acc, tuple) -> tuple.left().apply(tuple.right(), acc), (a1, a2) -> a1));
         }
     }
 

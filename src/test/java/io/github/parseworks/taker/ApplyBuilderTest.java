@@ -1,0 +1,236 @@
+package io.github.parseworks.taker;
+
+import io.github.parseworks.taker.impl.result.Match;
+import io.github.parseworks.taker.impl.result.NoMatch;
+import org.junit.jupiter.api.Test;
+
+import static io.github.parseworks.taker.parsers.Lexical.regex;
+import static io.github.parseworks.taker.parsers.Lexical.trim;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ApplyBuilderTest {
+
+    // Test two-parser combination
+    @Test
+    public void testTwoParserCombination() {
+        Parser<String> p1 = stringParser("hello");
+        Parser<String> p2 = stringParser("world");
+        
+        Parser<String> combined = p1.then(p2)
+            .map((s1, s2) -> s1 + " " + s2);
+        
+        Result<String> result = combined.parseAll("helloworld");
+        assertTrue(result.matches());
+        assertEquals("hello world", result.value());
+    }
+    
+    // Test three-parser combination
+    @Test
+    public void testThreeParserCombination() {
+        Parser<String> p1 = stringParser("a");
+        Parser<String> p2 = stringParser("b");
+        Parser<String> p3 = stringParser("c");
+        
+        Parser<String> combined = p1.then(p2).then(p3)
+            .map((a, b, c) -> a + b + c);
+        
+        Result<String> result = combined.parseAll("abc");
+        assertTrue(result.matches());
+        assertEquals("abc", result.value());
+    }
+    
+    // Test four-parser combination
+    @Test
+    public void testFourParserCombination() {
+        Parser<Integer> p1 = intParser(1);
+        Parser<Integer> p2 = intParser(2);
+        Parser<Integer> p3 = intParser(3);
+        Parser<Integer> p4 = intParser(4);
+        
+        Parser<Integer> combined = p1.then(p2).then(p3).then(p4)
+            .map((a, b, c, d) -> a + b + c + d);
+        
+        Result<Integer> result = combined.parse("1234");
+        assertTrue(result.matches());
+        assertEquals(10, result.value()); // 1+2+3+4 = 10
+    }
+    
+    // Test five-parser combination
+    @Test
+    public void testFiveParserCombination() {
+        Parser<Integer> p1 = intParser(1);
+        Parser<Integer> p2 = intParser(2);
+        Parser<Integer> p3 = intParser(3);
+        Parser<Integer> p4 = intParser(4);
+        Parser<Integer> p5 = intParser(5);
+        
+        Parser<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5)
+            .map((a, b, c, d, e) -> a + b + c + d + e);
+        
+        Result<Integer> result = combined.parse("12345");
+        assertTrue(result.matches());
+        assertEquals(15, result.value()); // 1+2+3+4+5 = 15
+    }
+    
+    // Test six-parser combination
+    @Test
+    public void testSixParserCombination() {
+        Parser<Integer> p1 = intParser(1);
+        Parser<Integer> p2 = intParser(2);
+        Parser<Integer> p3 = intParser(3);
+        Parser<Integer> p4 = intParser(4);
+        Parser<Integer> p5 = intParser(5);
+        Parser<Integer> p6 = intParser(6);
+        
+        Parser<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6)
+            .map((a, b, c, d, e, f) -> a + b + c + d + e + f);
+        
+        Result<Integer> result = combined.parse("123456");
+        assertTrue(result.matches());
+        assertEquals(21, result.value()); // Sum = 21
+    }
+    
+    // Test seven-parser combination
+    @Test
+    public void testSevenParserCombination() {
+        Parser<String> p1 = stringParser("a");
+        Parser<String> p2 = stringParser("b");
+        Parser<String> p3 = stringParser("c");
+        Parser<String> p4 = stringParser("d");
+        Parser<String> p5 = stringParser("e");
+        Parser<String> p6 = stringParser("f");
+        Parser<String> p7 = stringParser("g");
+        
+        Parser<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7)
+            .map((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
+        
+        Result<String> result = combined.parse("abcdefg");
+        assertTrue(result.matches());
+        assertEquals("abcdefg", result.value());
+    }
+    
+    // Test eight-parser combination
+    @Test
+    public void testEightParserCombination() {
+        Parser<String> p1 = stringParser("1");
+        Parser<String> p2 = stringParser("2");
+        Parser<String> p3 = stringParser("3");
+        Parser<String> p4 = stringParser("4");
+        Parser<String> p5 = stringParser("5");
+        Parser<String> p6 = stringParser("6");
+        Parser<String> p7 = stringParser("7");
+        Parser<String> p8 = stringParser("8");
+        
+        Parser<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7).then(p8)
+            .map((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
+        
+        Result<String> result = combined.parse("12345678");
+        assertTrue(result.matches());
+        assertEquals("12345678", result.value());
+    }
+    
+    // Test with mixed types
+    @Test
+    public void testMixedTypesCombination() {
+        Parser<String> p1 = stringParser("user");
+        Parser<Character> p2 = charParser(':');
+        Parser<Integer> p3 = intParser(42);
+        
+        Parser<String> combined = p1.then(p2).then(p3)
+            .map((user, colon, id) -> user + id);
+        
+        Result<String> result = combined.parse("user:42");
+        assertTrue(result.matches());
+        assertEquals("user42", result.value());
+    }
+    
+    // Test parsing failure
+    @Test
+    public void testParsingFailure() {
+        Parser<String> p1 = stringParser("hello");
+        Parser<String> p2 = stringParser("world");
+        
+        Parser<String> combined = p1.then(p2)
+            .map((s1, s2) -> s1 + " " + s2);
+        
+        Result<String> result = combined.parse("helloplanet");
+        assertTrue(!result.matches());
+    }
+    
+    // Test with incomplete input
+    @Test
+    public void testIncompleteInput() {
+        Parser<String> p1 = stringParser("hello");
+        Parser<String> p2 = stringParser("world");
+        
+        Parser<String> combined = p1.then(p2)
+            .map((s1, s2) -> s1 + " " + s2);
+        
+        Result<String> result = combined.parse("hello");
+        assertTrue(!result.matches());
+    }
+    
+    // Test real-world scenario: parsing a simple assignment statement
+    @Test
+    public void testAssignmentParsing() {
+        Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
+        Parser<Character> equals = charParser('=');
+        Parser<Integer> number = regexIntParser("[0-9]+");
+        Parser<Character> semicolon = charParser(';');
+        
+        // Parse "x = 42;"
+        Parser<Assignment> assignmentParser = trim(identifier).then(equals)
+            .then(trim(number)).then(semicolon)
+            .map((name, eq, value, semi) -> new Assignment(name, value));
+        
+        Result<Assignment> result = assignmentParser.parseAll("myVar = 42;");
+        assertTrue(result.matches());
+        Assignment assignment = result.value();
+        assertEquals("myVar", assignment.name);
+        assertEquals(42, assignment.value);
+    }
+    
+    // Helper class for assignment test
+    private static class Assignment {
+        final String name;
+        final int value;
+        
+        Assignment(String name, int value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
+    
+    // Helper parser methods
+    private Parser<Character> charParser(char expected) {
+        return new Parser<>(input -> {
+            if (input.isEof() || input.current() != expected) {
+                return new NoMatch<>(input, String.valueOf(expected));
+            }
+            return new Match<>(expected, input.next());
+        });
+    }
+    
+    private Parser<String> stringParser(String expected) {
+        return new Parser<>(input -> {
+            Input current = input;
+            for (int i = 0; i < expected.length(); i++) {
+                if (current.isEof() || current.current() != expected.charAt(i)) {
+                    return new NoMatch<>(input, expected);
+                }
+                current = current.next();
+            }
+            return new Match<>(expected, current);
+        });
+    }
+    
+    private Parser<Integer> intParser(int value) {
+        return stringParser(Integer.toString(value)).map(s -> value);
+    }
+
+    
+    private Parser<Integer> regexIntParser(String pattern) {
+        return regex(pattern).map(Integer::parseInt);
+    }
+}

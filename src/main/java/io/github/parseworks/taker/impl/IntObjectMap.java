@@ -1,9 +1,10 @@
 package io.github.parseworks.taker.impl;
 
 import java.util.Arrays;
+import java.util.Map;
 
 /**
- * Specialized map2 from {@code int} keys to object values to avoid boxing.
+ * Specialized map from {@code int} keys to object values to avoid boxing.
  *
  * @param <V> value type
  */
@@ -23,8 +24,8 @@ public class IntObjectMap<V> {
     }
 
     /**
-     * Associates the specified value with the specified key in this map2.
-     * If the map2 previously contained a mapping for the key, the old value is replaced.
+     * Associates the specified value with the specified key in this map.
+     * If the map previously contained a mapping for the key, the old value is replaced.
      *
      * @param key the key with which the specified value is to be associated
      * @param value the value to be associated with the specified key
@@ -48,11 +49,11 @@ public class IntObjectMap<V> {
 
     /**
      * Returns the value to which the specified key is mapped,
-     * or {@code null} if this map2 contains no mapping for the key.
+     * or {@code null} if this map contains no mapping for the key.
      *
      * @param key the key whose associated value is to be returned
      * @return the value to which the specified key is mapped, or
-     *         {@code null} if this map2 contains no mapping for the key
+     *         {@code null} if this map contains no mapping for the key
      */
     @SuppressWarnings("unchecked")
     public V get(int key) {
@@ -65,11 +66,11 @@ public class IntObjectMap<V> {
     }
 
     /**
-     * Returns {@code true} if this map2 contains a mapping for the
+     * Returns {@code true} if this map contains a mapping for the
      * specified key.
      *
-     * @param key the key whose presence in this map2 is to be tested
-     * @return {@code true} if this map2 contains a mapping for the specified
+     * @param key the key whose presence in this map is to be tested
+     * @return {@code true} if this map contains a mapping for the specified
      *         key, {@code false} otherwise
      */
     public boolean containsKey(int key) {
@@ -82,10 +83,10 @@ public class IntObjectMap<V> {
     }
 
     /**
-     * Removes the mapping for the specified key from this map2 if present.
+     * Removes the mapping for the specified key from this map if present.
      * Shifts any subsequent elements to the left.
      *
-     * @param key the key whose mapping is to be removed from the map2
+     * @param key the key whose mapping is to be removed from the map
      */
     public void remove(int key) {
         for (int i = 0; i < size; i++) {
@@ -101,8 +102,8 @@ public class IntObjectMap<V> {
     }
 
     /**
-     * Increases the capacity of this map2 instance, if necessary.
-     * Capacity is doubled when the map2 is full.
+     * Increases the capacity of this map instance, if necessary.
+     * Capacity is doubled when the map is full.
      */
     private void grow() {
         int newCapacity = keys.length * 2;

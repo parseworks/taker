@@ -1,15 +1,6 @@
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.CharPredicate;
-
-import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.Failure;
-import io.github.parseworks.taker.ResultType;
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.*;
-import io.github.parseworks.taker.impl.inputs.LowercaseInput;
-import io.github.parseworks.taker.impl.inputs.UppercaseInput;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 
@@ -25,43 +16,40 @@ import java.util.function.Supplier;
  */
 public class Combinators {
 
-    /**
-     * Succeeds if the input is at the end of the file (EOF).
-     */
-    public static final Taker<Void> eof = new Taker<>(input -> {
-        if (input.isEof()) {
-            return new Match<>(null, input);
-        } else {
-            return new NoMatch<>(input, "end of input");
-        }
-    });
-
-    /**
-     * Succeeds on any input other than EOF
-     */
-    public static Taker<Character> any = new Taker<>(in -> {
-        if (in.isEof()) {
-            return new NoMatch<>(in, Character.class.descriptorString()).cast();
-        } else {
-            return new Match<>(in.current(), in.next());
-        }
-    });
-
     private Combinators() {
+    }
+
+    /**
+     * Matches any single input element of the specified type.
+     * <pre>{@code
+     * any(Character.class).parse("abc").value(); // 'a'
+     * }</pre>
+     *
+     * @return a parser that matches any single input element
+     */
+    public static Parser<Character> any() {
+        return new Parser<>(input -> {
+            if (input.isEof()) {
+                return new NoMatch<Character>(input, "any character").cast();
+            } else {
+                return new Match<>(input.current(), input.next());
+            }
+        });
     }
 
     /**
      * Unconditionally throws an exception from the supplier.
      * <pre>{@code
-     * Taker< Object> critical = throwError(() -> new IllegalStateException("Fail"));
+     * Parser<Object> critical = throwError(() -> new IllegalStateException("Fail"));
      * }</pre>
      *
      * @param supplier exception supplier
+     * @param <I>      input type
      * @return a parser that always throws
      * @see #fail()
      */
-    public static Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
-        return new Taker<>(in -> {
+    public static <I> Parser<? super Object> throwError(Supplier<? extends Exception> supplier) {
+        return new Parser<>(in -> {
             throw sneakyThrow(supplier.get());
         });
     }
@@ -74,28 +62,72 @@ public class Combinators {
         throw (E) e;
     }
 
+
+    /**
+     * Matches the current input element against a set of possible values.
+     * <pre>{@code
+     * oneOf('1', '2', '3').parse("1").value(); // '1'
+     * }</pre>
+     *
+     * @param items values to match against
+     * @return a parser matching any of the items
+     * @see #is(Object)
+     */
+    public static  Parser<Character> oneOf(char... items) {
+        return new Parser<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<>(in, "one of the expected values");
+            }
+            char current = in.current();
+            for (char item : items) {
+                if (current == item) {
+                    return new Match<>(current, in.next());
+                }
+            }
+
+            // Create a readable list of expected items
+            StringBuilder expectedItems = new StringBuilder();
+            if (items.length > 0) {
+                expectedItems.append(items[0]);
+                for (int i = 1; i < items.length; i++) {
+                    if (i == items.length - 1) {
+                        expectedItems.append(" or ");
+                    } else {
+                        expectedItems.append(", ");
+                    }
+                    expectedItems.append(items[i]);
+                }
+            }
+
+            return new NoMatch<>(in, "one of [" + expectedItems + "]");
+        });
+    }
+
     /**
      * Succeeds if the input is at the end of the file (EOF).
-     *
-     * @deprecated use {@link #eof} instead
      */
-    @Deprecated
-    public static <I> Taker<Void> eof() {
-        return eof;
+    public static  Parser<Void> eof() {
+        return new Parser<>(input -> {
+            if (input.isEof()) {
+                return new Match<>(null, input);
+            } else {
+                return new NoMatch<>(input, "end of input");
+            }
+        });
     }
 
     /**
      * Unconditionally fails, consuming no input.
      */
-    public static <A> Taker<A> fail() {
-        return new Taker<>(in -> new NoMatch<>(in, "parser explicitly set to fail"));
+    public static <A> Parser<A> fail() {
+        return new Parser<>(in -> new NoMatch<A>(in, "parser explicitly set to fail"));
     }
 
     /**
      * Fails with a specific error message.
      */
-    public static <A> Taker<A> fail(String expected) {
-        return new Taker<>(in -> new NoMatch<>(in, expected));
+    public static <A> Parser<A> fail(String expected) {
+        return new Parser<>(in -> new NoMatch<A>(in, expected));
     }
 
     /**
@@ -105,17 +137,14 @@ public class Combinators {
      * }</pre>
      *
      * @param parser parser to negate
-     * @param <A>    result type
-     * @return a negation parser
-     * @see #isNot(char)
      */
-    public static <A> Taker not(Taker<A> parser) {
-        return new Taker<>(in -> {
+    public static <A> Parser<Character> not(Parser<A> parser) {
+        return new Parser<>(in -> {
             Result<A> result = parser.apply(in);
             if (result.matches() || !result.input().hasMore()) {
                 // Provide more context about what was found that shouldn't have matched
                 String found = result.input().hasMore() ? "expected parser to fail" : "end of input";
-                return new NoMatch<>(in, found);
+                return new NoMatch<Character>(in, found);
             }
             return new Match<>(in.current(), in.next());
 
@@ -130,48 +159,23 @@ public class Combinators {
      *
      * @param value value to exclude
      * @return a parser matching anything except the value
-     * @see #not(Taker)
-     * @see #is(char)
+     * @see #not(Parser)
+     * @see #is(Object)
      */
-    public static Taker<Character> isNot(char value) {
-        return satisfy("any value except " + value, CharPredicate.isNot(value));
+    public static Parser<Character> isNot(char value) {
+        return new Parser<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<Character>(in, "any value except " + value);
+            }
+            char item = in.current();
+            if (item == value) {
+                return new NoMatch<Character>(in, "any value except " + value);
+            } else {
+                return new Match<>(item, in.next());
+            }
+        });
     }
 
-    /**
-     * Creates a parser that repeatedly applies this parser as long as the condition evaluates to true.
-     * <p>
-     * This parser will:
-     * <ul>
-     *   <li>Check if the condition is true for the current input position</li>
-     *   <li>If true, apply this parser and collect the result</li>
-     *   <li>Continue until either the condition becomes false, parsing fails, or input is exhausted</li>
-     *   <li>Return all collected results as an FList</li>
-     * </ul>
-     * <p>
-     * Unlike {@link #oneOf(List)}, this parser uses a separate condition parser to determine
-     * when to stop collecting items rather than relying on parse failures. This allows for more
-     * flexible parsing based on lookahead or contextual conditions.
-     * <p>
-     * The implementation includes a check to prevent infinite loops in cases where the parser
-     * succeeds but doesn't advance the input position.
-     *
-     * @param condition a parser that returns a boolean indicating whether to continue collecting
-     * @return a parser that collects elements while the condition is true
-     * @throws IllegalArgumentException if the condition parser is null
-     */
-    public static Taker<String> takeWhile(CharPredicate condition) {
-        return Lexical.takeWhile(condition);
-    }
-
-    /**
-     * Collects characters until the condition is met.
-     *
-     * @param condition the condition that stops the collection
-     * @return characters until the condition is met
-     */
-    public static Taker<String> takeUntil(CharPredicate condition) {
-        return Lexical.takeUntil(condition);
-    }
 
     /**
      * Tries multiple parsers in sequence until one succeeds.
@@ -179,32 +183,30 @@ public class Combinators {
      * @param parsers list of parsers to try
      * @param <A>     result type
      * @return a choice parser
-     * @see Taker#or(Taker)
+     * @see Parser#or(Parser)
      */
-    public static <A> Taker<A> oneOf(List<Taker<A>> parsers) {
+    public static <A> Parser<A> oneOf(List<Parser<A>> parsers) {
         if (parsers.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one parser defined");
         }
-        return new Taker<>(in -> {
+        return new Parser<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<>(in, "eof before `oneOf` parser");
             }
-
-            int pos = in.position();
             List<Failure<A>> failures = null;
 
-            for (Taker<A> parser : parsers) {
+            for (Parser<A> parser : parsers) {
                 Result<A> result = parser.apply(in);
                 if (result.matches()) {
                     return result;
                 }
-
+                
                 // If it's a hard failure (consumed input), stop and return it
-                if (result.input().position() > pos) {
+                if (result.type() == ResultType.PARTIAL && result.input().position() > in.position()) {
                     return result;
                 }
 
-                if (failures == null) {
+                if (failures == null){
                     failures = new ArrayList<>();
                 }
                 failures.add((Failure<A>) result);
@@ -215,35 +217,10 @@ public class Combinators {
     }
 
     /**
-     * Predictive version of {@link #oneOf(List)} that attempts to find a match
-     * based on common prefixes.
-     *
-     * @param parsers list of parsers to try
-     * @param <A>     result type
-     * @return a choice parser
-     */
-    public static <A> Taker<A> predict(List<Taker<A>> parsers) {
-        return oneOf(parsers);
-    }
-
-    /**
-     * Predictive version of {@link #oneOf(Taker[])} that attempts to find a match
-     * based on common prefixes.
-     *
-     * @param parsers parsers to try
-     * @param <A>     result type
-     * @return a choice parser
-     */
-    @SafeVarargs
-    public static <A> Taker<A> predict(Taker<A>... parsers) {
-        return predict(Arrays.asList(parsers));
-    }
-
-    /**
      * Tries each of the provided parsers in order and succeeds with the first match.
      */
     @SafeVarargs
-    public static <A> Taker<A> oneOf(Taker<A>... parsers) {
+    public static <A> Parser<A> oneOf(Parser<A>... parsers) {
         return oneOf(Arrays.asList(parsers));
     }
 
@@ -257,11 +234,11 @@ public class Combinators {
      * @param <A>     result type
      * @return a sequence parser
      */
-    public static <A> Taker<List<A>> sequence(List<Taker<A>> parsers) {
-        return new Taker<>(in -> {
+    public static <A> Parser<List<A>> sequence(List<Parser<A>> parsers) {
+        return new Parser<>(in -> {
             List<A> results = new ArrayList<>();
             Input currentInput = in;
-            for (Taker<A> parser : parsers) {
+            for (Parser<A> parser : parsers) {
                 Result<A> result = parser.apply(currentInput);
                 if (!result.matches()) {
                     return result.cast();
@@ -276,32 +253,55 @@ public class Combinators {
     /**
      * Applies two parsers in sequence and returns an ApplyBuilder.
      */
-    public static <A> ApplyBuilder<A, A> sequence(Taker<A> parserA, Taker<A> parserB) {
+    public static <A> ApplyBuilder<A, A> sequence(Parser<A> parserA, Parser<A> parserB) {
         return parserA.then(parserB);
     }
 
     /**
      * Applies three parsers in sequence and returns an ApplyBuilder3.
      */
-    public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
+    public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Parser<A> parserA, Parser<A> parserB, Parser<A> parserC) {
         return parserA.then(parserB).then(parserC);
     }
 
     /**
      * Parses a single item that satisfies the given predicate.
+     * @deprecated for #{@link #satisfy(String, CharPredicate)}
+     * @param expectedType error message if not satisfied
+     * @param predicate    condition to satisfy
+     * @return a satisfy parser
+     */
+    public static Parser<Character> satisfy(String expectedType, Predicate<Character> predicate) {
+        return new Parser<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<Character>(in, expectedType);
+            }
+            var item = in.current();
+            if (predicate.test(item)) {
+                return new Match<>(item, in.next());
+            } else {
+                return new NoMatch<Character>(in, expectedType);
+            }
+        });
+    }
+
+    /**
+     * Parses a single character that satisfies the given predicate.
      *
      * @param expectedType error message if not satisfied
      * @param predicate    condition to satisfy
      * @return a satisfy parser
      */
-    public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
-        return new Taker<>(in -> {
-            if (in.isEof()) {
+    public static Parser<Character> satisfy(String expectedType, CharPredicate predicate) {
+        return new Parser<>(in -> {
+            CharSequence data = in.data();
+            int pos = in.position();
+            if (pos >= data.length()) {
                 return new NoMatch<>(in, expectedType);
             }
-            char item = in.current();
+            char item = data.charAt(pos);
             if (predicate.test(item)) {
-                return new Match<>(item, in.next());
+                return new Match<>(item, in.skip(1));
             } else {
                 return new NoMatch<>(in, expectedType);
             }
@@ -311,23 +311,30 @@ public class Combinators {
     /**
      * Matches the current input item against the provided value.
      */
-    public static Taker<Character> is(char equivalence) {
-        return satisfy(String.valueOf(equivalence), CharPredicate.is(equivalence));
+    public static <A> Parser<A> is(A equivalence) {
+        return new Parser<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<A>(in, String.valueOf(equivalence));
+            }
+            char item = in.current();
+            if (Objects.equals(item, equivalence)) {
+                return new Match<A>((A) (Character) item, in.next());
+            } else {
+                return new NoMatch<A>(in, String.valueOf(equivalence));
+            }
+        });
     }
 
 
     /**
-     *
-     *
-     * @return
+     * Backtracks on failure, reporting failure at the original position.
      */
-    public static Taker<Character> any() {
-        return new Taker<>(in -> {
-            if (in.isEof()) {
-                return new NoMatch<>(in, Character.class.descriptorString()).cast();
-            } else {
-                return new Match<>(in.current(), in.next());
-            }
+    public static <A> Parser<A> attempt(Parser<A> parser) {
+        return new Parser<>(in -> {
+            Result<A> res = parser.apply(in);
+            if (res.matches()) return res;
+            return new NoMatch<A>(in, "parse attempt", (Failure<?>) res);
         });
     }
+
 }

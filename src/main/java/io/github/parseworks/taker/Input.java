@@ -2,16 +2,13 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.impl.inputs.*;
 
+import java.io.Reader;
+
 /**
  * Represents a position in a stream of input symbols.
  *e
  */
 public interface Input {
-    /** Creates an {@code Input} from a {@code char} array. */
-    static Input of(char[] data) {
-        return new CharArrayInput(data);
-    }
-
     /** Creates an {@code Input} from a {@link CharSequence}. */
     static Input of(CharSequence s) {
         return new CharSequenceInput(s);
@@ -59,8 +56,6 @@ public interface Input {
     default boolean hasMore(){
         return !isEof();
     }
-
-
 
 }
 
