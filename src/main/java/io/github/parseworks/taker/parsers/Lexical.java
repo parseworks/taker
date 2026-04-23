@@ -80,92 +80,13 @@ public class Lexical {
      * word.parse("Hello123").value(); // "Hello"
      * }</pre>
      */
-    public static final Taker<String> word = takeWhile(CharPredicate.letter);
+    public static final Taker<String> word = Taker.takeWhile(CharPredicate.letter);
 
     /**
      * Matches a single whitespace character.
      */
-    public static final Taker<String> line = takeUntil(CharPredicate.is('\n'));
+    public static final Taker<String> line = Taker.takeUntil(CharPredicate.is('\n'));
 
-    /**
-     *  retrieves a single character that satisfies the given condition.
-     * @param condition
-     * @return matching char
-     */
-    public static Taker<Character> take(CharPredicate condition){
-        return new Taker<>(input -> {
-            var c = input.data().charAt(input.position());
-            if (condition.test(c)) {
-                return new Match<>(c, input.skip(1));
-            }
-            return new NoMatch<>(input,"to find char matching predicate");
-        });
-    }
-
-
-    /**
-     * Creates a parser that repeatedly applies this parser as long as the condition evaluates to true.
-     * <p>
-     * This parser will:
-     * <ul>
-     *   <li>Check if the condition is true for the current input position</li>
-     *   <li>If true, apply this parser and collect the result</li>
-     *   <li>Continue until either the condition becomes false, parsing fails, or input is exhausted</li>
-     *   <li>Return all collected results as a String</li>
-     * </ul>
-     * <p>
-     * The implementation includes a check to prevent infinite loops in cases where the parser
-     * succeeds but doesn't advance the input position.
-     *
-     * @param condition a predicate that returns a boolean indicating whether to continue collecting
-     * @return a parser that collects characters while the condition is true
-     * @throws IllegalArgumentException if the condition predicate is null
-     */
-    public static Taker<String> takeWhile(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
-
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int current = start;
-            int length = data.length();
-
-            while (current < length && condition.test(data.charAt(current))) {
-                current++;
-            }
-            if (current == start) {
-                return new NoMatch<String>(in, "condition to be true for at least one character");
-            }
-            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
-        });
-    }
-
-    /**
-     * Consumes characters until the given predicate matches.
-     * The character that matches the predicate is NOT consumed.
-     * If the predicate never matches, all characters until EOF are consumed.
-     *
-     * @param predicate the predicate to stop at
-     * @return characters before the predicate match
-     */
-    public static Taker<String> takeUntil(CharPredicate predicate) {
-        Objects.requireNonNull(predicate, "predicate");
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int len = data.length();
-            for (int i = start; i < len; i++) {
-                if (predicate.test(data.charAt(i))) {
-                    String out = data.subSequence(start, i).toString();
-                    return new Match<>(out, in.skip(i - start));
-                }
-            }
-            String out = data.subSequence(start, len).toString();
-            return new Match<>(out, in.skip(len - start));
-        });
-    }
 
     /**
      * Collects characters until the first occurrence of the given needle.
@@ -177,29 +98,10 @@ public class Lexical {
      * @return characters before the needle
      */
     public static Taker<String> takeUntil(String needle) {
-        Objects.requireNonNull(needle, "needle");
-        if (needle.isEmpty()) {
-            // Edge-case: empty delimiter – always succeed with empty string
-            return new Taker<>(in -> new Match<>("", in));
-        }
-        final char first = needle.charAt(0);
-
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int idx = indexOf(data, needle, start);
-            if (idx < 0) {
-                // Not found: consume to EOF
-                String out = data.subSequence(start, data.length()).toString();
-                return new Match<>(out, in.skip(data.length() - start));
-            } else {
-                String out = data.subSequence(start, idx).toString();
-                return new Match<>(out, in.skip(idx - start));
-            }
-        });
+        return Taker.takeUntil(needle);
     }
 
-    private static int indexOf(CharSequence haystack, String needle, int from) {
+    public static int indexOf(CharSequence haystack, String needle, int from) {
         // Use the platform’s indexOf for CharSequence (via toString() only if necessary)
         if (haystack instanceof String s) {
             return s.indexOf(needle, from);
@@ -270,6 +172,9 @@ public class Lexical {
      * @return a parser matching any character in the string
      */
     public static Taker<Character> oneOf(String str) {
+        if (str == null || str.isEmpty()) {
+            return Combinators.fail("any character in empty string");
+        }
         // For small strings (under 10 chars), this approach is efficient
         if (str.length() < 10) {
             return satisfy("<oneOf> " + str, (CharPredicate) (c -> str.indexOf(c) != -1));
@@ -439,7 +344,7 @@ public class Lexical {
      * @return a parser matching characters by predicate
      * @see Combinators#satisfy
      */
-    public static Taker<Character> chr(Predicate<Character> predicate) {
+    public static Taker<Character> chr(CharPredicate predicate) {
         return satisfy("<character>", predicate);
     }
 }

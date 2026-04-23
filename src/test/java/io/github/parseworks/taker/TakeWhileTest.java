@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TakeWhileTest {
     @Test
     public void testTakeWhileNoneOf() {
-        Taker<String> parser = Lexical.takeWhile(noneOf("=/>\t\n\r\f"));
+        Taker<String> parser = Taker.takeWhile(noneOf("=/>\t\n\r\f"));
         Result<String> result = parser.parse(Input.of("div>"));
         assertTrue(result.matches());
         assertEquals("div", result.value());
@@ -19,7 +19,7 @@ public class TakeWhileTest {
 
     @Test
     public void testInfiniteLoop() {
-        Taker<String> emptyParser = Lexical.takeWhile(c -> false);
+        Taker<String> emptyParser = Taker.takeWhile(c -> false);
         // This should not infinite loop
         Result<java.util.List<String>> result = emptyParser.zeroOrMore().parse(Input.of("abc"));
         assertTrue(result.matches());

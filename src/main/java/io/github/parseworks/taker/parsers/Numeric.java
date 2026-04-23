@@ -82,7 +82,7 @@ public class Numeric {
      * @see #number for multi-digit parsing that accepts leading zeros
      */
     public static final Taker<Integer> unsignedInteger = unsignedIntegerZero.or(
-        nonZeroDigit.then(Lexical.takeWhile(CharPredicate.digit).orElse(""))
+        nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
             .map((d, ds) -> Integer.parseInt(d + ds))
     );
 
@@ -116,7 +116,7 @@ public class Numeric {
      * @see #unsignedInteger for Integer range
      */
     public static final Taker<Long> unsignedLong = unsignedLongZero.or(
-        nonZeroDigit.then(Lexical.takeWhile(CharPredicate.digit).orElse(""))
+        nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
             .map((d, ds) -> {
                 String s = d + ds;
                 try {
@@ -220,9 +220,9 @@ public class Numeric {
         }
     });
 
-    public static final Taker<Long> number = Lexical.takeWhile(CharPredicate.digit).map(Long::parseLong);
+    public static final Taker<Long> number = Taker.takeWhile(CharPredicate.digit).map(Long::parseLong);
 
-    private static final Taker<String> hexDigits = Lexical.takeWhile(
+    private static final Taker<String> hexDigits = Taker.takeWhile(
             (CharPredicate) (c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
         .expecting("hex value");
 
@@ -250,7 +250,7 @@ public class Numeric {
      * @return a parser that parses a non-zero digit followed by zero or more digits and converts the result
      */
     private static <T> Taker<T> nonZeroDigitParser(Function<List<Integer>, T> converter) {
-        return nonZeroDigit.then(Lexical.takeWhile(CharPredicate.digit).orElse(""))
+        return nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
             .map(d -> ds -> {
                 List<Integer> digits = new java.util.ArrayList<>();
                 digits.add(Character.getNumericValue(d));

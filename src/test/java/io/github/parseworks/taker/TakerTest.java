@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 
+import static io.github.parseworks.taker.Taker.*;
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Lexical.*;
@@ -292,12 +293,6 @@ public class TakerTest {
 
     @Test
     public void testTakeWhile() {
-        // Create a parser that parses digits
-        Taker<Character> digitParser = chr(Character::isDigit);
-
-        // Create a condition that checks if a character is a digit
-        Taker<Boolean> isDigit = digitParser.map(c -> true).orElse(false);
-
         // Create a parser that takes digits while they are present
         Taker<String> takeWhileParser = takeWhile(CharPredicate.digit);
 

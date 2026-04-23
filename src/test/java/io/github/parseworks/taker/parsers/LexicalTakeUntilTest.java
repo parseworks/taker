@@ -1,5 +1,6 @@
 package io.github.parseworks.taker.parsers;
 
+import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -12,7 +13,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntil() {
-        Taker<String> parser = Lexical.takeUntil("-->");
+        Taker<String> parser = Taker.takeUntil("-->");
         Result<String> result = parser.parse(Input.of("comment-->"));
         assertTrue(result.matches());
         assertEquals("comment", result.value());
@@ -21,7 +22,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntilNotFound() {
-        Taker<String> parser = Lexical.takeUntil("-->");
+        Taker<String> parser = Taker.takeUntil("-->");
         Result<String> result = parser.parse(Input.of("comment"));
         assertTrue(result.matches());
         assertEquals("comment", result.value());
@@ -39,7 +40,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntilPredicate() {
-        Taker<String> parser = Lexical.takeUntil(c -> c == '>');
+        Taker<String> parser = Taker.takeUntil((CharPredicate)(c -> c == '>'));
         Result<String> result = parser.parse(Input.of("abc>def"));
         assertTrue(result.matches());
         assertEquals("abc", result.value());
@@ -48,7 +49,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntilPredicateNotFound() {
-        Taker<String> parser = Lexical.takeUntil(c -> c == '>');
+        Taker<String> parser = Taker.takeUntil((CharPredicate)(c -> c == '>'));
         Result<String> result = parser.parse(Input.of("abcdef"));
         assertTrue(result.matches());
         assertEquals("abcdef", result.value());
@@ -57,7 +58,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntilPredicateWhitespace() {
-        Taker<String> parser = Lexical.takeUntil(Character::isWhitespace);
+        Taker<String> parser = Taker.takeUntil((CharPredicate)Character::isWhitespace);
         Result<String> result = parser.parse(Input.of("hello world"));
         assertTrue(result.matches());
         assertEquals("hello", result.value());
@@ -66,7 +67,7 @@ public class LexicalTakeUntilTest {
 
     @Test
     public void testTakeUntilPredicateStartWithDelimiter() {
-        Taker<String> parser = Lexical.takeUntil(c -> c == 'a');
+        Taker<String> parser = Taker.takeUntil((CharPredicate)(c -> c == 'a'));
         Result<String> result = parser.parse(Input.of("abc"));
         assertTrue(result.matches());
         assertEquals("", result.value());

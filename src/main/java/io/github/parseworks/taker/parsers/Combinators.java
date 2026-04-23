@@ -74,33 +74,10 @@ public class Combinators {
      * @see #is(Object)
      */
     public static Taker<Character> oneOf(char... items) {
-        return new Taker<>(in -> {
-            if (in.isEof()) {
-                return new NoMatch<>(in, "one of the expected values");
-            }
-            char current = in.current();
-            for (char item : items) {
-                if (current == item) {
-                    return new Match<>(current, in.next());
-                }
-            }
-
-            // Create a readable list of expected items
-            StringBuilder expectedItems = new StringBuilder();
-            if (items.length > 0) {
-                expectedItems.append(items[0]);
-                for (int i = 1; i < items.length; i++) {
-                    if (i == items.length - 1) {
-                        expectedItems.append(" or ");
-                    } else {
-                        expectedItems.append(", ");
-                    }
-                    expectedItems.append(items[i]);
-                }
-            }
-
-            return new NoMatch<>(in, "one of [" + expectedItems + "]");
-        });
+        if (items == null || items.length == 0) {
+            return fail("any character in empty set");
+        }
+        return Lexical.oneOf(new String(items));
     }
 
     /**
@@ -265,24 +242,31 @@ public class Combinators {
     }
 
     /**
-     * Parses a single item that satisfies the given predicate.
-     * @deprecated for #{@link #satisfy(String, CharPredicate)}
-     * @param expectedType error message if not satisfied
-     * @param predicate    condition to satisfy
-     * @return a satisfy parser
+     * Matches any character between the given opening and closing parsers.
      */
-    public static Taker<Character> satisfy(String expectedType, Predicate<Character> predicate) {
-        return new Taker<>(in -> {
-            if (in.isEof()) {
-                return new NoMatch<Character>(in, expectedType);
-            }
-            var item = in.current();
-            if (predicate.test(item)) {
-                return new Match<>(item, in.next());
-            } else {
-                return new NoMatch<Character>(in, expectedType);
-            }
-        });
+    public static <A, B, C> Taker<A> between(Taker<B> open, Taker<A> parser, Taker<C> close) {
+        return open.skipThen(parser).thenSkip(close);
+    }
+
+    /**
+     * Matches any character between the given bracket parser.
+     */
+    public static <A, B> Taker<A> between(Taker<B> bracket, Taker<A> parser) {
+        return between(bracket, parser, bracket);
+    }
+
+    /**
+     * Matches any character between the given opening and closing characters.
+     */
+    public static <A> Taker<A> between(char open, Taker<A> parser, char close) {
+        return between(Lexical.chr(open), parser, Lexical.chr(close));
+    }
+
+    /**
+     * Matches any character between the given bracket character.
+     */
+    public static <A> Taker<A> between(char bracket, Taker<A> parser) {
+        return between(bracket, parser, bracket);
     }
 
     /**
@@ -294,16 +278,14 @@ public class Combinators {
      */
     public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
         return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int pos = in.position();
-            if (pos >= data.length()) {
-                return new NoMatch<>(in, expectedType);
+            if (in.isEof()) {
+                return new NoMatch<Character>(in, expectedType);
             }
-            char item = data.charAt(pos);
+            var item = in.current();
             if (predicate.test(item)) {
-                return new Match<>(item, in.skip(1));
+                return new Match<>(item, in.next());
             } else {
-                return new NoMatch<>(in, expectedType);
+                return new NoMatch<Character>(in, expectedType);
             }
         });
     }
@@ -323,6 +305,99 @@ public class Combinators {
                 return new NoMatch<A>(in, String.valueOf(equivalence));
             }
         });
+    }
+
+    /**
+     * Chains a parser left-associatively.
+     */
+    public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches()) return new Match<>(identity, in);
+            A value = result.value();
+            Input current = result.input();
+
+            while (true) {
+                Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
+                if (!opResult.matches()) break;
+
+                Result<A> nextResult = parser.apply(opResult.input());
+                if (!nextResult.matches()) break;
+
+                value = opResult.value().apply(value, nextResult.value());
+                current = nextResult.input();
+            }
+            return new Match<>(value, current);
+        });
+    }
+
+    /**
+     * Chains a parser left-associatively, requiring at least one match.
+     */
+    public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches()) return result;
+            A value = result.value();
+            Input current = result.input();
+
+            while (true) {
+                Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
+                if (!opResult.matches()) break;
+
+                Result<A> nextResult = parser.apply(opResult.input());
+                if (!nextResult.matches()) break;
+
+                value = opResult.value().apply(value, nextResult.value());
+                current = nextResult.input();
+            }
+            return new Match<>(value, current);
+        });
+    }
+
+    /**
+     * Chains a parser right-associatively.
+     */
+    public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches()) return new Match<>(identity, in);
+
+            Result<java.util.function.BinaryOperator<A>> opResult = op.apply(result.input());
+            if (!opResult.matches()) return result;
+
+            Result<A> restResult = chainRight(parser, op, identity).apply(opResult.input());
+            return new Match<>(opResult.value().apply(result.value(), restResult.value()), restResult.input());
+        });
+    }
+
+    /**
+     * Chains a parser right-associatively, requiring at least one match.
+     */
+    public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches()) return result;
+
+            Result<java.util.function.BinaryOperator<A>> opResult = op.apply(result.input());
+            if (!opResult.matches()) return result;
+
+            Result<A> restResult = chainRight(parser, op).apply(opResult.input());
+            if (!restResult.matches()) return result;
+
+            return new Match<>(opResult.value().apply(result.value(), restResult.value()), restResult.input());
+        });
+    }
+
+    /**
+     * Chains a parser according to specified associativity.
+     */
+    public static <A> Taker<A> chain(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, Chains.Associativity associativity) {
+        if (associativity == Chains.Associativity.LEFT) {
+            return chainLeft(parser, op);
+        } else {
+            return chainRight(parser, op);
+        }
     }
 
 

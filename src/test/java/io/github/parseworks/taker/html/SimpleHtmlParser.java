@@ -8,6 +8,7 @@ import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
 
+import static io.github.parseworks.taker.Taker.*;
 import static io.github.parseworks.taker.CharPredicate.noneOf;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
@@ -126,7 +127,7 @@ public class SimpleHtmlParser {
             escapedString('"', '\0', Map.of())
         );
 
-    private static final Taker<Map<String, String>> COMMENT_BODY = takeUntil("-->").map(
+    private static final Taker<Map<String, String>> COMMENT_BODY = Lexical.takeUntil("-->").map(
         data -> Map.of("data", data)
     );
 

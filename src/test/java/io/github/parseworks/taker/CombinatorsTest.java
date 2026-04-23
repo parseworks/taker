@@ -164,7 +164,7 @@ public class CombinatorsTest {
 
     @Test
     public void testSatisfy() {
-        Predicate<Character> isUppercase = Character::isUpperCase;
+        CharPredicate isUppercase = Character::isUpperCase;
         Taker<Character> parser = satisfy("uppercase letter", isUppercase);
 
         // Match case
@@ -195,7 +195,7 @@ public class CombinatorsTest {
 
     @Test
     public void testChrPredicate() {
-        Predicate<Character> isVowel = c -> "aeiouAEIOU".indexOf(c) >= 0;
+        CharPredicate isVowel = c -> "aeiouAEIOU".indexOf(c) >= 0;
         Taker<Character> parser = Lexical.chr(isVowel);
 
         // Match cases

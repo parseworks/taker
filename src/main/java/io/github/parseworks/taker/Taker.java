@@ -5,6 +5,7 @@ import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import io.github.parseworks.taker.impl.result.PartialMatch;
 import io.github.parseworks.taker.parsers.Chains;
+import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
@@ -37,6 +38,111 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param <R>   result type
      * @return a parser returning the constant value
      */
+    /**
+     * Matches the current input element against a single character.
+     * <pre>{@code
+     * take(c -> c == 'a').parse("abc").value(); // 'a'
+     * }</pre>
+     * @param condition character predicate
+     * @return matching char parser
+     */
+    public static Taker<Character> take(CharPredicate condition) {
+        return new Taker<>(input -> {
+            if (input.isEof()) {
+                return new NoMatch<>(input, "to find char matching predicate (EOF)");
+            }
+            var c = input.current();
+            if (condition.test(c)) {
+                return new Match<>(c, input.next());
+            }
+            return new NoMatch<>(input, "to find char matching predicate");
+        });
+    }
+
+    /**
+     * Creates a parser that repeatedly applies the predicate as long as it evaluates to true.
+     * Returns the collected results as a String.
+     */
+    public static Taker<String> takeWhile(CharPredicate condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition parser cannot be null");
+        }
+
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int current = start;
+            int length = data.length();
+
+            while (current < length && condition.test(data.charAt(current))) {
+                current++;
+            }
+            if (current == start) {
+                return new NoMatch<String>(in, "condition to be true for at least one character");
+            }
+            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
+        });
+    }
+
+    /**
+     * Creates a parser that repeatedly applies the predicate until it evaluates to true.
+     * Returns the collected results as a String.
+     */
+    public static Taker<String> takeUntil(CharPredicate condition) {
+        Objects.requireNonNull(condition, "condition");
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int len = data.length();
+            for (int i = start; i < len; i++) {
+                if (condition.test(data.charAt(i))) {
+                    String out = data.subSequence(start, i).toString();
+                    return new Match<>(out, in.skip(i - start));
+                }
+            }
+            String out = data.subSequence(start, len).toString();
+            return new Match<>(out, in.skip(len - start));
+        });
+    }
+
+    /**
+     * Collects characters until the first occurrence of the given needle.
+     * <pre>{@code
+     * takeUntil("-->").parse("comment-->").value(); // "comment"
+     * }</pre>
+     *
+     * @param needle delimiter string
+     * @return characters before the needle
+     */
+    public static Taker<String> takeUntil(String needle) {
+        Objects.requireNonNull(needle, "needle");
+        if (needle.isEmpty()) {
+            // Edge-case: empty delimiter – always succeed with empty string
+            return new Taker<>(in -> new Match<>("", in));
+        }
+
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int idx = Lexical.indexOf(data, needle, start);
+            if (idx < 0) {
+                // Not found: consume to EOF
+                String out = data.subSequence(start, data.length()).toString();
+                return new Match<>(out, in.skip(data.length() - start));
+            }
+            // Found: return substring before needle
+            String out = data.subSequence(start, idx).toString();
+            return new Match<>(out, in.skip(idx - start));
+        });
+    }
+
+    /**
+     * Matches a single character.
+     */
+    public static Taker<Character> is(char c) {
+        return Lexical.chr(c);
+    }
+
     public <R> Taker<R> as(R value) {
         return this.skipThen(pure(value));
     }
@@ -55,21 +161,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that matches content between matching bracket symbols
      */
     public Taker<A> between(char bracket) {
-        return between(bracket, bracket);
+        return Combinators.between(bracket, this);
     }
 
-    /**
-     * Creates a parser that matches an expression between distinct opening and closing symbols.
-     * <p>
-     * This is useful for asymmetric delimiters like XML tags or different bracket styles.
-     *
-     * @param open the opening delimiter symbol
-     * @param close the closing delimiter symbol
-     * @return a parser that matches content between the specified delimiters
-     */
-
     public Taker<A> between(char open, char close) {
-        return is(open).skipThen(this).thenSkip(is(close));
+        return Combinators.between(open, this, close);
     }
 
     /**
@@ -141,20 +237,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser for expressions with enclosing bracket symbols
      */
     public <B> Taker<A> between(Taker<B> bracket) {
-        return between(bracket, bracket);
+        return Combinators.between(bracket, this);
     }
 
-    /**
-     * A parser for expressions with enclosing symbols.
-     * Validates the open symbol, then this parser, and then the close symbol.
-     * If all three succeed, the result of this parser is returned.
-     *
-     * @param open  the open symbol
-     * @param close the close symbol
-     * @return a parser for expressions with enclosing symbols
-     */
     public <B, C> Taker<A> between(Taker<B> open, Taker<C> close) {
-        return open.skipThen(this).thenSkip(close);
+        return Combinators.between(open, this, close);
     }
 
     /**
@@ -203,7 +290,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see Chains.Associativity for associativity options
      */
     public Taker<A> chainLeftZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
-        return this.chainLeftOneOrMore(op).or(pure(a));
+        return Combinators.chainLeft(this, op, a);
     }
 
     /**
@@ -251,7 +338,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #chainRightOneOrMore(Taker) for the right-associative equivalent
      */
     public Taker<A> chainLeftOneOrMore(Taker<BinaryOperator<A>> op) {
-        return chain(this, op, Chains.Associativity.LEFT);
+        return Combinators.chainLeft(this, op);
     }
 
     /**
@@ -300,7 +387,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see Chains.Associativity for associativity options
      */
     public Taker<A> chainRightZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
-        return this.chainRightOneOrMore(op).or(pure(a));
+        return Combinators.chainRight(this, op, a);
     }
 
     /**
@@ -366,7 +453,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #chainLeftOneOrMore(Taker) for the left-associative equivalent
      */
     public Taker<A> chainRightOneOrMore(Taker<BinaryOperator<A>> op) {
-        return chain(this, op, Chains.Associativity.RIGHT);
+        return Combinators.chainRight(this, op);
     }
 
     /**
@@ -1165,70 +1252,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
         this.applyHandler = applyHandler;
     }
 
-    /**
-     * Creates a parser that repeatedly applies this parser as long as the condition evaluates to true.
-     * <p>
-     * This parser will:
-     * <ul>
-     *   <li>Check if the condition is true for the current input position</li>
-     *   <li>If true, apply this parser and collect the result</li>
-     *   <li>Continue until either the condition becomes false, parsing fails, or input is exhausted</li>
-     *   <li>Return all collected results as an FList</li>
-     * </ul>
-     * <p>
-     * Unlike {@link #zeroOrMore()}, this parser uses a separate condition parser to determine
-     * when to stop collecting items rather than relying on parse failures. This allows for more
-     * flexible parsing based on lookahead or contextual conditions.
-     * <p>
-     * The implementation includes a check to prevent infinite loops in cases where the parser
-     * succeeds but doesn't advance the input position.
-     * @deprecated use {@link Lexical#takeWhile}
-     *
-     *
-     * @param condition a parser that returns a boolean indicating whether to continue collecting
-     * @return a parser that collects elements while the condition is true
-     * @throws IllegalArgumentException if the condition parser is null
-     */
-    public Taker<List<A>> takeWhile(Taker<Boolean> condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
-
-        return new Taker<>(in -> {
-            List<A> results = new ArrayList<>();
-            Input currentInput = in;
-
-            while (!currentInput.isEof()) {
-                // Check if the condition is met
-                Result<Boolean> conditionResult = condition.apply(currentInput);
-                if (!conditionResult.matches()) {
-                    // Condition not met, stop collecting
-                    return new Match<>(Collections.unmodifiableList(results), currentInput);
-                }
-
-                // Store the current position to check for advancement
-                int currentPosition = currentInput.position();
-
-                // Condition met, try to parse an element
-                Result<A> elementResult = this.apply(currentInput);
-                if (!elementResult.matches()) {
-                    // Failed to parse an element, stop collecting
-                    return new Match<>(Collections.unmodifiableList(results), currentInput);
-                }
-
-                // Add parsed element to results
-                results.add(elementResult.value());
-                currentInput = elementResult.input();
-
-                // Check if we've advanced the position - if not, break to avoid infinite loop
-                if (currentInput.position() == currentPosition) {
-                    return new Match<>(Collections.unmodifiableList(results), currentInput);
-                }
-            }
-
-            return new Match<>(Collections.unmodifiableList(results), currentInput);
-        });
-    }
 
     /**
      * Creates a repeating parser that applies this parser zero or more times until a terminator parser succeeds,
