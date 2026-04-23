@@ -128,7 +128,7 @@ Parser<KV> kvParser = Lexical.regex("[a-z]+")
 #### Step 4: Parse multiple key-value pairs
 
 ```java
-// Parser for multiple key-value pairs separated by newlines
+// Taker for multiple key-value pairs separated by newlines
 Parser<List<KV>> configParser = kvParser
     .oneOrMoreSeparatedBy(Lexical.chr('\n'));
 
@@ -198,7 +198,7 @@ number ::= [0-9]+
 #### Step 2: Create parsers for the basic elements
 
 ```java
-// Parser for numbers
+// Taker for numbers
 Parser<Integer> number = Lexical.regex("[0-9]+")
     .map(Integer::parseInt);
 
@@ -235,7 +235,7 @@ import java.util.function.BinaryOperator;
 Parser<BinaryOperator<Integer>> mulOp = trim(Lexical.chr('*'))
     .as((a, b) -> a * b);
 
-// Parser for division operator
+// Taker for division operator
 Parser<BinaryOperator<Integer>> divOp = trim(Lexical.chr('/'))
     .as((a, b) -> a / b);
 
@@ -248,11 +248,11 @@ term.set(
 #### Step 5: Define the expression parser (addition and subtraction)
 
 ```java
-// Parser for addition operator
+// Taker for addition operator
 Parser<BinaryOperator<Integer>> addOp = trim(Lexical.chr('+'))
     .as(Integer::sum);
 
-// Parser for subtraction operator
+// Taker for subtraction operator
 Parser<BinaryOperator<Integer>> subOp = trim(Lexical.chr('-'))
     .as((a, b) -> a - b);
 
@@ -307,7 +307,7 @@ Parser<Object> jsonValue = Parser.ref();
     Parser<Map<String, Object>> jsonObject = Parser.ref();
     Parser<List<Object>> jsonArray = Parser.ref();
 
-    // Parser for JSON strings
+    // Taker for JSON strings
     Parser<String> jsonString = Lexical.chr('"')
         .skipThen(
             Combinators.oneOf(
@@ -318,20 +318,20 @@ Parser<Object> jsonValue = Parser.ref();
         .thenSkip(Lexical.chr('"'))
         .map(Lists::join);
 
-    // Parser for JSON numbers
+    // Taker for JSON numbers
     Parser<Double> jsonNumber = Lexical.regex("-?[0-9]+(\\.[0-9]+)?")
         .map(Double::parseDouble);
 
-    // Parser for JSON booleans
+    // Taker for JSON booleans
     Parser<Boolean> jsonBoolean = Combinators.oneOf(
         Lexical.string("true").as(Boolean.TRUE),
         Lexical.string("false").as(Boolean.FALSE)
     );
 
-    // Parser for JSON null
+    // Taker for JSON null
     Parser<Object> jsonNull = Lexical.string("null").as(null);
 
-// Parser for JSON arrays
+// Taker for JSON arrays
 jsonArray.
 
     set(
@@ -349,7 +349,7 @@ jsonArray.
     map(values ->(List<Object>)new ArrayList<>(values))
     );
 
-    // Parser for JSON objects
+    // Taker for JSON objects
     Parser<Map.Entry<String, Object>> jsonProperty = jsonString
         .thenSkip(Lexical.trim(Lexical.chr(':')))
         .then(jsonValue)

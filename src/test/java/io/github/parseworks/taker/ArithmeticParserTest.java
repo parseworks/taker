@@ -18,14 +18,14 @@ public class ArithmeticParserTest {
     /**
      * A reference to a parser for terms in arithmetic expressions.
      */
-    public static Parser<Double> term = Parser.ref();
+    public static Taker<Double> term = Taker.ref();
 
-    public static Parser<Double> trimmedTerm = trim(term);
+    public static Taker<Double> trimmedTerm = trim(term);
 
     /**
      * A parser for arithmetic expressions, supporting addition and subtraction.
      */
-    public static Parser<Double> expression = trimmedTerm
+    public static Taker<Double> expression = trimmedTerm
             .then(Combinators.oneOf(
                     chr('+').as(Double::sum),
                     chr('-').as((BinaryOperator<Double>) (left, right) -> left - right)
@@ -34,7 +34,7 @@ public class ArithmeticParserTest {
     /**
      * A parser for factors in arithmetic expressions, supporting nested expressions and double values.
      */
-    public static Parser<Double> factor = trim(Combinators.oneOf(
+    public static Taker<Double> factor = trim(Combinators.oneOf(
             doubleValue,
             expression.between('(', ')')
     ));

@@ -315,7 +315,7 @@ Parser<Object> jsonValue = Parser.ref();
 Parser<Map<String, Object>> jsonObject = Parser.ref();
 Parser<List<Object>> jsonArray = Parser.ref();
 
-// Parser for JSON strings
+// Taker for JSON strings
 Parser<String> jsonString = chr('"')
     .skipThen(
         oneOf(
@@ -326,18 +326,18 @@ Parser<String> jsonString = chr('"')
     .thenSkip(chr('"'))
     .map(Lists::join);
 
-// Parser for JSON numbers
+// Taker for JSON numbers
 Parser<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
     .map(Double::parseDouble);
 
-// Parser for JSON booleans
+// Taker for JSON booleans
 Parser<Boolean> jsonBoolean = string("true").as(true)
     .or(string("false").as(false));
 
-// Parser for JSON null
+// Taker for JSON null
 Parser<Object> jsonNull = string("null").as(null);
 
-// Parser for JSON arrays
+// Taker for JSON arrays
 jsonArray.set(
     chr('[')
         .skipThen(jsonValue.zeroOrMoreSeparatedBy(chr(',')))
@@ -345,7 +345,7 @@ jsonArray.set(
         .map(values -> (List<Object>) new ArrayList<>(values))
 );
 
-// Parser for JSON objects
+// Taker for JSON objects
 jsonObject.set(
     chr('{')
         .skipThen(
@@ -394,16 +394,16 @@ enum BinOp {
 // Create a parser for expressions with variables
 Parser<UnaryOperator<Integer>> expr = Parser.ref();
 
-// Parser for variables (x)
+// Taker for variables (x)
 Parser<UnaryOperator<Integer>> var = chr('x')
     .map(x -> v -> v);  // Identity function that returns the variable value
 
-// Parser for numbers (constants)
+// Taker for numbers (constants)
 Parser<UnaryOperator<Integer>> num = regex("\\d+")
     .map(Integer::parseInt)
     .map(i -> v -> i);  // Constant function that ignores the variable value
 
-// Parser for binary operators
+// Taker for binary operators
 Parser<BinOp> binOp = oneOf(
     chr('+').as(BinOp.ADD),
     chr('-').as(BinOp.SUB),
@@ -411,7 +411,7 @@ Parser<BinOp> binOp = oneOf(
     chr('/').as(BinOp.DIV)
 );
 
-// Parser for binary expressions
+// Taker for binary expressions
 Parser<UnaryOperator<Integer>> binExpr = chr('(')
     .skipThen(expr)
     .then(binOp)
@@ -493,32 +493,32 @@ class IfStatement implements Statement {
 Parser<Statement> statement = Parser.ref();
 Parser<List<Statement>> statements = Parser.ref();
 
-// Parser for identifiers
+// Taker for identifiers
 Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 
-// Parser for numbers
+// Taker for numbers
 Parser<Integer> number = regex("\\d+").map(Integer::parseInt);
 
-// Parser for strings
+// Taker for strings
 Parser<String> stringLiteral = chr('"')
     .skipThen(chr(c -> c != '"').zeroOrMore())
     .thenSkip(chr('"'))
     .map(Lists::join);
 
-// Parser for print statements
+// Taker for print statements
 Parser<Statement> printStatement = string("print")
     .skipThen(stringLiteral)
     .thenSkip(chr(';'))
     .map(PrintStatement::new);
 
-// Parser for assignment statements
+// Taker for assignment statements
 Parser<Statement> assignStatement = identifier
     .thenSkip(string("="))
     .then(number)
     .thenSkip(chr(';'))
     .map(var -> val -> new AssignStatement(var, val));
 
-// Parser for if statements
+// Taker for if statements
 Parser<Statement> ifStatement = string("if")
     .skipThen(chr('('))
     .skipThen(identifier)

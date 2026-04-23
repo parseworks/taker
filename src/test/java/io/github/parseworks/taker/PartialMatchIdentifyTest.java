@@ -11,7 +11,7 @@ public class PartialMatchIdentifyTest {
 
     @Test
     public void testStringPartialMatch() {
-        Parser<String> abc = Lexical.string("abc");
+        Taker<String> abc = Lexical.string("abc");
         Input input = Input.of("abd"); // matches 'ab', fails on 'c' vs 'd'
         
         Result<String> result = abc.apply(input);
@@ -23,11 +23,11 @@ public class PartialMatchIdentifyTest {
 
     @Test
     public void testSequencePartialMatch() {
-        Parser<Character> a = Lexical.chr('a');
-        Parser<Character> b = Lexical.chr('b');
-        Parser<Character> c = Lexical.chr('c');
+        Taker<Character> a = Lexical.chr('a');
+        Taker<Character> b = Lexical.chr('b');
+        Taker<Character> c = Lexical.chr('c');
         
-        Parser<Character> abc = a.skipThen(b).skipThen(c);
+        Taker<Character> abc = a.skipThen(b).skipThen(c);
         Input input = Input.of("abd");
         
         Result<Character> result = abc.apply(input);
@@ -40,8 +40,8 @@ public class PartialMatchIdentifyTest {
     
     @Test
     public void testRepeatPartialMatch() {
-        Parser<Character> a = Lexical.chr('a');
-        Parser<List<Character>> a3 = a.repeat(3);
+        Taker<Character> a = Lexical.chr('a');
+        Taker<List<Character>> a3 = a.repeat(3);
         Input input = Input.of("aab");
         
         Result<List<Character>> result = a3.apply(input);

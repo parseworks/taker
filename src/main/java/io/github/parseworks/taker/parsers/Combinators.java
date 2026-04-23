@@ -27,8 +27,8 @@ public class Combinators {
      *
      * @return a parser that matches any single input element
      */
-    public static Parser<Character> any() {
-        return new Parser<>(input -> {
+    public static Taker<Character> any() {
+        return new Taker<>(input -> {
             if (input.isEof()) {
                 return new NoMatch<Character>(input, "any character").cast();
             } else {
@@ -40,7 +40,7 @@ public class Combinators {
     /**
      * Unconditionally throws an exception from the supplier.
      * <pre>{@code
-     * Parser<Object> critical = throwError(() -> new IllegalStateException("Fail"));
+     * Taker<Object> critical = throwError(() -> new IllegalStateException("Fail"));
      * }</pre>
      *
      * @param supplier exception supplier
@@ -48,8 +48,8 @@ public class Combinators {
      * @return a parser that always throws
      * @see #fail()
      */
-    public static <I> Parser<? super Object> throwError(Supplier<? extends Exception> supplier) {
-        return new Parser<>(in -> {
+    public static <I> Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
+        return new Taker<>(in -> {
             throw sneakyThrow(supplier.get());
         });
     }
@@ -73,8 +73,8 @@ public class Combinators {
      * @return a parser matching any of the items
      * @see #is(Object)
      */
-    public static  Parser<Character> oneOf(char... items) {
-        return new Parser<>(in -> {
+    public static Taker<Character> oneOf(char... items) {
+        return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<>(in, "one of the expected values");
             }
@@ -106,8 +106,8 @@ public class Combinators {
     /**
      * Succeeds if the input is at the end of the file (EOF).
      */
-    public static  Parser<Void> eof() {
-        return new Parser<>(input -> {
+    public static Taker<Void> eof() {
+        return new Taker<>(input -> {
             if (input.isEof()) {
                 return new Match<>(null, input);
             } else {
@@ -119,15 +119,15 @@ public class Combinators {
     /**
      * Unconditionally fails, consuming no input.
      */
-    public static <A> Parser<A> fail() {
-        return new Parser<>(in -> new NoMatch<A>(in, "parser explicitly set to fail"));
+    public static <A> Taker<A> fail() {
+        return new Taker<>(in -> new NoMatch<A>(in, "parser explicitly set to fail"));
     }
 
     /**
      * Fails with a specific error message.
      */
-    public static <A> Parser<A> fail(String expected) {
-        return new Parser<>(in -> new NoMatch<A>(in, expected));
+    public static <A> Taker<A> fail(String expected) {
+        return new Taker<>(in -> new NoMatch<A>(in, expected));
     }
 
     /**
@@ -138,8 +138,8 @@ public class Combinators {
      *
      * @param parser parser to negate
      */
-    public static <A> Parser<Character> not(Parser<A> parser) {
-        return new Parser<>(in -> {
+    public static <A> Taker<Character> not(Taker<A> parser) {
+        return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (result.matches() || !result.input().hasMore()) {
                 // Provide more context about what was found that shouldn't have matched
@@ -159,11 +159,11 @@ public class Combinators {
      *
      * @param value value to exclude
      * @return a parser matching anything except the value
-     * @see #not(Parser)
+     * @see #not(Taker)
      * @see #is(Object)
      */
-    public static Parser<Character> isNot(char value) {
-        return new Parser<>(in -> {
+    public static Taker<Character> isNot(char value) {
+        return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<Character>(in, "any value except " + value);
             }
@@ -183,19 +183,19 @@ public class Combinators {
      * @param parsers list of parsers to try
      * @param <A>     result type
      * @return a choice parser
-     * @see Parser#or(Parser)
+     * @see Taker#or(Taker)
      */
-    public static <A> Parser<A> oneOf(List<Parser<A>> parsers) {
+    public static <A> Taker<A> oneOf(List<Taker<A>> parsers) {
         if (parsers.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one parser defined");
         }
-        return new Parser<>(in -> {
+        return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<>(in, "eof before `oneOf` parser");
             }
             List<Failure<A>> failures = null;
 
-            for (Parser<A> parser : parsers) {
+            for (Taker<A> parser : parsers) {
                 Result<A> result = parser.apply(in);
                 if (result.matches()) {
                     return result;
@@ -220,7 +220,7 @@ public class Combinators {
      * Tries each of the provided parsers in order and succeeds with the first match.
      */
     @SafeVarargs
-    public static <A> Parser<A> oneOf(Parser<A>... parsers) {
+    public static <A> Taker<A> oneOf(Taker<A>... parsers) {
         return oneOf(Arrays.asList(parsers));
     }
 
@@ -234,11 +234,11 @@ public class Combinators {
      * @param <A>     result type
      * @return a sequence parser
      */
-    public static <A> Parser<List<A>> sequence(List<Parser<A>> parsers) {
-        return new Parser<>(in -> {
+    public static <A> Taker<List<A>> sequence(List<Taker<A>> parsers) {
+        return new Taker<>(in -> {
             List<A> results = new ArrayList<>();
             Input currentInput = in;
-            for (Parser<A> parser : parsers) {
+            for (Taker<A> parser : parsers) {
                 Result<A> result = parser.apply(currentInput);
                 if (!result.matches()) {
                     return result.cast();
@@ -253,14 +253,14 @@ public class Combinators {
     /**
      * Applies two parsers in sequence and returns an ApplyBuilder.
      */
-    public static <A> ApplyBuilder<A, A> sequence(Parser<A> parserA, Parser<A> parserB) {
+    public static <A> ApplyBuilder<A, A> sequence(Taker<A> parserA, Taker<A> parserB) {
         return parserA.then(parserB);
     }
 
     /**
      * Applies three parsers in sequence and returns an ApplyBuilder3.
      */
-    public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Parser<A> parserA, Parser<A> parserB, Parser<A> parserC) {
+    public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
         return parserA.then(parserB).then(parserC);
     }
 
@@ -271,8 +271,8 @@ public class Combinators {
      * @param predicate    condition to satisfy
      * @return a satisfy parser
      */
-    public static Parser<Character> satisfy(String expectedType, Predicate<Character> predicate) {
-        return new Parser<>(in -> {
+    public static Taker<Character> satisfy(String expectedType, Predicate<Character> predicate) {
+        return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<Character>(in, expectedType);
             }
@@ -292,8 +292,8 @@ public class Combinators {
      * @param predicate    condition to satisfy
      * @return a satisfy parser
      */
-    public static Parser<Character> satisfy(String expectedType, CharPredicate predicate) {
-        return new Parser<>(in -> {
+    public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
+        return new Taker<>(in -> {
             CharSequence data = in.data();
             int pos = in.position();
             if (pos >= data.length()) {
@@ -311,8 +311,8 @@ public class Combinators {
     /**
      * Matches the current input item against the provided value.
      */
-    public static <A> Parser<A> is(A equivalence) {
-        return new Parser<>(in -> {
+    public static <A> Taker<A> is(A equivalence) {
+        return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<A>(in, String.valueOf(equivalence));
             }
@@ -329,8 +329,8 @@ public class Combinators {
     /**
      * Backtracks on failure, reporting failure at the original position.
      */
-    public static <A> Parser<A> attempt(Parser<A> parser) {
-        return new Parser<>(in -> {
+    public static <A> Taker<A> attempt(Taker<A> parser) {
+        return new Taker<>(in -> {
             Result<A> res = parser.apply(in);
             if (res.matches()) return res;
             return new NoMatch<A>(in, "parse attempt", (Failure<?>) res);

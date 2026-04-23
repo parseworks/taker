@@ -52,7 +52,7 @@ public class EnhancedErrorMessagingTest {
     @Test
     public void testErrorRecovery() {
         // Create a parser that recovers from errors
-        Parser<String> parser = string("hello")
+        Taker<String> parser = string("hello")
             .recover(string("world"));
             
         // Test successful parsing with the primary parser
@@ -73,7 +73,7 @@ public class EnhancedErrorMessagingTest {
     @Test
     public void testErrorRecoveryWithFunction() {
         // Create a parser that recovers from errors with a function
-        Parser<String> parser = string("hello")
+        Taker<String> parser = string("hello")
             .recoverWith(failure -> 
                 new Match<>("default", failure.input()));
                 

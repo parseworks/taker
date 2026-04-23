@@ -14,7 +14,7 @@ public class ErrorHandlingTest {
 
     @Test
     public void testSyntaxErrorType() {
-        Parser<String> parser = oneOf(Lexical.string("foo"), Lexical.string("bar"));
+        Taker<String> parser = oneOf(Lexical.string("foo"), Lexical.string("bar"));
         Result<String> result = parser.parse("baz");
 
         assertTrue(!result.matches());
@@ -23,7 +23,7 @@ public class ErrorHandlingTest {
     @Test
     public void testExpectedEofErrorType() {
         // Test that eof() uses EXPECTED_EOF error type when input is not at EOF
-        Parser<Void> parser = eof();
+        Taker<Void> parser = eof();
         Result<Void> result = parser.parse("x");
 
         assertFalse(result.matches());
@@ -32,7 +32,7 @@ public class ErrorHandlingTest {
     @Test
     public void testUnexpectedEofErrorType() {
         // Test that oneOf() uses UNEXPECTED_EOF error type when input is at EOF
-        Parser<String> parser = oneOf(Lexical.string("foo"), Lexical.string("bar"));
+        Taker<String> parser = oneOf(Lexical.string("foo"), Lexical.string("bar"));
         Result<String> result = parser.parse("");
 
         assertFalse(result.matches());
@@ -42,7 +42,7 @@ public class ErrorHandlingTest {
     @Test
     public void testValidationErrorType() {
         // Test that not() uses VALIDATION error type when input matches the pattern
-        Parser<Character> parser = not(is('x'));
+        Taker<Character> parser = not(is('x'));
         Result<Character> result = parser.parse("x");
 
         assertFalse(result.matches());
@@ -52,7 +52,7 @@ public class ErrorHandlingTest {
     public void testRecursionErrorType() {
         // Create a parser that causes infinite recursion
         // We need to create a more realistic recursive grammar
-        Parser<String> expr = Parser.ref();
+        Taker<String> expr = Taker.ref();
 
         // Define expr in terms of itself, which will cause infinite recursion
         // when there's no base case that can succeed
@@ -77,7 +77,7 @@ public class ErrorHandlingTest {
     @Test
     public void testInternalErrorType() {
         // Create a parser that throws a RuntimeException
-        Parser<String> parser = new Parser<>(in -> {
+        Taker<String> parser = new Taker<>(in -> {
             throw new RuntimeException("Test exception");
         });
 
@@ -90,7 +90,7 @@ public class ErrorHandlingTest {
     @Test
     public void testErrorMessageFormat() {
         // Test that error messages follow the consistent format
-        Parser<String> parser = Lexical.string("foo");
+        Taker<String> parser = Lexical.string("foo");
         Result<String> result = parser.parse("bar");
 
         assertTrue(!result.matches());

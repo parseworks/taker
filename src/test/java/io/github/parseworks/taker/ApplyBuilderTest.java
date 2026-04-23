@@ -14,10 +14,10 @@ public class ApplyBuilderTest {
     // Test two-parser combination
     @Test
     public void testTwoParserCombination() {
-        Parser<String> p1 = stringParser("hello");
-        Parser<String> p2 = stringParser("world");
+        Taker<String> p1 = stringParser("hello");
+        Taker<String> p2 = stringParser("world");
         
-        Parser<String> combined = p1.then(p2)
+        Taker<String> combined = p1.then(p2)
             .map((s1, s2) -> s1 + " " + s2);
         
         Result<String> result = combined.parseAll("helloworld");
@@ -28,11 +28,11 @@ public class ApplyBuilderTest {
     // Test three-parser combination
     @Test
     public void testThreeParserCombination() {
-        Parser<String> p1 = stringParser("a");
-        Parser<String> p2 = stringParser("b");
-        Parser<String> p3 = stringParser("c");
+        Taker<String> p1 = stringParser("a");
+        Taker<String> p2 = stringParser("b");
+        Taker<String> p3 = stringParser("c");
         
-        Parser<String> combined = p1.then(p2).then(p3)
+        Taker<String> combined = p1.then(p2).then(p3)
             .map((a, b, c) -> a + b + c);
         
         Result<String> result = combined.parseAll("abc");
@@ -43,12 +43,12 @@ public class ApplyBuilderTest {
     // Test four-parser combination
     @Test
     public void testFourParserCombination() {
-        Parser<Integer> p1 = intParser(1);
-        Parser<Integer> p2 = intParser(2);
-        Parser<Integer> p3 = intParser(3);
-        Parser<Integer> p4 = intParser(4);
+        Taker<Integer> p1 = intParser(1);
+        Taker<Integer> p2 = intParser(2);
+        Taker<Integer> p3 = intParser(3);
+        Taker<Integer> p4 = intParser(4);
         
-        Parser<Integer> combined = p1.then(p2).then(p3).then(p4)
+        Taker<Integer> combined = p1.then(p2).then(p3).then(p4)
             .map((a, b, c, d) -> a + b + c + d);
         
         Result<Integer> result = combined.parse("1234");
@@ -59,13 +59,13 @@ public class ApplyBuilderTest {
     // Test five-parser combination
     @Test
     public void testFiveParserCombination() {
-        Parser<Integer> p1 = intParser(1);
-        Parser<Integer> p2 = intParser(2);
-        Parser<Integer> p3 = intParser(3);
-        Parser<Integer> p4 = intParser(4);
-        Parser<Integer> p5 = intParser(5);
+        Taker<Integer> p1 = intParser(1);
+        Taker<Integer> p2 = intParser(2);
+        Taker<Integer> p3 = intParser(3);
+        Taker<Integer> p4 = intParser(4);
+        Taker<Integer> p5 = intParser(5);
         
-        Parser<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5)
+        Taker<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5)
             .map((a, b, c, d, e) -> a + b + c + d + e);
         
         Result<Integer> result = combined.parse("12345");
@@ -76,14 +76,14 @@ public class ApplyBuilderTest {
     // Test six-parser combination
     @Test
     public void testSixParserCombination() {
-        Parser<Integer> p1 = intParser(1);
-        Parser<Integer> p2 = intParser(2);
-        Parser<Integer> p3 = intParser(3);
-        Parser<Integer> p4 = intParser(4);
-        Parser<Integer> p5 = intParser(5);
-        Parser<Integer> p6 = intParser(6);
+        Taker<Integer> p1 = intParser(1);
+        Taker<Integer> p2 = intParser(2);
+        Taker<Integer> p3 = intParser(3);
+        Taker<Integer> p4 = intParser(4);
+        Taker<Integer> p5 = intParser(5);
+        Taker<Integer> p6 = intParser(6);
         
-        Parser<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6)
+        Taker<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6)
             .map((a, b, c, d, e, f) -> a + b + c + d + e + f);
         
         Result<Integer> result = combined.parse("123456");
@@ -94,15 +94,15 @@ public class ApplyBuilderTest {
     // Test seven-parser combination
     @Test
     public void testSevenParserCombination() {
-        Parser<String> p1 = stringParser("a");
-        Parser<String> p2 = stringParser("b");
-        Parser<String> p3 = stringParser("c");
-        Parser<String> p4 = stringParser("d");
-        Parser<String> p5 = stringParser("e");
-        Parser<String> p6 = stringParser("f");
-        Parser<String> p7 = stringParser("g");
+        Taker<String> p1 = stringParser("a");
+        Taker<String> p2 = stringParser("b");
+        Taker<String> p3 = stringParser("c");
+        Taker<String> p4 = stringParser("d");
+        Taker<String> p5 = stringParser("e");
+        Taker<String> p6 = stringParser("f");
+        Taker<String> p7 = stringParser("g");
         
-        Parser<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7)
+        Taker<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7)
             .map((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
         
         Result<String> result = combined.parse("abcdefg");
@@ -113,16 +113,16 @@ public class ApplyBuilderTest {
     // Test eight-parser combination
     @Test
     public void testEightParserCombination() {
-        Parser<String> p1 = stringParser("1");
-        Parser<String> p2 = stringParser("2");
-        Parser<String> p3 = stringParser("3");
-        Parser<String> p4 = stringParser("4");
-        Parser<String> p5 = stringParser("5");
-        Parser<String> p6 = stringParser("6");
-        Parser<String> p7 = stringParser("7");
-        Parser<String> p8 = stringParser("8");
+        Taker<String> p1 = stringParser("1");
+        Taker<String> p2 = stringParser("2");
+        Taker<String> p3 = stringParser("3");
+        Taker<String> p4 = stringParser("4");
+        Taker<String> p5 = stringParser("5");
+        Taker<String> p6 = stringParser("6");
+        Taker<String> p7 = stringParser("7");
+        Taker<String> p8 = stringParser("8");
         
-        Parser<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7).then(p8)
+        Taker<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7).then(p8)
             .map((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
         
         Result<String> result = combined.parse("12345678");
@@ -133,11 +133,11 @@ public class ApplyBuilderTest {
     // Test with mixed types
     @Test
     public void testMixedTypesCombination() {
-        Parser<String> p1 = stringParser("user");
-        Parser<Character> p2 = charParser(':');
-        Parser<Integer> p3 = intParser(42);
+        Taker<String> p1 = stringParser("user");
+        Taker<Character> p2 = charParser(':');
+        Taker<Integer> p3 = intParser(42);
         
-        Parser<String> combined = p1.then(p2).then(p3)
+        Taker<String> combined = p1.then(p2).then(p3)
             .map((user, colon, id) -> user + id);
         
         Result<String> result = combined.parse("user:42");
@@ -148,10 +148,10 @@ public class ApplyBuilderTest {
     // Test parsing failure
     @Test
     public void testParsingFailure() {
-        Parser<String> p1 = stringParser("hello");
-        Parser<String> p2 = stringParser("world");
+        Taker<String> p1 = stringParser("hello");
+        Taker<String> p2 = stringParser("world");
         
-        Parser<String> combined = p1.then(p2)
+        Taker<String> combined = p1.then(p2)
             .map((s1, s2) -> s1 + " " + s2);
         
         Result<String> result = combined.parse("helloplanet");
@@ -161,10 +161,10 @@ public class ApplyBuilderTest {
     // Test with incomplete input
     @Test
     public void testIncompleteInput() {
-        Parser<String> p1 = stringParser("hello");
-        Parser<String> p2 = stringParser("world");
+        Taker<String> p1 = stringParser("hello");
+        Taker<String> p2 = stringParser("world");
         
-        Parser<String> combined = p1.then(p2)
+        Taker<String> combined = p1.then(p2)
             .map((s1, s2) -> s1 + " " + s2);
         
         Result<String> result = combined.parse("hello");
@@ -174,13 +174,13 @@ public class ApplyBuilderTest {
     // Test real-world scenario: parsing a simple assignment statement
     @Test
     public void testAssignmentParsing() {
-        Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
-        Parser<Character> equals = charParser('=');
-        Parser<Integer> number = regexIntParser("[0-9]+");
-        Parser<Character> semicolon = charParser(';');
+        Taker<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
+        Taker<Character> equals = charParser('=');
+        Taker<Integer> number = regexIntParser("[0-9]+");
+        Taker<Character> semicolon = charParser(';');
         
         // Parse "x = 42;"
-        Parser<Assignment> assignmentParser = trim(identifier).then(equals)
+        Taker<Assignment> assignmentParser = trim(identifier).then(equals)
             .then(trim(number)).then(semicolon)
             .map((name, eq, value, semi) -> new Assignment(name, value));
         
@@ -203,8 +203,8 @@ public class ApplyBuilderTest {
     }
     
     // Helper parser methods
-    private Parser<Character> charParser(char expected) {
-        return new Parser<>(input -> {
+    private Taker<Character> charParser(char expected) {
+        return new Taker<>(input -> {
             if (input.isEof() || input.current() != expected) {
                 return new NoMatch<>(input, String.valueOf(expected));
             }
@@ -212,8 +212,8 @@ public class ApplyBuilderTest {
         });
     }
     
-    private Parser<String> stringParser(String expected) {
-        return new Parser<>(input -> {
+    private Taker<String> stringParser(String expected) {
+        return new Taker<>(input -> {
             Input current = input;
             for (int i = 0; i < expected.length(); i++) {
                 if (current.isEof() || current.current() != expected.charAt(i)) {
@@ -225,12 +225,12 @@ public class ApplyBuilderTest {
         });
     }
     
-    private Parser<Integer> intParser(int value) {
+    private Taker<Integer> intParser(int value) {
         return stringParser(Integer.toString(value)).map(s -> value);
     }
 
     
-    private Parser<Integer> regexIntParser(String pattern) {
+    private Taker<Integer> regexIntParser(String pattern) {
         return regex(pattern).map(Integer::parseInt);
     }
 }

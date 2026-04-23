@@ -8,11 +8,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CoreParserTest {
+public class CoreTakerTest {
 
     @Test
     public void testBetween() {
-        Parser<Character> p = Lexical.chr('a').between('(', ')');
+        Taker<Character> p = Lexical.chr('a').between('(', ')');
         assertTrue(p.parse("(a)").matches());
         assertFalse(p.parse("a").matches());
         assertFalse(p.parse("(a").matches());
@@ -21,7 +21,7 @@ public class CoreParserTest {
 
     @Test
     public void testAs() {
-        Parser<String> p = Lexical.chr('a').as("found a");
+        Taker<String> p = Lexical.chr('a').as("found a");
         Result<String> result = p.parse("a");
         assertTrue(result.matches());
         assertEquals("found a", result.value());
@@ -29,7 +29,7 @@ public class CoreParserTest {
 
     @Test
     public void testPure() {
-        Parser<String> p = Parser.pure("pure value");
+        Taker<String> p = Taker.pure("pure value");
         Result<String> result = p.parse("anything");
         assertTrue(result.matches());
         assertEquals("pure value", result.value());
@@ -38,7 +38,7 @@ public class CoreParserTest {
 
     @Test
     public void testOptional() {
-        Parser<Optional<Character>> p = Lexical.chr('a').optional();
+        Taker<Optional<Character>> p = Lexical.chr('a').optional();
         Result<Optional<Character>> r1 = p.parse("a");
         assertTrue(r1.matches());
         assertEquals(Optional.of('a'), r1.value());
@@ -50,14 +50,14 @@ public class CoreParserTest {
 
     @Test
     public void testOrElse() {
-        Parser<Character> p = Lexical.chr('a').orElse('b');
+        Taker<Character> p = Lexical.chr('a').orElse('b');
         assertEquals('a', p.parse("a").value());
         assertEquals('b', p.parse("x").value());
     }
 
     @Test
     public void testRepeatAtLeast() {
-        Parser<List<Character>> p = Lexical.chr('a').repeatAtLeast(2);
+        Taker<List<Character>> p = Lexical.chr('a').repeatAtLeast(2);
         assertFalse(p.parse("a").matches());
         assertTrue(p.parse("aa").matches());
         assertTrue(p.parse("aaa").matches());
@@ -66,7 +66,7 @@ public class CoreParserTest {
 
     @Test
     public void testRepeatAtMost() {
-        Parser<List<Character>> p = Lexical.chr('a').repeatAtMost(2);
+        Taker<List<Character>> p = Lexical.chr('a').repeatAtMost(2);
         assertTrue(p.parse("").matches());
         assertTrue(p.parse("a").matches());
         assertTrue(p.parse("aa").matches());
@@ -78,7 +78,7 @@ public class CoreParserTest {
 
     @Test
     public void testExpecting() {
-        Parser<Character> p = Lexical.chr('a').expecting("the letter a");
+        Taker<Character> p = Lexical.chr('a').expecting("the letter a");
         Result<Character> res = p.parse("b");
         assertFalse(res.matches());
         assertTrue(res.error().contains("the letter a"));
@@ -86,7 +86,7 @@ public class CoreParserTest {
 
     @Test
     public void testRecover() {
-        Parser<Character> p = Lexical.chr('a').recover(Lexical.chr('b'));
+        Taker<Character> p = Lexical.chr('a').recover(Lexical.chr('b'));
         assertEquals('a', p.parse("a").value());
         assertEquals('b', p.parse("b").value());
     }

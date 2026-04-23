@@ -14,7 +14,7 @@ public class ErrorMessageTest {
     @Test
     public void testUnexpectedEofError() {
         // Test unexpected EOF error when input ends prematurely
-        Parser<Character> parser = chr('a').then(chr('b')).map((a, b) -> a);
+        Taker<Character> parser = chr('a').then(chr('b')).map((a, b) -> a);
         Result<Character> result = parser.parse("a");
 
         assertTrue(!result.matches());
@@ -26,7 +26,7 @@ public class ErrorMessageTest {
     @Test
     public void testExpectedEofError() {
         // Test expected EOF error when input has trailing content
-        Parser<Character> parser = chr('a');
+        Taker<Character> parser = chr('a');
         Result<Character> result = parser.parseAll("ab");
 
         assertTrue(!result.matches());

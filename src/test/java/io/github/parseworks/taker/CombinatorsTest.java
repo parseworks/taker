@@ -17,7 +17,7 @@ public class CombinatorsTest {
 
     @Test
     public void testAny() {
-        Parser<Character> parser = any();
+        Taker<Character> parser = any();
         
         // Match case
         Result<Character> result = parser.parse("a");
@@ -31,13 +31,13 @@ public class CombinatorsTest {
 
     @Test
     public void testThrowError() {
-        Parser<Object> parser = throwError(() -> new IOException("Test exception"));
+        Taker<Object> parser = throwError(() -> new IOException("Test exception"));
         assertThrows(IOException.class, () -> parser.parse("a"));
     }
 
     @Test
     public void testEof() {
-        Parser<Void> parser = eof();
+        Taker<Void> parser = eof();
 
         // Match case (empty input)
         Result<Void> result = parser.parse("");
@@ -50,7 +50,7 @@ public class CombinatorsTest {
 
     @Test
     public void testFail() {
-        Parser<Object> parser = Combinators.fail();
+        Taker<Object> parser = Combinators.fail();
 
         // Should always fail regardless of input
         assertFalse(parser.parse("a").matches());
@@ -59,8 +59,8 @@ public class CombinatorsTest {
 
     @Test
     public void testNot() {
-        Parser<Character> aParser = Lexical.chr('a');
-        Parser<Character> notAParser = not(aParser);
+        Taker<Character> aParser = Lexical.chr('a');
+        Taker<Character> notAParser = not(aParser);
 
         // Match case (not 'a')
         Result<Character> result = notAParser.parse("b");
@@ -73,7 +73,7 @@ public class CombinatorsTest {
 
     @Test
     public void testIsNot() {
-        Parser<Character> parser = isNot('a');
+        Taker<Character> parser = isNot('a');
 
         // Match case (not 'a')
         Result<Character> result = parser.parse("b");
@@ -89,10 +89,10 @@ public class CombinatorsTest {
 
     @Test
     public void testOneOfList() {
-        List<Parser<Character>> parsers = Arrays.asList(
+        List<Taker<Character>> parsers = Arrays.asList(
                 Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c')
         );
-        Parser<Character> parser = oneOf(parsers);
+        Taker<Character> parser = oneOf(parsers);
 
         // Match cases
         assertTrue(parser.parse("a").matches());
@@ -109,33 +109,33 @@ public class CombinatorsTest {
     @Test
     public void testOneOfVarargs() {
         // Test with 2 parsers
-        Parser<Character> parser2 = oneOf(Lexical.chr('a'), Lexical.chr('b'));
+        Taker<Character> parser2 = oneOf(Lexical.chr('a'), Lexical.chr('b'));
         assertTrue(parser2.parse("a").matches());
         assertTrue(parser2.parse("b").matches());
         assertFalse(parser2.parse("c").matches());
 
         // Test with 3 parsers
-        Parser<Character> parser3 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'));
+        Taker<Character> parser3 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'));
         assertTrue(parser3.parse("c").matches());
         assertFalse(parser3.parse("d").matches());
 
         // Additional tests for 4, 5, and 6 parser variants
-        Parser<Character> parser4 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'));
+        Taker<Character> parser4 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'));
         assertTrue(parser4.parse("d").matches());
 
-        Parser<Character> parser5 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'));
+        Taker<Character> parser5 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'));
         assertTrue(parser5.parse("e").matches());
 
-        Parser<Character> parser6 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'), Lexical.chr('f'));
+        Taker<Character> parser6 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'), Lexical.chr('f'));
         assertTrue(parser6.parse("f").matches());
     }
 
     @Test
     public void testSequenceList() {
-        List<Parser<Character>> parsers = Arrays.asList(
+        List<Taker<Character>> parsers = Arrays.asList(
                 Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c')
         );
-        Parser<List<Character>> parser = sequence(parsers);
+        Taker<List<Character>> parser = sequence(parsers);
 
         // Match case
         Result<List<Character>> result = parser.parse("abc");
@@ -150,13 +150,13 @@ public class CombinatorsTest {
     @Test
     public void testSequenceVarargs() {
         // Test with 2 parsers
-        Parser<String> parser2 = sequence(Lexical.chr('a'), Lexical.chr('b'))
+        Taker<String> parser2 = sequence(Lexical.chr('a'), Lexical.chr('b'))
                 .map((a, b) -> String.valueOf(a) + b);
         assertTrue(parser2.parse("ab").matches());
         assertEquals("ab", parser2.parse("ab").value());
 
         // Test with 3 parsers
-        Parser<String> parser3 = sequence(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'))
+        Taker<String> parser3 = sequence(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'))
                 .map((a, b, c) -> String.valueOf(a) + b + c);
         assertTrue(parser3.parse("abc").matches());
         assertEquals("abc", parser3.parse("abc").value());
@@ -165,7 +165,7 @@ public class CombinatorsTest {
     @Test
     public void testSatisfy() {
         Predicate<Character> isUppercase = Character::isUpperCase;
-        Parser<Character> parser = satisfy("uppercase letter", isUppercase);
+        Taker<Character> parser = satisfy("uppercase letter", isUppercase);
 
         // Match case
         assertTrue(parser.parse("A").matches());
@@ -180,7 +180,7 @@ public class CombinatorsTest {
 
     @Test
     public void testIs() {
-        Parser<Character> parser = is('x');
+        Taker<Character> parser = is('x');
 
         // Match case
         assertTrue(parser.parse("x").matches());
@@ -196,7 +196,7 @@ public class CombinatorsTest {
     @Test
     public void testChrPredicate() {
         Predicate<Character> isVowel = c -> "aeiouAEIOU".indexOf(c) >= 0;
-        Parser<Character> parser = Lexical.chr(isVowel);
+        Taker<Character> parser = Lexical.chr(isVowel);
 
         // Match cases
         assertTrue(parser.parse("a").matches());
@@ -208,17 +208,17 @@ public class CombinatorsTest {
 
     @Test
     public void testChrChar() {
-        Parser<Character> parser = Lexical.chr('!');
+        Taker<Character> parser = Lexical.chr('!');
 
         // Match case
         assertTrue(parser.parse("!").matches());
         assertEquals('!', parser.parse("!").value());
 
-        Parser<String> keyword = Lexical.string("if").or(Lexical.string("else")).or(Lexical.string("while"));
-        Parser<String> identifier = Lexical.regex("[a-zA-Z][a-zA-Z0-9]*");
-        Parser<String> number = Numeric.numeric.oneOrMore().map(Lists::join);
+        Taker<String> keyword = Lexical.string("if").or(Lexical.string("else")).or(Lexical.string("while"));
+        Taker<String> identifier = Lexical.regex("[a-zA-Z][a-zA-Z0-9]*");
+        Taker<String> number = Numeric.numeric.oneOrMore().map(Lists::join);
 
-       Parser<String> token = oneOf(Arrays.asList(
+       Taker<String> token = oneOf(Arrays.asList(
          keyword,
        identifier,
          number
@@ -230,7 +230,7 @@ public class CombinatorsTest {
 
     @Test
     public void testString() {
-        Parser<String> parser = Lexical.string("hello");
+        Taker<String> parser = Lexical.string("hello");
 
         var result = parser.parse("hello world");
         var result2 = parser.parse("hello");
@@ -248,7 +248,7 @@ public class CombinatorsTest {
 
     @Test
     public void testOneOfString() {
-        Parser<Character> parser = Lexical.oneOf("0123456789");
+        Taker<Character> parser = Lexical.oneOf("0123456789");
 
         // Match cases - all digits
         for (char c = '0'; c <= '9'; c++) {
@@ -262,8 +262,8 @@ public class CombinatorsTest {
 
     @Test
     public void testRegex() {
-        // Keep a simple composition example; detailed regex semantics live in RegexParserTest
-        Parser<String> letters = Lexical.regex("[A-Za-z]+");
+        // Keep a simple composition example; detailed regex semantics live in RegexTakerTest
+        Taker<String> letters = Lexical.regex("[A-Za-z]+");
         Result<String> r1 = letters.parse("hello123");
         assertTrue(r1.matches());
         assertEquals("hello", r1.value());
@@ -274,9 +274,9 @@ public class CombinatorsTest {
     @Test
     public void testComplexParsers() {
         // Simple arithmetic expression: number + number
-        Parser<Integer> number = Lexical.oneOf("0123456789").map(Character::getNumericValue);
-        Parser<Character> plus = Lexical.chr('+');
-        Parser<Integer> expr = number.then(plus).then(number)
+        Taker<Integer> number = Lexical.oneOf("0123456789").map(Character::getNumericValue);
+        Taker<Character> plus = Lexical.chr('+');
+        Taker<Integer> expr = number.then(plus).then(number)
                 .map((n1, op, n2) -> n1 + n2);
 
         // Match case
@@ -291,9 +291,9 @@ public class CombinatorsTest {
 
     @Test
     public void testJsonLikeParser() {
-        // Parser for "key": "value" pattern
-        Parser<Character> quote = Lexical.chr('"');
-        Parser<String> chars = Lexical.chr(c -> c != '"').oneOrMore()
+        // Taker for "key": "value" pattern
+        Taker<Character> quote = Lexical.chr('"');
+        Taker<String> chars = Lexical.chr(c -> c != '"').oneOrMore()
                 .map(list -> {
                     StringBuilder sb = new StringBuilder();
                     for (Character c : list) {
@@ -301,8 +301,8 @@ public class CombinatorsTest {
                     }
                     return sb.toString();
                 });
-        Parser<String> quotedString = chars.between(quote);
-        Parser<String> keyValue = quotedString.then(Lexical.string(": ")).then(quotedString)
+        Taker<String> quotedString = chars.between(quote);
+        Taker<String> keyValue = quotedString.then(Lexical.string(": ")).then(quotedString)
                 .map((key, sep, value) -> key + "=" + value);
 
         // Match case
@@ -318,11 +318,11 @@ public class CombinatorsTest {
     @Test
     public void testCombinedNotIsNot() {
         // Test combining not and isNot
-        Parser<Character> notDigit = not(Lexical.chr(Character::isDigit));
-        Parser<Character> letter = Lexical.chr(Character::isLetter);
+        Taker<Character> notDigit = not(Lexical.chr(Character::isDigit));
+        Taker<Character> letter = Lexical.chr(Character::isLetter);
 
-        // Parser that accepts a letter that's followed by a non-digit
-        Parser<Character> letterFollowedByNonDigit = letter.peek(notDigit);
+        // Taker that accepts a letter that's followed by a non-digit
+        Taker<Character> letterFollowedByNonDigit = letter.peek(notDigit);
 
         var firstResult = letterFollowedByNonDigit.parse("a");
         var secondResult = letterFollowedByNonDigit.parse("a1");

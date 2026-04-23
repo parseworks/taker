@@ -17,7 +17,7 @@ public class AssociativityTest {
 
     @Test
     public void testDouble() {
-        Parser<Double> addition = number.then(chr('+')).then(number).map((left, op, right) -> Double.sum(left, right));
+        Taker<Double> addition = number.then(chr('+')).then(number).map((left, op, right) -> Double.sum(left, right));
 
 
         var result = addition.parse(Input.of("2+3"));
@@ -27,11 +27,11 @@ public class AssociativityTest {
 
     @Test
     public void testAssociativity() {
-        Parser<Double> expression = Parser.ref();
-        Parser<Double> term = Parser.ref();
+        Taker<Double> expression = Taker.ref();
+        Taker<Double> term = Taker.ref();
 
-        Parser<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
-        Parser<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
+        Taker<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
+        Taker<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
         term.set(multiplication.or(doubleValue));
         expression.set(Combinators.oneOf(List.of(
                 addition,
@@ -46,11 +46,11 @@ public class AssociativityTest {
 
     @Test
     public void associativity2() {
-        Parser<Double> expression = Parser.ref();
-        Parser<Double> term = Parser.ref();
+        Taker<Double> expression = Taker.ref();
+        Taker<Double> term = Taker.ref();
 
-        Parser<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
-        Parser<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
+        Taker<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
+        Taker<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
         term.set(multiplication.or(doubleValue));
         expression.set(Combinators.oneOf(List.of(
                 addition,
@@ -66,7 +66,7 @@ public class AssociativityTest {
     @Test
     public void testLeftAssociative() {
         BinaryOperator<Long> add = Long::sum;
-        Parser<Long> leftAssocParser = number.chainLeftZeroOrMore(chr('+').as(add), 0l);
+        Taker<Long> leftAssocParser = number.chainLeftZeroOrMore(chr('+').as(add), 0l);
 
         String input = "1+2+3";
         Result<Long> result = leftAssocParser.parse(Input.of(input));

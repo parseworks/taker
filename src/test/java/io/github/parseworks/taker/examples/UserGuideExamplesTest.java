@@ -2,7 +2,7 @@ package io.github.parseworks.taker.examples;
 
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Lists;
-import io.github.parseworks.taker.Parser;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
@@ -22,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UserGuideExamplesTest {
 
     /**
-     * Test for Tutorial 1: Creating Your First Parser
+     * Test for Tutorial 1: Creating Your First Taker
      */
     @Test
     public void testTutorial1() {
         // Create a parser that recognizes the string "hello"
-        Parser<String> helloParser = Lexical.string("hello");
+        Taker<String> helloParser = Lexical.string("hello");
 
         // Parse the input "hello world"
         Result<String> result = helloParser.parse(Input.of("hello world"));
@@ -50,17 +50,17 @@ public class UserGuideExamplesTest {
      */
     @Test
     public void testTutorial2() {
-        // Parser for the word "hello"
-        Parser<String> helloParser = Lexical.string("hello");
+        // Taker for the word "hello"
+        Taker<String> helloParser = Lexical.string("hello");
 
-        // Parser for the word "world"
-        Parser<String> worldParser = Lexical.string("world");
+        // Taker for the word "world"
+        Taker<String> worldParser = Lexical.string("world");
 
-        // Parser for whitespace
-        Parser<String> whitespaceParser = chr(' ').oneOrMore().as("");
+        // Taker for whitespace
+        Taker<String> whitespaceParser = chr(' ').oneOrMore().as("");
 
-        // Parser for "hello world" that ignores whitespace
-        Parser<String> cleanerParser = helloParser
+        // Taker for "hello world" that ignores whitespace
+        Taker<String> cleanerParser = helloParser
             .thenSkip(whitespaceParser)
             .then(worldParser)
             .map(hello -> world -> hello + " " + world);
@@ -75,23 +75,23 @@ public class UserGuideExamplesTest {
      */
     @Test
     public void testTutorial3() {
-        // Parser for keys (alphanumeric strings)
-        Parser<String> keyParser = regex("[a-zA-Z0-9]+");
+        // Taker for keys (alphanumeric strings)
+        Taker<String> keyParser = regex("[a-zA-Z0-9]+");
 
-        // Parser for the equals sign
-        Parser<Character> equalsParser = chr('=');
+        // Taker for the equals sign
+        Taker<Character> equalsParser = chr('=');
 
-        // Parser for values (any string until end of line)
-        Parser<String> valueParser = regex("[^\\n]*");
+        // Taker for values (any string until end of line)
+        Taker<String> valueParser = regex("[^\\n]*");
 
-        // Parser for a key-value pair
-        Parser<KeyValue> keyValueParser = keyParser
+        // Taker for a key-value pair
+        Taker<KeyValue> keyValueParser = keyParser
             .thenSkip(equalsParser)
             .then(valueParser)
             .map(key -> value -> new KeyValue(key, value));
 
-        // Parser for multiple key-value pairs separated by newlines
-        Parser<List<KeyValue>> configParser = keyValueParser
+        // Taker for multiple key-value pairs separated by newlines
+        Taker<List<KeyValue>> configParser = keyValueParser
             .oneOrMoreSeparatedBy(chr('\n'));
 
         // Parse a configuration file
@@ -114,27 +114,27 @@ public class UserGuideExamplesTest {
      */
     @Test
     public void testTutorial4() {
-        // Parser for keys (alphanumeric strings)
-        Parser<String> keyParser = regex("[a-zA-Z0-9]+").expecting("key");
+        // Taker for keys (alphanumeric strings)
+        Taker<String> keyParser = regex("[a-zA-Z0-9]+").expecting("key");
 
-        // Parser for the equal sign
-        Parser<Character> equalsParser = chr('=').expecting("equals");
+        // Taker for the equal sign
+        Taker<Character> equalsParser = chr('=').expecting("equals");
 
-        // Parser for values (any string until the end of line)
-        Parser<String> valueParser = chr(c -> c != '\n' && c != ',' && c != '}')
+        // Taker for values (any string until the end of line)
+        Taker<String> valueParser = chr(c -> c != '\n' && c != ',' && c != '}')
             .oneOrMore()
             .map(Lists::join)
             .expecting("value");
 
-        // Parser for a key-value pair
-        Parser<KeyValue> keyValueParser = keyParser
+        // Taker for a key-value pair
+        Taker<KeyValue> keyValueParser = keyParser
             .thenSkip(equalsParser)
             .then(valueParser)
             .map(key -> value -> new KeyValue(key, value))
             .expecting("key-value pair");
 
-        // Parser for a JSON-like object
-        Parser<Map<String, String>> objectParser = chr('{')
+        // Taker for a JSON-like object
+        Taker<Map<String, String>> objectParser = chr('{')
             .skipThen(
                 keyValueParser.oneOrMoreSeparatedBy(Lexical.string(","))
             )
@@ -171,7 +171,7 @@ public class UserGuideExamplesTest {
     public void testTutorial4_ExpectingExample() {
         // Suppose an identifier is a letter followed by zero or more alphanumerics
         // Use a regex-based parser for a concise identifier definition
-        Parser<String> identifier =
+        Taker<String> identifier =
             regex("[A-Za-z][A-Za-z0-9]*")
                 .expecting("identifier");
 
@@ -183,22 +183,22 @@ public class UserGuideExamplesTest {
     }
 
     /**
-     * Test for Tutorial 5: Creating a Calculator Parser
+     * Test for Tutorial 5: Creating a Calculator Taker
      */
     @Test
     public void testTutorial5() {
 
-        // Parser for numbers
-        Parser<Integer> number = regex("[0-9]+")
+        // Taker for numbers
+        Taker<Integer> number = regex("[0-9]+")
             .map(Integer::parseInt);
 
         // Create references for recursive parsers
-        Parser<Integer> expr = Parser.ref();
-        Parser<Integer> term = Parser.ref();
-        Parser<Integer> factor = Parser.ref();
+        Taker<Integer> expr = Taker.ref();
+        Taker<Integer> term = Taker.ref();
+        Taker<Integer> factor = Taker.ref();
 
         // Factor can be a number or an expression in parentheses
-        Parser<Integer> parenFactor = chr('(')
+        Taker<Integer> parenFactor = chr('(')
             .skipThen(trim(expr))
             .thenSkip(chr(')')); // Using trim from Lexical
 
@@ -206,12 +206,12 @@ public class UserGuideExamplesTest {
             trim(oneOf(number, parenFactor))
         );
 
-        // Parser for multiplication operator
-        Parser<BinaryOperator<Integer>> mulOp = trim(chr('*'))
+        // Taker for multiplication operator
+        Taker<BinaryOperator<Integer>> mulOp = trim(chr('*'))
             .as((a, b) -> a * b);
 
-        // Parser for division operator
-        Parser<BinaryOperator<Integer>> divOp = trim(chr('/'))
+        // Taker for division operator
+        Taker<BinaryOperator<Integer>> divOp = trim(chr('/'))
             .as((a, b) -> a / b);
 
         // Term handles multiplication and division
@@ -219,12 +219,12 @@ public class UserGuideExamplesTest {
             factor.chainLeftZeroOrMore(oneOf(mulOp, divOp), 0)
         );
 
-        // Parser for addition operator
-        Parser<BinaryOperator<Integer>> addOp = trim(chr('+'))
+        // Taker for addition operator
+        Taker<BinaryOperator<Integer>> addOp = trim(chr('+'))
             .as(Integer::sum);
 
-        // Parser for subtraction operator
-        Parser<BinaryOperator<Integer>> subOp = trim(chr('-'))
+        // Taker for subtraction operator
+        Taker<BinaryOperator<Integer>> subOp = trim(chr('-'))
             .as((a, b) -> a - b);
 
         // Expression handles addition and subtraction

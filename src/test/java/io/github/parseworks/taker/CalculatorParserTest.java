@@ -12,17 +12,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CalculatorParserTest {
 
-    public static Parser<Integer> term = Parser.ref();
-    public static Parser<Integer> expression = term.chainLeftZeroOrMore(operator(), 0);
-    public static Parser<Integer> term2 = Combinators.oneOf(List.of(
+    public static Taker<Integer> term = Taker.ref();
+    public static Taker<Integer> expression = term.chainLeftZeroOrMore(operator(), 0);
+    public static Taker<Integer> term2 = Combinators.oneOf(List.of(
             number(),
             expression.between('(', ')')));
 
-    public static Parser<Integer> number() {
+    public static Taker<Integer> number() {
         return numeric.map(Character::getNumericValue);
     }
 
-    public static Parser<BinaryOperator<Integer>> operator() {
+    public static Taker<BinaryOperator<Integer>> operator() {
         return Combinators.oneOf(List.of(
                 chr('+').map(op -> Integer::sum),
                 chr('-').map(op -> (a, b) -> a - b),

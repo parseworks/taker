@@ -1,7 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.Lists;
-import io.github.parseworks.taker.Parser;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.impl.Pair;
 
 import java.util.function.BinaryOperator;
@@ -20,9 +20,9 @@ public class Chains {
      * @param associativity LEFT or RIGHT
      * @return an operator chain parser
      */
-    public static <A> Parser<A> chain(Parser<A> parser, Parser<BinaryOperator<A>> op, Associativity associativity) {
+    public static <A> Taker<A> chain(Taker<A> parser, Taker<BinaryOperator<A>> op, Associativity associativity) {
         if (associativity == Associativity.LEFT) {
-            final Parser<UnaryOperator<A>> plo =
+            final Taker<UnaryOperator<A>> plo =
                 op.then(parser)
                     .map((f, y) -> x -> f.apply(x, y));
             return parser.then(plo.zeroOrMore())

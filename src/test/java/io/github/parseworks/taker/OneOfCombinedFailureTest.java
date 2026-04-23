@@ -16,11 +16,11 @@ public class OneOfCombinedFailureTest {
         Input in = Input.of("a");
 
         // Three parsers that all fail at the same position with distinct expectations
-        Parser<String> p1 = new Parser<>(inp -> new NoMatch<>(inp, "option A"));
-        Parser<String> p2 = new Parser<>(inp -> new NoMatch<>(inp, "option B"));
-        Parser<String> p3 = new Parser<>(inp -> new NoMatch<>(inp, "option C"));
+        Taker<String> p1 = new Taker<>(inp -> new NoMatch<>(inp, "option A"));
+        Taker<String> p2 = new Taker<>(inp -> new NoMatch<>(inp, "option B"));
+        Taker<String> p3 = new Taker<>(inp -> new NoMatch<>(inp, "option C"));
 
-        Parser<String> parser = Combinators.oneOf(Arrays.asList(p1, p2, p3));
+        Taker<String> parser = Combinators.oneOf(Arrays.asList(p1, p2, p3));
 
         Result<String> result = parser.parse(in);
         assertFalse(result.matches(), "Result should be an error when all alternatives fail");

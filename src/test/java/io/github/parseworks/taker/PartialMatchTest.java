@@ -11,7 +11,7 @@ public class PartialMatchTest {
 
     @Test
     public void testPartialMatchInParse() {
-        Parser<String> abc = Lexical.string("abc");
+        Taker<String> abc = Lexical.string("abc");
         Input input = Input.of("abcdef");
 
         // parse(input, false) should return a Match
@@ -33,7 +33,7 @@ public class PartialMatchTest {
 
     @Test
     public void testFullMatchInParse() {
-        Parser<String> abc = Lexical.string("abc");
+        Taker<String> abc = Lexical.string("abc");
         Input input = Input.of("abc");
 
         Result<String> result = abc.parse(input, true);
@@ -46,7 +46,7 @@ public class PartialMatchTest {
 
     @Test
     public void testNoStringMatch() {
-        Parser<String> abcd = Lexical.string("abcd");
+        Taker<String> abcd = Lexical.string("abcd");
         Input input = Input.of("xyz");
 
         Result<String> result = abcd.parse(input);
@@ -58,7 +58,7 @@ public class PartialMatchTest {
 
     @Test
     public void testPartialMatch() {
-        Parser<String> abcd = Lexical.string("abcd");
+        Taker<String> abcd = Lexical.string("abcd");
         Input input = Input.of("abc");
         
         Result<String> result = abcd.parse(input);
@@ -70,7 +70,7 @@ public class PartialMatchTest {
 
     @Test
     public void testAttemptBacktrack() {
-        Parser<String> abcd = attempt(Lexical.string("abcd"));
+        Taker<String> abcd = attempt(Lexical.string("abcd"));
         Input fullInput = Input.of("prefixabcd");
         Input startInput = fullInput.skip(6); // at 'a'
         

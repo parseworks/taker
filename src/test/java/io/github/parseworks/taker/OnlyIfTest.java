@@ -8,7 +8,7 @@ public class OnlyIfTest {
 
     @Test
     public void testOnlyIfWithCharPredicate() {
-        Parser<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
+        Taker<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
         Result<Character> result = parser.parse("a");
         assertTrue(result.matches(), "Should match 'a'");
         assertEquals('a', result.value());
@@ -19,7 +19,7 @@ public class OnlyIfTest {
 
     @Test
     public void testOnlyIfEOF() {
-        Parser<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
+        Taker<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
         Result<Character> result = parser.parse("");
         assertFalse(result.matches(), "Should not match EOF");
     }

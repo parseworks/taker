@@ -12,7 +12,7 @@ public class AtomicPartialMatchTest {
     @Test
     public void testAttemptWithPartialMatch() {
         // string("abc") will produce a PartialMatch on input "abx"
-        Parser<String> p = attempt(string("abc"));
+        Taker<String> p = attempt(string("abc"));
         Input input = Input.of("abx");
         
         Result<String> result = p.apply(input);

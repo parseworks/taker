@@ -6,11 +6,11 @@ import static io.github.parseworks.taker.parsers.Lexical.regex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RegexParserTest {
+public class RegexTakerTest {
 
     @Test
     public void testEmptyInput() {
-        Parser<String> parser = regex(".*");
+        Taker<String> parser = regex(".*");
         Result<String> result = parser.parse("");
         assertTrue(result.matches());
         assertEquals("", result.value());
@@ -24,7 +24,7 @@ public class RegexParserTest {
     
     @Test
     public void testNoMatch() {
-        Parser<String> parser = regex("\\d+");
+        Taker<String> parser = regex("\\d+");
         Result<String> result = parser.parse("abc");
         assertTrue(!result.matches());
         
@@ -36,13 +36,13 @@ public class RegexParserTest {
     @Test
     public void testRegexVsGreedyBehavior() {
         // Standard regex stops at first complete match
-        Parser<String> standard = regex("[a-z]+\\.[a-z]+");
+        Taker<String> standard = regex("[a-z]+\\.[a-z]+");
         Result<String> result1 = standard.parse("example.com.org");
         assertTrue(result1.matches());
         assertEquals("example.com", result1.value());
         
         // Greedy regex finds longest possible match
-        Parser<String> greedy = regex("[a-z]+\\.[a-z\\.]+");
+        Taker<String> greedy = regex("[a-z]+\\.[a-z\\.]+");
         Result<String> result2 = greedy.parse("example.com.org");
         assertTrue(result2.matches());
         assertEquals("example.com.org", result2.value());
@@ -51,7 +51,7 @@ public class RegexParserTest {
     @Test
     public void testComplexPatterns() {
         // Email-like pattern
-        Parser<String> emailParser = regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        Taker<String> emailParser = regex("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
         Result<String> result = emailParser.parse("user@example.com and more");
         assertTrue(result.matches());
         assertEquals("user@example.com", result.value());
@@ -64,7 +64,7 @@ public class RegexParserTest {
     @Test
     public void testAnchors() {
         // Start anchor
-        Parser<String> parser = regex("^abc");
+        Taker<String> parser = regex("^abc");
         Result<String> result = parser.parse("abcdef");
         assertTrue(result.matches());
         assertEquals("abc", result.value());
@@ -86,12 +86,12 @@ public class RegexParserTest {
     @Test
     public void testQuantifiers() {
         // Test greedy vs non-greedy quantifiers
-        Parser<String> greedyParser = regex("a.*b");
+        Taker<String> greedyParser = regex("a.*b");
         Result<String> result = greedyParser.parse("axbycb");
         assertTrue(result.matches());
         assertEquals("axbycb", result.value());
         
-        Parser<String> nonGreedyParser = regex("a.*?b");
+        Taker<String> nonGreedyParser = regex("a.*?b");
         result = nonGreedyParser.parse("axbycb");
         assertTrue(result.matches());
         assertEquals("axb", result.value());
@@ -100,7 +100,7 @@ public class RegexParserTest {
     @Test
     public void testGroupsAndAlternatives() {
         // Capturing groups
-        Parser<String> parser = regex("(ab)|(cd)");
+        Taker<String> parser = regex("(ab)|(cd)");
         Result<String> result = parser.parse("abcd");
         assertTrue(result.matches());
         assertEquals("ab", result.value());
@@ -120,7 +120,7 @@ public class RegexParserTest {
         }
         
         // Test with pattern that matches a prefix
-        Parser<String> parser = regex("\\d{500}");
+        Taker<String> parser = regex("\\d{500}");
         Result<String> result = parser.parse(longInput.toString());
         assertTrue(result.matches());
         assertEquals(500, result.value().length());
@@ -135,7 +135,7 @@ public class RegexParserTest {
     @Test
     public void testSpecialCharacters() {
         // Unicode characters
-        Parser<String> parser = regex("\\p{L}+");
+        Taker<String> parser = regex("\\p{L}+");
         Result<String> result = parser.parse("αβγδε");
         assertTrue(result.matches());
         assertEquals("αβγδε", result.value());
@@ -150,7 +150,7 @@ public class RegexParserTest {
     @Test
     public void testPartialMatches() {
         // Input with partial match at start
-        Parser<String> parser = regex("\\d+");
+        Taker<String> parser = regex("\\d+");
         Result<String> result = parser.parse("123abc");
         assertTrue(result.matches());
         assertEquals("123", result.value());
@@ -166,7 +166,7 @@ public class RegexParserTest {
     public void testConsecutiveMatches() {
         // Multiple matches in sequence - regex only takes first
         String input = "123 456 789";
-        Parser<String> parser = regex("\\d+");
+        Taker<String> parser = regex("\\d+");
         Result<String> result = parser.parse(input);
         assertTrue(result.matches());
         assertEquals("123", result.value());

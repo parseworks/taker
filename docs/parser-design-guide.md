@@ -95,14 +95,14 @@ parseWorks provides a rich set of tools for implementing parsers:
 Start with basic parsers for simple elements:
 
 ```java
-// Parser for a single digit
+// Taker for a single digit
 Parser<Integer> digit = chr(Character::isDigit)
     .map(c -> Character.getNumericValue(c));
 
-// Parser for a specific string
+// Taker for a specific string
 Parser<String> keyword = string("if");
 
-// Parser for a regular expression
+// Taker for a regular expression
 Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 ```
 
@@ -111,7 +111,7 @@ Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 Combine basic parsers to create more complex ones:
 
 ```java
-// Parser for a number (one or more digits)
+// Taker for a number (one or more digits)
 Parser<Integer> number = digit.oneOrMore()
     .map(digits -> {
         int result = 0;
@@ -121,7 +121,7 @@ Parser<Integer> number = digit.oneOrMore()
         return result;
     });
 
-// Parser for a key-value pair
+// Taker for a key-value pair
 Parser<KeyValue> keyValueParser = identifier
     .thenSkip(chr('='))
     .then(identifier)
@@ -359,7 +359,7 @@ Parser<Object> jsonValue = Parser.ref();
 Parser<Map<String, Object>> jsonObject = Parser.ref();
 Parser<List<Object>> jsonArray = Parser.ref();
 
-// Parser for JSON strings
+// Taker for JSON strings
 Parser<String> jsonString = chr('"')
     .skipThen(
         oneOf(
@@ -389,18 +389,18 @@ Parser<String> jsonString = chr('"')
         return sb.toString();
     });
 
-// Parser for JSON numbers
+// Taker for JSON numbers
 Parser<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
     .map(Double::parseDouble);
 
-// Parser for JSON booleans
+// Taker for JSON booleans
 Parser<Boolean> jsonBoolean = string("true").as(true)
     .or(string("false").as(false));
 
-// Parser for JSON null
+// Taker for JSON null
 Parser<Object> jsonNull = string("null").as(null);
 
-// Parser for JSON arrays
+// Taker for JSON arrays
 jsonArray.set(
     chr('[')
         .skipThen(jsonValue.zeroOrMoreSeparatedBy(chr(',')))
@@ -408,7 +408,7 @@ jsonArray.set(
         .map(values -> (List<Object>) new ArrayList<>(values))
 );
 
-// Parser for JSON objects
+// Taker for JSON objects
 jsonObject.set(
     chr('{')
         .skipThen(

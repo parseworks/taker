@@ -16,8 +16,8 @@ public class ReadMeTest {
 
     @Test
     public void summ() {
-        Parser<String> expr = Parser.ref();
-        Parser<String> temp = chr('X').or(
+        Taker<String> expr = Taker.ref();
+        Taker<String> temp = chr('X').or(
                 chr('a')).then(expr).then(chr('b')).map(a -> e -> b -> a + e + b);
 
         expr.set(temp);
@@ -33,7 +33,7 @@ public class ReadMeTest {
 
         // This is a test class for the README.md file.
         // It is used to validate the code snippets in the README.md file.
-        Parser<Long> sum =
+        Taker<Long> sum =
                 number.thenSkip(chr('+')).then(number).map(Long::sum);
 
         long sumResult = sum.parse(Input.of("1+2")).value();
@@ -58,18 +58,18 @@ public class ReadMeTest {
             abstract BinaryOperator<Integer> op();
         }
 
-        Parser<UnaryOperator<Integer>> expr = Parser.ref();
+        Taker<UnaryOperator<Integer>> expr = Taker.ref();
 
-        Parser<UnaryOperator<Integer>> var = chr('x').map(x -> v -> v);
-        Parser<UnaryOperator<Integer>> num = integer.map(i -> v -> i);
-        Parser<BinOp> binOp = Combinators.oneOf(
+        Taker<UnaryOperator<Integer>> var = chr('x').map(x -> v -> v);
+        Taker<UnaryOperator<Integer>> num = integer.map(i -> v -> i);
+        Taker<BinOp> binOp = Combinators.oneOf(
                 chr('+').as(BinOp.ADD),
                 chr('-').as(BinOp.SUB),
                 chr('*').as(BinOp.MUL),
                 chr('/').as(BinOp.DIV)
         );
 
-        Parser<UnaryOperator<Integer>> binExpr = chr('(')
+        Taker<UnaryOperator<Integer>> binExpr = chr('(')
                 .skipThen(expr)
                 .then(binOp)
                 .then(expr.thenSkip(chr(')')))

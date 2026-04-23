@@ -18,12 +18,12 @@ import static io.github.parseworks.taker.parsers.Combinators.is;
 /**
  * Core parser class for consuming input and producing results of type {@code A}.
  * <pre>{@code
- * Parser<Integer> parser = Numeric.integer;
+ * Taker<Integer> parser = Numeric.integer;
  * }</pre>
  *
  * @param <A> result type
  */
-public class Parser<A> implements Function<Input, Result<A>>{
+public class Taker<A> implements Function<Input, Result<A>>{
 
 
 
@@ -37,12 +37,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <R>   result type
      * @return a parser returning the constant value
      */
-    public <R> Parser<R> as(R value) {
+    public <R> Taker<R> as(R value) {
         return this.skipThen(pure(value));
     }
 
-    public static <A> Parser<A> pure(A value) {
-        return new Parser<>(input -> new Match<>(value, input));
+    public static <A> Taker<A> pure(A value) {
+        return new Taker<>(input -> new Match<>(value, input));
     }
 
     /**
@@ -54,7 +54,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param bracket the symbol used as both opening and closing delimiter
      * @return a parser that matches content between matching bracket symbols
      */
-    public Parser<A> between(char bracket) {
+    public Taker<A> between(char bracket) {
         return between(bracket, bracket);
     }
 
@@ -68,14 +68,14 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @return a parser that matches content between the specified delimiters
      */
 
-    public Parser<A> between(char open, char close) {
+    public Taker<A> between(char open, char close) {
         return is(open).skipThen(this).thenSkip(is(close));
     }
 
     /**
      * Applies two parsers in sequence and returns the result of this parser.
      * <pre>{@code
-     * Parser<Integer> p = Numeric.integer.thenSkip(Lexical.chr(';'));
+     * Taker<Integer> p = Numeric.integer.thenSkip(Lexical.chr(';'));
      * p.parse("42;").value(); // 42
      * }</pre>
      *
@@ -83,8 +83,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B> result type of pb
      * @return a parser returning this parser's result
      */
-    public <B> Parser<A> thenSkip(Parser<B> pb) {
-        return new Parser<>(in -> {
+    public <B> Taker<A> thenSkip(Taker<B> pb) {
+        return new Taker<>(in -> {
             Result<A> res = this.apply(in);
             if (!res.matches()) return res;
             Result<B> res2 = pb.apply(res.input());
@@ -102,7 +102,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Applies two parsers in sequence and returns the result of the second parser.
      * <pre>{@code
-     * Parser<Integer> p = Lexical.string("key:").skipThen(Numeric.integer);
+     * Taker<Integer> p = Lexical.string("key:").skipThen(Numeric.integer);
      * p.parse("key:42").value(); // 42
      * }</pre>
      *
@@ -110,8 +110,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B> result type of pb
      * @return a parser returning pb's result
      */
-    public <B> Parser<B> skipThen(Parser<B> pb) {
-        return new Parser<>(in -> {
+    public <B> Taker<B> skipThen(Taker<B> pb) {
+        return new Taker<>(in -> {
             Result<A> res = this.apply(in);
             if (!res.matches()) return res.cast();
             Result<B> res2 = pb.apply(res.input());
@@ -128,7 +128,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Applies two parsers in sequence and returns an {@link ApplyBuilder} for combining results.
      * <pre>{@code
-     * Parser<String> p = Lexical.chr('a').then(Lexical.chr('b'))
+     * Taker<String> p = Lexical.chr('a').then(Lexical.chr('b'))
      *                                      .map((a, b) -> "" + a + b);
      * p.parse("ab").value(); // "ab"
      * }</pre>
@@ -137,7 +137,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B>  result type of next
      * @return an ApplyBuilder
      */
-    public <B> ApplyBuilder<A, B> then(Parser<B> next) {
+    public <B> ApplyBuilder<A, B> then(Taker<B> next) {
         return ApplyBuilder.of(this, next);
     }
 
@@ -149,7 +149,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param bracket the bracket symbol
      * @return a parser for expressions with enclosing bracket symbols
      */
-    public <B> Parser<A> between(Parser<B> bracket) {
+    public <B> Taker<A> between(Taker<B> bracket) {
         return between(bracket, bracket);
     }
 
@@ -162,14 +162,14 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param close the close symbol
      * @return a parser for expressions with enclosing symbols
      */
-    public <B, C> Parser<A> between(Parser<B> open, Parser<C> close) {
+    public <B, C> Taker<A> between(Taker<B> open, Taker<C> close) {
         return open.skipThen(this).thenSkip(close);
     }
 
     /**
      * Creates a parser for left-associative operator expressions that succeeds even when no operands are found.
      * <p>
-     * The {@code chainLeftZeroOrMany} method extends {@link #chainLeftOneOrMore(Parser)} to handle the case
+     * The {@code chainLeftZeroOrMany} method extends {@link #chainLeftOneOrMore(Taker)} to handle the case
      * where no operands are present in the input by providing a default value. It processes the input as follows:
      * <ol>
      *   <li>First attempts to parse a left-associative operator expression using {@code chainLeftOneOrMore}</li>
@@ -183,7 +183,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * <p>
      * Implementation details:
      * <ul>
-     *   <li>Combines {@link #chainLeftOneOrMore(Parser)} with {@link #or(Parser)} and {@link #pure(Object)}</li>
+     *   <li>Combines {@link #chainLeftOneOrMore(Taker)} with {@link #or(Taker)} and {@link #pure(Object)}</li>
      *   <li>No input is consumed if the expression cannot be parsed</li>
      *   <li>Always succeeds, either with the parsed result or the default value</li>
      * </ul>
@@ -191,12 +191,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse arithmetic expressions with left-associative subtraction
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<BinaryOperator<Integer>> subtract =
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<BinaryOperator<Integer>> subtract =
      *     Lexical.chr('-').as((a, b) -> a - b);
      *
      * // Parse subtraction expression or return 0 if none found
-     * Parser<Integer> expression =
+     * Taker<Integer> expression =
      *     number.chainLeftZeroOrMany(subtract, 0);
      *
      * // Parses "5-3-2" as (5-3)-2 = 0
@@ -207,11 +207,11 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param a  the default value to return if no expression can be parsed
      * @return a parser that handles left-associative expressions or returns the default value
      * @throws IllegalArgumentException if the operator parser is null
-     * @see #chainLeftOneOrMore(Parser) for the version that requires at least one operand
-     * @see #chainRightZeroOrMore(Parser, Object) for the right-associative equivalent
+     * @see #chainLeftOneOrMore(Taker) for the version that requires at least one operand
+     * @see #chainRightZeroOrMore(Taker, Object) for the right-associative equivalent
      * @see Chains.Associativity for associativity options
      */
-    public Parser<A> chainLeftZeroOrMore(Parser<BinaryOperator<A>> op, A a) {
+    public Taker<A> chainLeftZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
         return this.chainLeftOneOrMore(op).or(pure(a));
     }
 
@@ -241,11 +241,11 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse arithmetic expressions with left-associative subtraction
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<BinaryOperator<Integer>> subtract =
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<BinaryOperator<Integer>> subtract =
      *     Lexical.chr('-').as((a, b) -> a - b);
      *
-     * Parser<Integer> expression = number.chainLeftOneOrMore(subtract);
+     * Taker<Integer> expression = number.chainLeftOneOrMore(subtract);
      *
      * // Parses "5-3-2" as (5-3)-2 = 0
      * // Parses "7" as simply 7
@@ -255,18 +255,18 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param op the parser that recognizes and returns binary operators
      * @return a parser that handles left-associative expressions with at least one operand
      * @throws IllegalArgumentException if the operator parser is null
-     * @see Chains#chain(Parser, Parser, Chains.Associativity) for the more general method with explicit associativity
-     * @see #chainLeftZeroOrMore(Parser, Object) for a version that provides a default value
-     * @see #chainRightOneOrMore(Parser) for the right-associative equivalent
+     * @see Chains#chain(Taker, Taker, Chains.Associativity) for the more general method with explicit associativity
+     * @see #chainLeftZeroOrMore(Taker, Object) for a version that provides a default value
+     * @see #chainRightOneOrMore(Taker) for the right-associative equivalent
      */
-    public Parser<A> chainLeftOneOrMore(Parser<BinaryOperator<A>> op) {
+    public Taker<A> chainLeftOneOrMore(Taker<BinaryOperator<A>> op) {
         return chain(this, op, Chains.Associativity.LEFT);
     }
 
     /**
      * Creates a parser for right-associative operator expressions that succeeds even when no operands are found.
      * <p>
-     * The {@code chainRightZeroOrMany} method extends {@link #chainRightOneOrMore(Parser)} to handle the case
+     * The {@code chainRightZeroOrMany} method extends {@link #chainRightOneOrMore(Taker)} to handle the case
      * where no operands are present in the input by providing a default value. It processes the input as follows:
      * <ol>
      *   <li>First attempts to parse a right-associative operator expression using {@code chainRightOneOrMore}</li>
@@ -280,7 +280,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * <p>
      * Implementation details:
      * <ul>
-     *   <li>Combines {@link #chainRightOneOrMore(Parser)} with {@link #or(Parser)} and {@link #pure(Object)}</li>
+     *   <li>Combines {@link #chainRightOneOrMore(Taker)} with {@link #or(Taker)} and {@link #pure(Object)}</li>
      *   <li>No input is consumed if the expression cannot be parsed</li>
      *   <li>Always succeeds, either with the parsed result or the default value</li>
      * </ul>
@@ -288,12 +288,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse arithmetic expressions with right-associative exponentiation
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<BinaryOperator<Integer>> power =
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<BinaryOperator<Integer>> power =
      *     Lexical.chr('^').as((base, exp) -> (int)Math.pow(base, exp));
      *
      * // Parse exponentiation expression or return 1 if none found
-     * Parser<Integer> expression =
+     * Taker<Integer> expression =
      *     number.chainRightZeroOrMany(power, 1);
      *
      * // Parses "2^3^2" as 2^(3^2) = 2^9 = 512
@@ -304,18 +304,18 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param a  the default value to return if no expression can be parsed
      * @return a parser that handles right-associative expressions or returns the default value
      * @throws IllegalArgumentException if the operator parser is null
-     * @see #chainRightOneOrMore(Parser) for the version that requires at least one operand
-     * @see #chainLeftZeroOrMore(Parser, Object) for the left-associative equivalent
+     * @see #chainRightOneOrMore(Taker) for the version that requires at least one operand
+     * @see #chainLeftZeroOrMore(Taker, Object) for the left-associative equivalent
      * @see Chains.Associativity for associativity options
      */
-    public Parser<A> chainRightZeroOrMore(Parser<BinaryOperator<A>> op, A a) {
+    public Taker<A> chainRightZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
         return this.chainRightOneOrMore(op).or(pure(a));
     }
 
     /**
      * Tries this parser first, and if it fails, tries the alternative parser.
      * <pre>{@code
-     * Parser<Integer> p = Numeric.integer.or(Parser.pure(0));
+     * Taker<Integer> p = Numeric.integer.or(Taker.pure(0));
      * p.parse("42").value(); // 42
      * p.parse("abc").value(); // 0
      * }</pre>
@@ -323,8 +323,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param other alternative parser
      * @return a choice parser
      */
-    public Parser<A> or(Parser<A> other) {
-        return new Parser<>(in -> {
+    public Taker<A> or(Taker<A> other) {
+        return new Taker<>(in -> {
             Result<A> result = this.apply(in);
             return result.matches() ? result : other.apply(in);
         });
@@ -356,11 +356,11 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse arithmetic expressions with right-associative exponentiation
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<BinaryOperator<Integer>> power =
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<BinaryOperator<Integer>> power =
      *     Lexical.chr('^').as((base, exp) -> (int)Math.pow(base, exp));
      *
-     * Parser<Integer> expression = number.chainRightOneOrMore(power);
+     * Taker<Integer> expression = number.chainRightOneOrMore(power);
      *
      * // Parses "2^3^2" as 2^(3^2) = 2^9 = 512
      * // Parses "5" as simply 5
@@ -370,11 +370,11 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param op the parser that recognizes and returns binary operators
      * @return a parser that handles right-associative expressions with at least one operand
      * @throws IllegalArgumentException if the operator parser is null
-     * @see Chains#chain(Parser, Parser, Chains.Associativity) for the more general method with explicit associativity
-     * @see #chainRightZeroOrMore(Parser, Object) for a version that provides a default value
-     * @see #chainLeftOneOrMore(Parser) for the left-associative equivalent
+     * @see Chains#chain(Taker, Taker, Chains.Associativity) for the more general method with explicit associativity
+     * @see #chainRightZeroOrMore(Taker, Object) for a version that provides a default value
+     * @see #chainLeftOneOrMore(Taker) for the left-associative equivalent
      */
-    public Parser<A> chainRightOneOrMore(Parser<BinaryOperator<A>> op) {
+    public Taker<A> chainRightOneOrMore(Taker<BinaryOperator<A>> op) {
         return chain(this, op, Chains.Associativity.RIGHT);
     }
 
@@ -387,7 +387,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      *
      * @return a list parser
      */
-    public Parser<List<A>> zeroOrMore() {
+    public Taker<List<A>> zeroOrMore() {
         return repeatInternal(0, Integer.MAX_VALUE, null);
     }
 
@@ -400,7 +400,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      *
      * @return a list parser
      */
-    public Parser<List<A>> oneOrMore() {
+    public Taker<List<A>> oneOrMore() {
         return repeatInternal(1, Integer.MAX_VALUE, null);
     }
 
@@ -413,7 +413,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param until terminator parser
      * @return a list parser
      */
-    public Parser<List<A>> oneOrMoreUntil(Parser<?> until) {
+    public Taker<List<A>> oneOrMoreUntil(Taker<?> until) {
         return repeatInternal(1, Integer.MAX_VALUE, until);
     }
 
@@ -421,7 +421,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Succeeds only if validation succeeds without consuming input.
      * <pre>{@code
-     * Parser<Integer> p = Numeric.integer.onlyIf(Lexical.chr('+'));
+     * Taker<Integer> p = Numeric.integer.onlyIf(Lexical.chr('+'));
      * p.parse("+123").value(); // 123
      * p.parse("-123").matches(); // false
      * }</pre>
@@ -430,8 +430,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B>        validation result type
      * @return a conditional parser
      */
-    public <B> Parser<A> onlyIf(Parser<B> validation) {
-        return new Parser<>(input -> {
+    public <B> Taker<A> onlyIf(Taker<B> validation) {
+        return new Taker<>(input -> {
             Result<B> validationResult = validation.apply(input);
             if (!validationResult.matches()) {
                 return validationResult.cast();
@@ -440,8 +440,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
         });
     }
 
-    public <B> Parser<A> onlyIf(CharPredicate validation) {
-        return new Parser<>(input -> {
+    public <B> Taker<A> onlyIf(CharPredicate validation) {
+        return new Taker<>(input -> {
             if (input.isEof()) {
                 return new NoMatch<>(input, "Expected Character at " + input.position());
             }
@@ -456,7 +456,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Succeeds if followed by lookahead without consuming lookahead input.
      * <pre>{@code
-     * Parser<String> p = Lexical.word.peek(Lexical.chr('='));
+     * Taker<String> p = Lexical.word.peek(Lexical.chr('='));
      * p.parse("id=42").value(); // "id"
      * }</pre>
      *
@@ -464,8 +464,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B>       lookahead result type
      * @return a lookahead parser
      */
-    public <B> Parser<A> peek(Parser<B> lookahead) {
-        return new Parser<>(input -> {
+    public <B> Taker<A> peek(Taker<B> lookahead) {
+        return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (!result.matches()) {
                 return result;
@@ -499,21 +499,21 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Create a parser for integers with logging
-     * Parser<Integer> debugParser = Numeric.integer.logSystemOut();
+     * Taker<Integer> debugParser = Numeric.integer.logSystemOut();
      *
      * // When parsing "123", outputs:
-     * // Parser starting at position: 0 succeeded with value: 123
+     * // Taker starting at position: 0 succeeded with value: 123
      *
      * // When parsing "abc", outputs:
-     * // Parser starting at position: 0 failed: Expected digit but found 'a'
+     * // Taker starting at position: 0 failed: Expected digit but found 'a'
      * }</pre>
      *
      * @return a new parser that logs its progress while behaving like this parser
      * @see Result for the structure of success and failure results that are logged
      */
-    public Parser<A> logSystemOut() {
-        return new Parser<>(input -> {
-            System.out.print("Parser starting at position: " + input.position());
+    public Taker<A> logSystemOut() {
+        return new Taker<>(input -> {
+            System.out.print("Taker starting at position: " + input.position());
             Result<A> result = this.apply(input);
             if (result.matches()) {
                 System.out.println(" succeeded with value: " + result.value());
@@ -553,8 +553,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse signed numbers
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<Integer> signedNumber = Lexical.chr('-').optional().then(number)
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<Integer> signedNumber = Lexical.chr('-').optional().then(number)
      *     .map((sign, num) -> sign.isPresent() ? -num : num);
      *
      * // Succeeds with 42 for input "42"
@@ -567,7 +567,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see #orElse(Object) for providing a default value instead of an Optional
      * @see #zeroOrMore() for collecting zero or more occurrences of a pattern
      */
-    public Parser<Optional<A>> optional() {
+    public Taker<Optional<A>> optional() {
         return this.map(Optional::of).orElse(Optional.empty());
     }
 
@@ -590,7 +590,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse an integer, or use 0 as default if parsing fails
-     * Parser<Integer> parser = Numeric.integer.orElse(0);
+     * Taker<Integer> parser = Numeric.integer.orElse(0);
      *
      * // Succeeds with 42 for input "42"
      * // Succeeds with 0 for input "abc"
@@ -599,8 +599,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param other the default value to return if this parser fails
      * @return a parser that returns either the successful parse result or the default value
      */
-    public Parser<A> orElse(A other) {
-        return new Parser<>(in -> {
+    public Taker<A> orElse(A other) {
+        return new Taker<>(in -> {
             Result<A> result = this.apply(in);
             if (!result.matches()) {
                 return new Match<>(other, in);
@@ -649,7 +649,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Create a parser that matches integers
-     * Parser<Integer> intParser = integer;
+     * Taker<Integer> intParser = integer;
      *
      * // Create an input from a string containing mixed content
      * Input input = Input.fromString("123 abc 456 def 789");
@@ -669,7 +669,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see Result for parse result handling
      */
     public Iterator<A> iterateParse(Input input) {
-        final Parser<A> parser = this;
+        final Taker<A> parser = this;
         return new Iterator<>() {
             private Input currentInput = input;
             private Result<A> nextResult = null;
@@ -775,7 +775,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse a complete integer from the input
-     * Parser<Integer> intParser = Numeric.integer;
+     * Taker<Integer> intParser = Numeric.integer;
      * Input input = Input.of("123");
      * Result<Integer> result = intParser.parseAll(input);
      *
@@ -833,8 +833,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse exactly 3 digits
-     * Parser<Character> digit = Lexical.chr(Character::isDigit);
-     * Parser<String> threeDigits = digit.repeat(3);
+     * Taker<Character> digit = Lexical.chr(Character::isDigit);
+     * Taker<String> threeDigits = digit.repeat(3);
      *
      * // Succeeds with [1,2,3] for input "123"
      * // Succeeds with [1,2,3] for input "123abc" (consuming only "123")
@@ -850,7 +850,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see #oneOrMore() for matching one or more occurrences without an upper limit
      * @see #zeroOrMore() for matching zero or more occurrences
      */
-    public Parser<List<A>> repeat(int target) {
+    public Taker<List<A>> repeat(int target) {
         return repeatInternal(target, target, null);
     }
 
@@ -884,8 +884,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse between 2 and 4 digits
-     * Parser<Character> digit = Lexical.chr(Character::isDigit);
-     * Parser<String> digits = digit.repeat(2, 4);
+     * Taker<Character> digit = Lexical.chr(Character::isDigit);
+     * Taker<String> digits = digit.repeat(2, 4);
      *
      * // Succeeds with [1,2,3,4] for input "1234"
      * // Succeeds with [1,2,3,4] for input "12345" (consuming only "1234")
@@ -905,26 +905,26 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see #oneOrMore() for matching one or more occurrences without an upper limit
      * @see #zeroOrMore() for matching zero or more occurrences without an upper limit
      */
-    public Parser<List<A>> repeat(int min, int max) {
+    public Taker<List<A>> repeat(int min, int max) {
         return repeatInternal(min, max, null);
     }
 
-    public Parser<List<A>> repeatAtLeast(int target) {
+    public Taker<List<A>> repeatAtLeast(int target) {
         return repeatInternal(target, Integer.MAX_VALUE, null);
     }
 
-    public Parser<List<A>> repeatAtMost(int max) {
+    public Taker<List<A>> repeatAtMost(int max) {
         return repeatInternal(0, max, null);
     }
 
-    public <SEP> Parser<List<A>> zeroOrMoreSeparatedBy(Parser<SEP> sep) {
+    public <SEP> Taker<List<A>> zeroOrMoreSeparatedBy(Taker<SEP> sep) {
         return this.oneOrMoreSeparatedBy(sep).map(l -> l).or(pure(Collections.emptyList()));
     }
 
     /**
      * Transforms the result of this parser using the given function.
      * <pre>{@code
-     * Parser<Integer> p = Lexical.chr('5').map(Character::getNumericValue);
+     * Taker<Integer> p = Lexical.chr('5').map(Character::getNumericValue);
      * p.parse("5").value(); // 5
      * }</pre>
      *
@@ -932,8 +932,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <R>  transformed result type
      * @return a transformed parser
      */
-    public <R> Parser<R> map(Function<A, R> func) {
-        return new Parser<>(in -> apply(in).map(func));
+    public <R> Taker<R> map(Function<A, R> func) {
+        return new Taker<>(in -> apply(in).map(func));
     }
 
     /**
@@ -965,9 +965,9 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse a comma-separated list of numbers, requiring at least one number
-     * Parser<Integer> number = Numeric.integer;
-     * Parser<Character> comma = Lexical.chr(',');
-     * Parser<List<Integer>> numberList = number.oneOrMoreSeparatedBy(comma);
+     * Taker<Integer> number = Numeric.integer;
+     * Taker<Character> comma = Lexical.chr(',');
+     * Taker<List<Integer>> numberList = number.oneOrMoreSeparatedBy(comma);
      *
      * // Succeeds with [1,2,3] for input "1,2,3"
      * // Succeeds with [42] for input "42"
@@ -979,11 +979,11 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <SEP> the type of the separator parse result (which is discarded)
      * @return a parser that parses one or more elements separated by the given separator
      * @throws IllegalArgumentException if the separator parser is null
-     * @see #zeroOrMoreSeparatedBy(Parser) for a version that allows empty sequences
+     * @see #zeroOrMoreSeparatedBy(Taker) for a version that allows empty sequences
      * @see #oneOrMore() for collecting repeated elements without separators
      * @see #repeat(int, int) for collecting a specific range of elements
      */
-    public <SEP> Parser<List<A>> oneOrMoreSeparatedBy(Parser<SEP> sep) {
+    public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
         return this.then(sep.skipThen(this).zeroOrMore()).map(a -> l -> Lists.prepend(a, l));
     }
 
@@ -1014,20 +1014,20 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage for recursive JSON-like parser:
      * <pre>{@code
      * // Create a forward reference for a JSON value parser
-     * Parser<Object> jsonValue = Parser.ref();
+     * Taker<Object> jsonValue = Taker.ref();
      *
      * // Define parsers for different JSON types
-     * Parser<String> jsonString = stringLiteral;
-     * Parser<Integer> jsonNumber = intr;
-     * Parser<Boolean> jsonBoolean = string("true").as(true).or(string("false").as(false));
-     * Parser<Object> jsonNull = string("null").as(null);
+     * Taker<String> jsonString = stringLiteral;
+     * Taker<Integer> jsonNumber = intr;
+     * Taker<Boolean> jsonBoolean = string("true").as(true).or(string("false").as(false));
+     * Taker<Object> jsonNull = string("null").as(null);
      *
      * // Define array parser using the value reference
-     * Parser<List<Object>> jsonArray =
+     * Taker<List<Object>> jsonArray =
      *     jsonValue.separatedByZeroOrMany(chr(',')).between('[', ']');
      *
      * // Define object parser using the value reference
-     * Parser<Map<String, Object>> jsonObject =
+     * Taker<Map<String, Object>> jsonObject =
      *     jsonString.skipThen(chr(':')).then(jsonValue)
      *         .map((key, val) -> Map.entry(key, val))
      *         .separatedByZeroOrMany(chr(','))
@@ -1048,12 +1048,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see #ref() for creating an uninitialized parser reference
      * @see #set(Function) for initializing with a custom apply handler
      */
-    public synchronized void set(Parser<A> parser) {
+    public synchronized void set(Taker<A> parser) {
         if (parser == null) {
             throw new IllegalArgumentException("parser cannot be null");
         }
         if (this.applyHandler != defaultApplyHandler) {
-            throw new IllegalStateException("Parser already has an applyHandler");
+            throw new IllegalStateException("Taker already has an applyHandler");
         }
         this.applyHandler = parser.applyHandler;
     }
@@ -1063,7 +1063,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * <p>
      * The {@code set} method initializes a parser reference created by {@link #ref()} with a
      * custom function that defines the parsing behavior. This provides more control than
-     * {@link #set(Parser)} by allowing direct specification of the parsing logic. The method
+     * {@link #set(Taker)} by allowing direct specification of the parsing logic. The method
      * works as follows:
      * <ol>
      *   <li>Takes a function that defines how the parser should process input</li>
@@ -1086,13 +1086,13 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage for a custom recursive parser:
      * <pre>{@code
      * // Create a forward reference for an expression parser
-     * Parser<Integer> expr = Parser.ref();
+     * Taker<Integer> expr = Taker.ref();
      *
      * // Define parsers for basic components
-     * Parser<Integer> number = intr;
-     * Parser<Character> plus = chr('+');
-     * Parser<Character> openParen = chr('(');
-     * Parser<Character> closeParen = chr(')');
+     * Taker<Integer> number = intr;
+     * Taker<Character> plus = chr('+');
+     * Taker<Character> openParen = chr('(');
+     * Taker<Character> closeParen = chr(')');
      *
      * // Define a custom apply handler for the expression parser
      * expr.set(input -> {
@@ -1140,7 +1140,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @throws IllegalArgumentException if the applyHandler is null
      * @throws IllegalStateException    if this parser has already been initialized
      * @see #ref() for creating an uninitialized parser reference
-     * @see #set(Parser) for initializing with another parser's behavior
+     * @see #set(Taker) for initializing with another parser's behavior
      * @see Result for the result type that should be returned by the apply handler
      * @see Input for the input type that will be provided to the apply handler
      */
@@ -1149,7 +1149,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
             throw new IllegalArgumentException("applyHandler cannot be null");
         }
         if (this.applyHandler != defaultApplyHandler) {
-            throw new IllegalStateException("Parser already has an applyHandler");
+            throw new IllegalStateException("Taker already has an applyHandler");
         }
         this.applyHandler = applyHandler;
     }
@@ -1178,12 +1178,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @return a parser that collects elements while the condition is true
      * @throws IllegalArgumentException if the condition parser is null
      */
-    public Parser<List<A>> takeWhile(Parser<Boolean> condition) {
+    public Taker<List<A>> takeWhile(Taker<Boolean> condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition parser cannot be null");
         }
 
-        return new Parser<>(in -> {
+        return new Taker<>(in -> {
             List<A> results = new ArrayList<>();
             Input currentInput = in;
 
@@ -1245,12 +1245,12 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse a comma-separated list of numbers terminated by a semicolon
-     * Parser<Character> digit = Lexical.chr(Character::isDigit);
-     * Parser<Character> comma = Lexical.chr(',');
-     * Parser<Character> semicolon = Lexical.chr(';');
+     * Taker<Character> digit = Lexical.chr(Character::isDigit);
+     * Taker<Character> comma = Lexical.chr(',');
+     * Taker<Character> semicolon = Lexical.chr(';');
      *
      * // Collect digits until semicolon is found
-     * Parser<String> digitList = digit.zeroOrManyUntil(semicolon);
+     * Taker<String> digitList = digit.zeroOrManyUntil(semicolon);
      *
      * // Succeeds with [1,2,3] for input "123;" (consuming all input including semicolon)
      * // Succeeds with [] for input ";" (consuming only the semicolon)
@@ -1260,10 +1260,10 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param terminator the parser that signals when to stop collecting elements
      * @return a parser that applies this parser zero or more times until the terminator succeeds
      * @throws IllegalArgumentException if the terminator parameter is null
-     * @see #oneOrMoreUntil(Parser) for a version that requires at least one match
+     * @see #oneOrMoreUntil(Taker) for a version that requires at least one match
      * @see #zeroOrMore() for a version that collects until this parser fails
      */
-    public Parser<List<A>> zeroOrMoreUntil(Parser<?> terminator) {
+    public Taker<List<A>> zeroOrMoreUntil(Taker<?> terminator) {
         return repeatInternal(0, Integer.MAX_VALUE, terminator);
     }
 
@@ -1280,7 +1280,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * </ol>
      * <p>
      * This method is used internally by higher-level combinators like {@link #zeroOrMore()},
-     * {@link #oneOrMore()}, and {@link #oneOrMoreUntil(Parser)}.
+     * {@link #oneOrMore()}, and {@link #oneOrMoreUntil(Taker)}.
      * <p>
      * Implementation details:
      * <ul>
@@ -1293,13 +1293,13 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse exactly 3 digits
-     * Parser<String> threeDigits = digit.repeatInternal(3, 3, null);
+     * Taker<String> threeDigits = digit.repeatInternal(3, 3, null);
      *
      * // Parse 1 to 5 letters
-     * Parser<String> letters = letter.repeatInternal(1, 5, null);
+     * Taker<String> letters = letter.repeatInternal(1, 5, null);
      *
      * // Parse digits until a semicolon
-     * Parser<String> digitsUntilSemicolon =
+     * Taker<String> digitsUntilSemicolon =
      *     digit.repeatInternal(0, Integer.MAX_VALUE, Lexical.chr(';'));
      * }</pre>
      *
@@ -1310,14 +1310,14 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @throws IllegalArgumentException if {@code min} is negative, {@code max} is less than {@code min},
      *                                   or {@code until} is null when required
      */
-    private Parser<List<A>> repeatInternal(int min, int max, Parser<?> until) {
+    private Taker<List<A>> repeatInternal(int min, int max, Taker<?> until) {
         if (min < 0 || max < 0) {
             throw new IllegalArgumentException("The number of repetitions cannot be negative");
         }
         if (min > max) {
             throw new IllegalArgumentException("The minimum number of repetitions cannot be greater than the maximum");
         }
-        return new Parser<>(in -> {
+        return new Taker<>(in -> {
             List<A> buffer = new ArrayList<>();
             Input current = in;
             int count = 0;
@@ -1409,16 +1409,16 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Private constructor to create a parser reference that can be initialized later.
      */
-    protected Parser() {
+    protected Taker() {
         this.applyHandler = defaultApplyHandler = in -> {
-            throw new IllegalStateException("Parser not initialized");
+            throw new IllegalStateException("Taker not initialized");
         };
     }
 
     /**
      * Creates a new parser with the specified apply handler function.
      * <p>
-     * The {@code Parser} constructor creates a parser that uses the provided function to process input and
+     * The {@code Taker} constructor creates a parser that uses the provided function to process input and
      * produce results. The apply handler is the core parsing function that defines how this parser
      * transforms input into parsed results. The function works as follows:
      * <ol>
@@ -1442,7 +1442,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Create a custom parser that recognizes a specific pattern
-     * Parser<String> customParser = new Parser<>(input -> {
+     * Taker<String> customParser = new Taker<>(input -> {
      *     if (input.atEnd()) {
      *         return new NoMatch<>(input, "Unexpected end of input");
      *     }
@@ -1462,7 +1462,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @see Result for the result type returned by the apply handler
      * @see Input for the input type consumed by the apply handler
      */
-    public Parser(Function<Input, Result<A>> applyHandler) {
+    public Taker(Function<Input, Result<A>> applyHandler) {
         if (applyHandler == null) {
             throw new IllegalArgumentException("applyHandler cannot be null");
         }
@@ -1479,7 +1479,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * <ol>
      *   <li>Create a parser reference using {@code ref()}</li>
      *   <li>Use this reference in other parser definitions as needed</li>
-     *   <li>Later, initialize the reference using {@link #set(Parser)} or {@link #set(Function)}</li>
+     *   <li>Later, initialize the reference using {@link #set(Taker)} or {@link #set(Function)}</li>
      * </ol>
      * <p>
      * This technique is essential for parsing recursive structures such as:
@@ -1492,7 +1492,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Implementation details:
      * <ul>
      *   <li>Creates a parser with a default handler that throws an exception if used before initialization</li>
-     *   <li>Must be initialized with {@link #set(Parser)} or {@link #set(Function)} before use</li>
+     *   <li>Must be initialized with {@link #set(Taker)} or {@link #set(Function)} before use</li>
      *   <li>Thread-safe, allowing for concurrent parser creation and initialization</li>
      *   <li>Cannot be reinitialized after being set once</li>
      * </ul>
@@ -1500,16 +1500,16 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * Example usage for parsing nested arithmetic expressions:
      * <pre>{@code
      * // Create a forward reference for an expression parser
-     * Parser<Integer> expr = Parser.ref();
+     * Taker<Integer> expr = Taker.ref();
      *
      * // Define a parser for simple numbers
-     * Parser<Integer> number = intr;
+     * Taker<Integer> number = intr;
      *
      * // Define a parser for parenthesized expressions using the reference
-     * Parser<Integer> parens = expr.between('(', ')');
+     * Taker<Integer> parens = expr.between('(', ')');
      *
      * // Define operators
-     * Parser<BinaryOperator<Integer>> addOp =
+     * Taker<BinaryOperator<Integer>> addOp =
      *     chr('+').as((a, b) -> a + b);
      *
      * // Now initialize the expression parser with a definition that references itself
@@ -1522,30 +1522,30 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <A> the type of the parsed value
      * @return a new uninitialized parser reference
      * @throws IllegalStateException if the parser is used before being initialized
-     * @see #set(Parser) for initializing the parser reference with another parser
+     * @see #set(Taker) for initializing the parser reference with another parser
      * @see #set(Function) for initializing the parser reference with an apply handler
      */
-    public static <I, A> Parser<A> ref() {
+    public static <I, A> Taker<A> ref() {
         return new CheckParser<>();
     }
 
-    private static class CheckParser<A> extends Parser<A> {
+    private static class CheckParser<A> extends Taker<A> {
 
-        private final ThreadLocal<IntObjectMap<ArrayDeque<Parser<?>>>> contextLocal =
+        private final ThreadLocal<IntObjectMap<ArrayDeque<Taker<?>>>> contextLocal =
             ThreadLocal.withInitial(IntObjectMap::new);
 
         @Override
         public Result<A> apply(Input in) {
             int pos = in.position();
-            IntObjectMap<ArrayDeque<Parser<?>>> ctx = contextLocal.get();
+            IntObjectMap<ArrayDeque<Taker<?>>> ctx = contextLocal.get();
 
-            ArrayDeque<Parser<?>> stack = ctx.get(pos);
+            ArrayDeque<Taker<?>> stack = ctx.get(pos);
             if (stack == null) {
                 stack = new ArrayDeque<>();
                 ctx.put(pos, stack);
             }
 
-            for (Parser<?> p : stack) {
+            for (Taker<?> p : stack) {
                 if (p == this) {
                     return new NoMatch<>(in, "no infinite recursion");
                 }
@@ -1578,8 +1578,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B> the result type of the recovery parser
      * @return a new parser that tries the recovery parser if this parser fails
      */
-    public <B> Parser<B> recover(Parser<B> recovery) {
-        return new Parser<>(input -> {
+    public <B> Taker<B> recover(Taker<B> recovery) {
+        return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) {
                 return result.cast();
@@ -1605,8 +1605,8 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B> the result type of the recovery function
      * @return a new parser that applies the recovery function if this parser fails
      */
-    public <B> Parser<B> recoverWith(Function<NoMatch<A>, Result<B>> recovery) {
-        return new Parser<>(input -> {
+    public <B> Taker<B> recoverWith(Function<NoMatch<A>, Result<B>> recovery) {
+        return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) {
                 return result.cast();
@@ -1618,15 +1618,15 @@ public class Parser<A> implements Function<Input, Result<A>>{
     /**
      * Labels this parser with a human-readable expectation for error messages.
      * <pre>{@code
-     * Parser<String> p = Lexical.word.expecting("identifier");
+     * Taker<String> p = Lexical.word.expecting("identifier");
      * p.parse("123").matches(); // false, error: "Expected identifier"
      * }</pre>
      *
      * @param label descriptive label
      * @return a labeled parser
      */
-    public <B> Parser<A> expecting(String label) {
-        return new Parser<>(input -> {
+    public <B> Taker<A> expecting(String label) {
+        return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) return result;
             return new NoMatch<>(input, label, (Failure<?>) result);
@@ -1640,7 +1640,7 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * provided.
      * This allows for dynamic parsing based on the result of the current parser.
      * <pre>{@code
-     * Parser<String> p = Numeric.unsignedInteger.flatMap(n -> 
+     * Taker<String> p = Numeric.unsignedInteger.flatMap(n ->
      *     Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n)).map(Lists::join)
      * );
      * p.parse("3,aaa").value(); // "aaa"
@@ -1650,17 +1650,17 @@ public class Parser<A> implements Function<Input, Result<A>>{
      * @param <B> next result type
      * @return a monadic parser
      */
-    public <B> Parser<B> flatMap(Function<A, Parser<B>> f) {
+    public <B> Taker<B> flatMap(Function<A, Taker<B>> f) {
         if (f == null) {
             throw new IllegalArgumentException("flatMap function cannot be null");
         }
-        return new Parser<>(in -> {
+        return new Taker<>(in -> {
             Result<A> r = this.apply(in);
             if (!r.matches()) {
                 // propagate the original failure
                 return r.cast();
             }
-            Parser<B> next = f.apply(r.value());
+            Taker<B> next = f.apply(r.value());
             if (next == null) {
                 // be defensive to help users diagnose nulls
                 return new NoMatch<B>(r.input(), "parser to function correctly").cast();

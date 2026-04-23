@@ -17,19 +17,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class RecursionProtectionTest {
 
-    public static Parser<Integer> term = Parser.ref();
-    public static Parser<Integer> expression = term.chainLeftOneOrMore(operator());
-    public static Parser<Integer> term2 = Combinators.oneOf(List.of(
+    public static Taker<Integer> term = Taker.ref();
+    public static Taker<Integer> expression = term.chainLeftOneOrMore(operator());
+    public static Taker<Integer> term2 = Combinators.oneOf(List.of(
             term,
             number(),
             expression.between('(', ')')
     ));
 
-    public static Parser<Integer> number() {
+    public static Taker<Integer> number() {
         return Numeric.numeric.map(Character::getNumericValue);
     }
 
-    public static Parser<BinaryOperator<Integer>> operator() {
+    public static Taker<BinaryOperator<Integer>> operator() {
         return Combinators.oneOf(List.of(
                 chr('+').as(Integer::sum),
                 chr('-').as((a, b) -> a - b),

@@ -13,8 +13,8 @@ public class RepeatInternalIssueTest {
     @Test
     public void testRepeatInternalFailsWhenRepetitionFailsCritically() {
         // Case 1: Complex item fails partially
-        Parser<String> ab = string("A").then(string("B")).map(a -> b -> a + b);
-        Parser<List<String>> manyAB = ab.oneOrMore();
+        Taker<String> ab = string("A").then(string("B")).map(a -> b -> a + b);
+        Taker<List<String>> manyAB = ab.oneOrMore();
         
         // Input "ABA" -> "AB" matches, then "A" matches, then "B" fails.
         // The second "ab" fails at position 3 (the end of input).
@@ -25,8 +25,8 @@ public class RepeatInternalIssueTest {
         assertTrue(res2.error().contains("expected B"), "Error should mention 'B'");
 
         // Case 2: oneOrMoreUntil without reaching terminator
-        Parser<String> simpleAB = string("AB");
-        Parser<List<String>> manyABUntilExcl = simpleAB.oneOrMoreUntil(chr('!'));
+        Taker<String> simpleAB = string("AB");
+        Taker<List<String>> manyABUntilExcl = simpleAB.oneOrMoreUntil(chr('!'));
         
         // Input "ABC" -> "AB" matches, then "C" is not "!" and not "AB".
         // It should fail because "!" was not reached.

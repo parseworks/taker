@@ -1,6 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
 
@@ -13,13 +12,13 @@ import static io.github.parseworks.taker.parsers.Lexical.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ParserPerformanceTest {
+public class TakerPerformanceTest {
 
     @Test
     public void testRepetitionPerformance() {
         // Create a parser that matches letters followed by numbers
-        Parser<List<Character>> letterParser = chr(Character::isLetter).zeroOrMore();
-        Parser<List<Character>> digitParser = chr(Character::isDigit).zeroOrMore();
+        Taker<List<Character>> letterParser = chr(Character::isLetter).zeroOrMore();
+        Taker<List<Character>> digitParser = chr(Character::isDigit).zeroOrMore();
         
         // Generate test input with oneOrMore repetitions
         StringBuilder input = new StringBuilder();
@@ -48,37 +47,37 @@ public class ParserPerformanceTest {
     @Test
     public void testLargeInputPerformance() {
         // Whitespace and separators
-        Parser<List<Character>> ws = chr(Character::isWhitespace).zeroOrMore();
-        Parser<Character> commaOnly = chr(',');
-        Parser<Character> comma = trim(commaOnly); // optional spaces around comma
-        Parser<Character> eol = chr('\n');
+        Taker<List<Character>> ws = chr(Character::isWhitespace).zeroOrMore();
+        Taker<Character> commaOnly = chr(',');
+        Taker<Character> comma = trim(commaOnly); // optional spaces around comma
+        Taker<Character> eol = chr('\n');
 
         // QUOTED FIELD: "..." with doubled quotes inside
 
-        Parser<String > quotedField = escapedString('"','\\', Map.of( '"', '"'));
+        Taker<String > quotedField = escapedString('"','\\', Map.of( '"', '"'));
 
         // UNQUOTED FIELD: runs until comma or EOL; use conditional to ensure we don't start with a quote
-        Parser<String> unquotedFieldCore = takeWhile(c -> c != ',' && c != '\n' && c != '\r');;
+        Taker<String> unquotedFieldCore = takeWhile(c -> c != ',' && c != '\n' && c != '\r');;
 
         // Conditional: only allow the unquoted variant if the next char is NOT a quote
-        Parser<String> unquotedField = unquotedFieldCore.onlyIf(not(chr('\"')));
+        Taker<String> unquotedField = unquotedFieldCore.onlyIf(not(chr('\"')));
 
         // TYPED VALUES via oneOf: boolean, null, number OR fallback to quoted/unquoted text
-        Parser<String> boolToken = oneOf(
-            Lexical.string("true"),
-            Lexical.string("false")
+        Taker<String> boolToken = oneOf(
+            string("true"),
+            string("false")
         );
 
-        Parser<String> nullToken = oneOf(
-            Lexical.string("NULL"),
-            Lexical.string("null")
+        Taker<String> nullToken = oneOf(
+            string("NULL"),
+            string("null")
         );
 
         // A lenient number (int or decimal); keep as string for uniform result type
-        Parser<String> numberToken = Numeric.doubleValue.map(String::valueOf);
+        Taker<String> numberToken = Numeric.doubleValue.map(String::valueOf);
 
         // Prefer more specific tokens first; then quoted; then raw unquoted
-        Parser<String> field = oneOf(
+        Taker<String> field = oneOf(
             boolToken.expecting("boolean"),
             nullToken.expecting("null"),
             numberToken.expecting("number"),
@@ -87,10 +86,10 @@ public class ParserPerformanceTest {
         );
 
         // Row: fields separated by commas (with optional surrounding whitespace)
-        Parser<List<String>> row = field.oneOrMoreSeparatedBy(attempt(comma));
+        Taker<List<String>> row = field.oneOrMoreSeparatedBy(attempt(comma));
 
         // CSV: rows separated by newlines
-        Parser<List<List<String>>> csvParser = row.oneOrMoreSeparatedBy(eol);
+        Taker<List<List<String>>> csvParser = row.oneOrMoreSeparatedBy(eol);
 
         // Generate a large CSV-like input
         String input = getInput();
@@ -134,7 +133,7 @@ public class ParserPerformanceTest {
     @Test()
     public void testStringCachingPerformance() {
         // Create a simple parser
-        Parser<Character> letterParser = chr('a');
+        Taker<Character> letterParser = chr('a');
         
         // Parse the same string multiple times to test caching
         String input = "a";

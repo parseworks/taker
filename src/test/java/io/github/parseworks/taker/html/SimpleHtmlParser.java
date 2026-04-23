@@ -2,7 +2,7 @@ package io.github.parseworks.taker.html;
 
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Parser;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.parsers.Lexical;
 
@@ -111,40 +111,40 @@ public class SimpleHtmlParser {
     }
 
     // Token parsers
-    private static final Parser<Void> WHITESPACE = takeWhile(CharPredicate.whitespace).map(chars -> null);
+    private static final Taker<Void> WHITESPACE = takeWhile(CharPredicate.whitespace).map(chars -> null);
 
     static String ILLEGAL_IDENTIFIER_CHARS = "=/> \t\n\r\f";
 
-    static Parser<Void> END_TAG = oneOf( string(">"), string("/>")).map(data -> null);
+    static Taker<Void> END_TAG = oneOf( string(">"), string("/>")).map(data -> null);
 
-    private static final Parser<String> IDENTIFIER = takeWhile(noneOf(ILLEGAL_IDENTIFIER_CHARS));
+    private static final Taker<String> IDENTIFIER = takeWhile(noneOf(ILLEGAL_IDENTIFIER_CHARS));
 
-    private static final Parser<String> QUOTED_STRING = 
+    private static final Taker<String> QUOTED_STRING =
         oneOf(
             escapedString('\'', '\0',Map.of()),
             escapedString('"', '\0', Map.of())
         );
 
-    private static final Parser<Map<String, String>> COMMENT_BODY = takeUntil("-->").map(
+    private static final Taker<Map<String, String>> COMMENT_BODY = takeUntil("-->").map(
         data -> Map.of("data", data)
     );
 
-    private static final Parser<Character> TAG_START = chr('<').peek(not(oneOf('!','#','/')));
+    private static final Taker<Character> TAG_START = chr('<').peek(not(oneOf('!','#','/')));
 
     record KV(String k, String v){};
 
 
     // Element parsers
-    public static final Parser<Element> element = Parser.ref();
-    private static final Parser<Element> tagBody = Parser.ref();
-    private static final Parser<Element> endTagBody = Parser.ref();
-    private static final Parser<Map<String, String>> attributeList = Parser.ref();
+    public static final Taker<Element> element = Taker.ref();
+    private static final Taker<Element> tagBody = Taker.ref();
+    private static final Taker<Element> endTagBody = Taker.ref();
+    private static final Taker<Map<String, String>> attributeList = Taker.ref();
 
     static {
         // Initialize recursive parsers
 
         // Attribute parser - parse a single attribute (name=value or just name)
-        Parser<KV> attribute = trim(IDENTIFIER).then(
+        Taker<KV> attribute = trim(IDENTIFIER).then(
                     trim(chr('='))
                         .skipThen(oneOf( QUOTED_STRING,
                             takeWhile(noneOf(">\"' \t\n\r")))).optional()
@@ -171,16 +171,16 @@ public class SimpleHtmlParser {
         );
 
         // Comment parser - parse an HTML comment
-        Parser<Element> commentTagBody = string("--").skipThen(COMMENT_BODY).thenSkip(Lexical.string("--"))
+        Taker<Element> commentTagBody = string("--").skipThen(COMMENT_BODY).thenSkip(Lexical.string("--"))
                 .map(data -> new Declaration("--", data));
 
         // Declaration parser - parse a declaration tag like <!DOCTYPE ...>
-        Parser<Element> declarationTagBody = IDENTIFIER.then(attributeList.thenSkip(END_TAG))
+        Taker<Element> declarationTagBody = IDENTIFIER.then(attributeList.thenSkip(END_TAG))
             .map(name -> attrs -> new Declaration(name, attrs));
+        Taker<Element> rawText = takeUntil(c -> c == '<').map(TextData::new);
+        //Taker<Element> rawText = takeUntil(CharPredicate.is('<')).map(TextData::new);
 
-        Parser<Element> rawText = takeUntil(c -> c == '<').map(TextData::new);
-
-        Parser<Element> anyTag =
+        Taker<Element> anyTag =
             chr('<').skipThen(
                 oneOf(
                     // order: the next char after '<' decides which one is cheap to try first

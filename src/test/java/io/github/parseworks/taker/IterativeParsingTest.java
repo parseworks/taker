@@ -17,7 +17,7 @@ public class IterativeParsingTest {
     @Test
     public void testIterateParseWithWords() {
         // Parse space-separated words
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         String input = "hello world test";
@@ -38,7 +38,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testIterateParseWithNumbers() {
-        Parser<Integer> numberParser = Numeric.integer;
+        Taker<Integer> numberParser = Numeric.integer;
         String input = "123 456 789";
         Input charInput = Input.of(input);
 
@@ -57,7 +57,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testStreamParseWithWords() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         String input = "hello world test";
@@ -74,7 +74,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testEmptyInput() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         Input charInput = Input.of("");
@@ -85,7 +85,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testIteratorNoSuchElementException() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         Input charInput = Input.of("test");
@@ -100,7 +100,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testParserWithErrors() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         // Input with numbers between words - should skip over them
@@ -118,7 +118,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testMultipleCallsToHasNext() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         Input charInput = Input.of("test");
@@ -133,7 +133,7 @@ public class IterativeParsingTest {
 
     @Test
     public void testParallelStreamProcessing() {
-        Parser<String> wordParser = alpha.oneOrMore().map(chars ->
+        Taker<String> wordParser = alpha.oneOrMore().map(chars ->
             chars.stream().map(String::valueOf).collect(Collectors.joining()));
 
         String input = "one two three four five";
