@@ -68,7 +68,7 @@ public class Lexical {
     }
 
     private static Input skipWhitespace(Input in) {
-        while (!in.isEof() && Character.isWhitespace(in.current())) {
+        while (!in.isEof() && in.current() == ' ') {
             in = in.next();
         }
         return in;

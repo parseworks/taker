@@ -63,7 +63,7 @@ public class IterativeParsingTest {
         String input = "hello world test";
         Input charInput = Input.of(input);
 
-        List<String> words = wordParser.streamParse(charInput)
+        List<String> words = wordParser.stream(charInput)
             .toList();
 
         assertEquals(3, words.size());
@@ -107,7 +107,7 @@ public class IterativeParsingTest {
         String input = "hello123world456test";
         Input charInput = Input.of(input);
 
-        List<String> words = wordParser.streamParse(charInput)
+        List<String> words = wordParser.stream(charInput)
             .toList();
 
         assertEquals(3, words.size());
@@ -139,7 +139,7 @@ public class IterativeParsingTest {
         String input = "one two three four five";
         Input charInput = Input.of(input);
 
-        List<String> words = wordParser.streamParse(charInput)
+        List<String> words = wordParser.stream(charInput)
             .parallel()
             .map(String::toUpperCase)
             .toList();

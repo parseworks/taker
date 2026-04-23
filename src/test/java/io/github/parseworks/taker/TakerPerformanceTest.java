@@ -48,10 +48,9 @@ public class TakerPerformanceTest {
     @Test
     public void testLargeInputPerformance() {
         // Whitespace and separators
-        Taker<List<Character>> ws = chr(Character::isWhitespace).zeroOrMore();
         Taker<Character> commaOnly = chr(',');
         Taker<Character> comma = trim(commaOnly); // optional spaces around comma
-        Taker<Character> eol = chr('\n');
+        Taker<Character> eol = string("\r\n").as('\n').or(chr('\n'));
 
         // QUOTED FIELD: "..." with doubled quotes inside
 

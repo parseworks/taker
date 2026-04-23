@@ -706,7 +706,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
 
-    public Stream<A> streamParse(Input input) {
+    public Stream<A> stream(Input input) {
         return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(
                 iterateParse(input),
@@ -975,6 +975,8 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #repeat(int, int) for collecting a specific range of elements
      */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
+        return this.then(commit(sep.skipThen(this)).zeroOrMore()).map(a -> l -> Lists.prepend(a, l));
+        /*
         return this.flatMap(first -> {
             List<A> list = new ArrayList<>();
             list.add(first);
@@ -993,7 +995,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
                     in = next.input();
                 }
             });
-        });
+        });*/
     }
 
     /**
