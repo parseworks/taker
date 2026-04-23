@@ -38,6 +38,10 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param <R>   result type
      * @return a parser returning the constant value
      */
+    public <R> Taker<R> as(R value) {
+        return this.skipThen(pure(value));
+    }
+
     /** Matches a character matching the predicate. */
     public static Taker<Character> take(CharPredicate condition) {
         return new Taker<>(input -> {
@@ -128,10 +132,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      */
     public static Taker<Character> is(char c) {
         return Lexical.chr(c);
-    }
-
-    public <R> Taker<R> as(R value) {
-        return this.skipThen(pure(value));
     }
 
     public static <A> Taker<A> pure(A value) {

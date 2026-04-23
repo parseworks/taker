@@ -76,6 +76,6 @@ public class UppercaseInput implements Input {
 
     @Override
     public String toString() {
-        return "UppercaseTextInput{delegate=" + delegate + "}";
+        return "UppercaseInput{delegate=" + delegate + "}";
     }
 }

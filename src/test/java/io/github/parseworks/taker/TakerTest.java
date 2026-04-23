@@ -29,6 +29,19 @@ public class TakerTest {
     }
 
     @Test
+    public void testRecursiveParser() {
+        Taker<String> expr = Taker.ref();
+        Taker<String> atom = chr(Character::isLetter).oneOrMore().map(Lists::join);
+        Taker<String> grouped = expr.between('(', ')');
+        expr.set(atom.or(grouped));
+
+        assertEquals("a", expr.parse("a").value());
+        assertEquals("a", expr.parse("(a)").value());
+        assertEquals("a", expr.parse("((a))").value());
+        assertFalse(expr.parse("(((a))").matches());
+    }
+
+    @Test
     public void testParseAllWithPartialConsumption() {
         Taker<Character> parser = chr('a');
         Result<Character> result = parser.parseAll("ab");

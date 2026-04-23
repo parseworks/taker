@@ -149,4 +149,19 @@ public class IntObjectMapTest {
         assertEquals("max", map.get(Integer.MAX_VALUE));
         assertEquals("min", map.get(Integer.MIN_VALUE));
     }
+
+    @Test
+    public void testClear() {
+        IntObjectMap<String> map = new IntObjectMap<>();
+        map.put(1, "one");
+        map.put(2, "two");
+        assertEquals(2, map.size());
+        assertFalse(map.isEmpty());
+
+        map.clear();
+        assertEquals(0, map.size());
+        assertTrue(map.isEmpty());
+        assertNull(map.get(1));
+        assertNull(map.get(2));
+    }
 }

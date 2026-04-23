@@ -71,6 +71,6 @@ public class LowercaseInput implements Input {
 
     @Override
     public String toString() {
-        return "LowercaseTextInput{delegate=" + delegate + "}";
+        return "LowercaseInput{delegate=" + delegate + "}";
     }
 }

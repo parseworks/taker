@@ -126,24 +126,4 @@ public class Numeric {
         .skipThen(hexDigits)
         .map(h -> Long.parseLong(h, 16));
 
-    /**
-     * A parser that parses a non-zero digit followed by zero or more digits.
-     * This parser will succeed if the next input symbols form a non-zero digit followed by zero or more digits,
-     * and will return the parsed result converted by the given converter function.
-     *
-     * @param converter the function to convert the parsed digits
-     * @param <T>       the type of the parsed value
-     * @return a parser that parses a non-zero digit followed by zero or more digits and converts the result
-     */
-    private static <T> Taker<T> nonZeroDigitParser(Function<List<Integer>, T> converter) {
-        return nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
-            .map(d -> ds -> {
-                List<Integer> digits = new java.util.ArrayList<>();
-                digits.add(Character.getNumericValue(d));
-                for (char c : ds.toCharArray()) {
-                    digits.add(Character.getNumericValue(c));
-                }
-                return converter.apply(digits);
-            });
-    }
 }

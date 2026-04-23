@@ -100,6 +100,19 @@ public class IntObjectMap<V> {
         }
     }
 
+    public void clear() {
+        Arrays.fill(values, 0, size, null);
+        size = 0;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public int size() {
+        return size;
+    }
+
     /**
      * Increases the capacity of this map instance, if necessary.
      * Capacity is doubled when the map is full.
