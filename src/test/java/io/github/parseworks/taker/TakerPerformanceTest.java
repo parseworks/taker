@@ -86,7 +86,7 @@ public class TakerPerformanceTest {
         );
 
         // Row: fields separated by commas (with optional surrounding whitespace)
-        Taker<List<String>> row = field.oneOrMoreSeparatedBy(attempt(comma));
+        Taker<List<String>> row = field.oneOrMoreSeparatedBy(comma);
 
         // CSV: rows separated by newlines
         Taker<List<List<String>>> csvParser = row.oneOrMoreSeparatedBy(eol);

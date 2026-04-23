@@ -202,7 +202,7 @@ public class Combinators {
                 }
                 
                 // If it's a hard failure (consumed input), stop and return it
-                if (result.type() == ResultType.PARTIAL && result.input().position() > in.position()) {
+                if (result.type() == ResultType.PARTIAL) {
                     return result;
                 }
 
@@ -326,15 +326,5 @@ public class Combinators {
     }
 
 
-    /**
-     * Backtracks on failure, reporting failure at the original position.
-     */
-    public static <A> Taker<A> attempt(Taker<A> parser) {
-        return new Taker<>(in -> {
-            Result<A> res = parser.apply(in);
-            if (res.matches()) return res;
-            return new NoMatch<A>(in, "parse attempt", (Failure<?>) res);
-        });
-    }
 
 }

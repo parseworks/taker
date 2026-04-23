@@ -237,25 +237,17 @@ public class Lexical {
             int strLen = str.length();
 
             if (start + strLen > data.length()) {
-                Failure<String> noMatch = new NoMatch<>(in, str.substring(0, 1));
                 // Find how many characters matched
                 int matched = 0;
                 while (matched < data.length() - start && str.charAt(matched) == data.charAt(start + matched)) {
                     matched++;
                 }
-                if (matched > 0) {
-                    return new PartialMatch<>(in.skip(matched), noMatch);
-                }
-                return noMatch;
+                return new NoMatch<>(in.skip(matched), str.substring(0, 1));
             }
 
             for (int i = 0; i < strLen; i++) {
                 if (str.charAt(i) != data.charAt(start + i)) {
-                    Failure<String> noMatch = new NoMatch<>(in.skip(i), str.substring(i, i + 1));
-                    if (i > 0) {
-                        return new PartialMatch<>(in.skip(i), noMatch);
-                    }
-                    return noMatch;
+                    return new NoMatch<>(in.skip(i), str.substring(i, i + 1));
                 }
             }
 

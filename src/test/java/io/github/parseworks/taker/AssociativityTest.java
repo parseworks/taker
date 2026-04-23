@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.BinaryOperator;
 
-import static io.github.parseworks.taker.parsers.Combinators.attempt;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Numeric.doubleValue;
 import static io.github.parseworks.taker.parsers.Numeric.number;
@@ -30,8 +29,8 @@ public class AssociativityTest {
         Taker<Double> expression = Taker.ref();
         Taker<Double> term = Taker.ref();
 
-        Taker<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
-        Taker<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
+        Taker<Double> addition = term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right));
+        Taker<Double> multiplication = doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right);
         term.set(multiplication.or(doubleValue));
         expression.set(Combinators.oneOf(List.of(
                 addition,
@@ -49,8 +48,8 @@ public class AssociativityTest {
         Taker<Double> expression = Taker.ref();
         Taker<Double> term = Taker.ref();
 
-        Taker<Double> addition = attempt(term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right)));
-        Taker<Double> multiplication = attempt(doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right));
+        Taker<Double> addition = term.then(chr('+')).then(expression).map((left, op, right) -> Double.sum(left, right));
+        Taker<Double> multiplication = doubleValue.then(chr('*')).then(term).map((left, op, right) -> left * right);
         term.set(multiplication.or(doubleValue));
         expression.set(Combinators.oneOf(List.of(
                 addition,

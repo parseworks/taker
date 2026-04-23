@@ -13,7 +13,7 @@ public class RepeatInternalIssueTest {
     @Test
     public void testRepeatInternalFailsWhenRepetitionFailsCritically() {
         // Case 1: Complex item fails partially
-        Taker<String> ab = string("A").then(string("B")).map(a -> b -> a + b);
+        Taker<String> ab = Taker.commit(string("A").then(string("B")).map(a -> b -> a + b));
         Taker<List<String>> manyAB = ab.oneOrMore();
         
         // Input "ABA" -> "AB" matches, then "A" matches, then "B" fails.

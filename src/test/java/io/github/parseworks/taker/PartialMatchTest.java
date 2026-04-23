@@ -4,7 +4,6 @@ import io.github.parseworks.taker.impl.result.PartialMatch;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
-import static io.github.parseworks.taker.parsers.Combinators.attempt;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PartialMatchTest {
@@ -58,7 +57,7 @@ public class PartialMatchTest {
 
     @Test
     public void testPartialMatch() {
-        Taker<String> abcd = Lexical.string("abcd");
+        Taker<String> abcd = Taker.commit(Lexical.string("abcd"));
         Input input = Input.of("abc");
         
         Result<String> result = abcd.parse(input);
@@ -69,18 +68,20 @@ public class PartialMatchTest {
     }
 
     @Test
-    public void testAttemptBacktrack() {
-        Taker<String> abcd = attempt(Lexical.string("abcd"));
+    public void testNoCommitBacktrack() {
+        Taker<String> abcd = Lexical.string("abcd");
         Input fullInput = Input.of("prefixabcd");
         Input startInput = fullInput.skip(6); // at 'a'
-        
+
         // Input is "prefixabcX"
         Input testInput = Input.of("prefixabcX").skip(6);
-        
+
         Result<String> result = abcd.apply(testInput);
-        
+
         assertFalse(result.matches());
         assertEquals(ResultType.NO_MATCH, result.type());
-        assertEquals(6, result.input().position(), "Should backtrack to 6");
+        // Lexical.string returns NoMatch but at the failing position (consumed input)
+        // because it's non-committing, but it reports where it failed.
+        assertEquals(9, result.input().position(), "Lexical.string should report where it failed");
     }
 }

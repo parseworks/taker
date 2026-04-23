@@ -31,10 +31,8 @@ public class ReadMeTest {
 
         assertTrue(response.contains("line 1"), "Message was " + response);
 
-        // This is a test class for the README.md file.
-        // It is used to validate the code snippets in the README.md file.
         Taker<Long> sum =
-                number.thenSkip(chr('+')).then(number).map(Long::sum);
+                Taker.commit(number.thenSkip(chr('+')).then(number).map(Long::sum));
 
         long sumResult = sum.parse(Input.of("1+2")).value();
         assertEquals(3, sumResult); // 3

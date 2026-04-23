@@ -89,9 +89,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
             if (!res.matches()) return res;
             Result<B> res2 = pb.apply(res.input());
             if (!res2.matches()) {
-                if (res2.input().position() > in.position()) {
-                    return new PartialMatch<>(res2.input(), (Failure<A>) res2.cast());
-                }
                 return res2.cast();
             }
             return new Match<>(res.value(), res2.input());
@@ -114,13 +111,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return new Taker<>(in -> {
             Result<A> res = this.apply(in);
             if (!res.matches()) return res.cast();
-            Result<B> res2 = pb.apply(res.input());
-            if (!res2.matches()) {
-                if (res2.input().position() > in.position()) {
-                    return new PartialMatch<>(res2.input(), (Failure<B>) res2);
-                }
-            }
-            return res2;
+            return pb.apply(res.input());
         });
     }
 
@@ -984,7 +975,25 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #repeat(int, int) for collecting a specific range of elements
      */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
-        return this.then(sep.skipThen(this).zeroOrMore()).map(a -> l -> Lists.prepend(a, l));
+        return this.flatMap(first -> {
+            List<A> list = new ArrayList<>();
+            list.add(first);
+            return new Taker<>(current -> {
+                Input in = current;
+                while (true) {
+                    Result<SEP> s = sep.apply(in);
+                    if (!s.matches()) {
+                        return new Match<>(Collections.unmodifiableList(list), in);
+                    }
+                    Result<A> next = apply(s.input());
+                    if (!next.matches()) {
+                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
+                    }
+                    list.add(next.value());
+                    in = next.input();
+                }
+            });
+        });
     }
 
     /**
@@ -1348,10 +1357,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
                 // Parse an item
                 Result<A> res = this.apply(current);
                 if (!res.matches()) {
-                    // If the parser consumed input before failing, it's a hard error
-                    //if (res.input() != null && res.input().position() > current.position()) {
-                    //    return res.cast();
-                    //}
                     if (res.type() == ResultType.PARTIAL){
                         return res.cast();
                     }
@@ -1362,13 +1367,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
                     if (count >= min) {
                         return new Match<>(Collections.unmodifiableList(buffer), current);
-                    }
-                    
-                    if (current.position() > in.position()) {
-                        return new PartialMatch<>(current, new NoMatch<>(current,
-                                "at least " + min + " repetition(s)",
-                                (NoMatch<?>) res
-                        ));
                     }
 
                     // Pass through the original error with more context
@@ -1413,6 +1411,23 @@ public class Taker<A> implements Function<Input, Result<A>>{
         this.applyHandler = defaultApplyHandler = in -> {
             throw new IllegalStateException("Taker not initialized");
         };
+    }
+
+    /**
+     * Commits the parser. If the parser fails and has consumed input, it returns a PartialMatch.
+     *
+     * @param <A> the result type
+     * @param parser the parser to commit
+     * @return a committed parser
+     */
+    public static <A> Taker<A> commit(Taker<A> parser) {
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches() && result.input().position() > in.position()) {
+                return new PartialMatch<>(result.input(), (Failure<A>) result);
+            }
+            return result;
+        });
     }
 
     /**
@@ -1665,11 +1680,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
                 // be defensive to help users diagnose nulls
                 return new NoMatch<B>(r.input(), "parser to function correctly").cast();
             }
-            Result<B> rb = next.apply(r.input());
-            if (!rb.matches()) {
-                return new PartialMatch<>(rb.input(), (Failure<B>) rb);
-            }
-            return rb;
+            return next.apply(r.input());
         });
     }
 
