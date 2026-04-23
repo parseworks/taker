@@ -5,10 +5,10 @@ import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import io.github.parseworks.taker.impl.result.PartialMatch;
 import io.github.parseworks.taker.parsers.Chains;
+import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
 import java.util.function.BinaryOperator;
-import io.github.parseworks.taker.parsers.Lexical;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;

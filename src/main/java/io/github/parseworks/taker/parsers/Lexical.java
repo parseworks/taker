@@ -1,12 +1,17 @@
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.*;
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Input;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.impl.IntObjectMap;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
-import io.github.parseworks.taker.impl.result.PartialMatch;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

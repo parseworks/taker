@@ -1,10 +1,10 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.result.NoMatch;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class AtomicPartialMatchTest {
 

@@ -2,14 +2,15 @@ package io.github.parseworks.taker.html;
 
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
 
 import static io.github.parseworks.taker.CharPredicate.noneOf;
-import static io.github.parseworks.taker.parsers.Combinators.*;
+import static io.github.parseworks.taker.parsers.Combinators.not;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 
 /**

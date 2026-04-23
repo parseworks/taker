@@ -2,8 +2,8 @@ package io.github.parseworks.taker.examples;
 
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Lists;
-import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 

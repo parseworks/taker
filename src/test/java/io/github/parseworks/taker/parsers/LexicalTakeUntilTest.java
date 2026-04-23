@@ -1,8 +1,8 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

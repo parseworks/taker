@@ -1,7 +1,6 @@
 package io.github.parseworks.taker.impl;
 
 import java.util.Arrays;
-import java.util.Map;
 
 /**
  * Specialized map from {@code int} keys to object values to avoid boxing.

@@ -2,6 +2,7 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OnlyIfTest {

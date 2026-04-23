@@ -2,8 +2,6 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.impl.inputs.*;
 
-import java.io.Reader;
-
 /**
  * Represents a position in a stream of input symbols.
  *e
