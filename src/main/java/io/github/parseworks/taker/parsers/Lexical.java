@@ -28,16 +28,7 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
 public class Lexical {
 
 
-    /**
-     * Matches a single alphabetical character (a-z, A-Z).
-     * <pre>{@code
-     * alpha.parse("abc").value(); // 'a'
-     * alpha.parse("123").matches(); // false
-     * }</pre>
-     *
-     * @see Numeric#numeric
-     * @see #alphaNumeric
-     */
+    /** Matches a single alphabetical character (a-z, A-Z). */
     public static final Taker<Character> alpha = satisfy("<alphabet>", (CharPredicate) Character::isLetter);
 
     /**
@@ -45,16 +36,7 @@ public class Lexical {
      */
     public static final Taker<Character> alphaNumeric = satisfy( "<alphanumeric>", (CharPredicate) Character::isLetterOrDigit);
 
-    /**
-     * Trims whitespace around the given parser.
-     * <pre>{@code
-     * trim(string("foo")).parse("  foo  ").value(); // "foo"
-     * }</pre>
-     *
-     * @param parser parser to wrap
-     * @param <A>    result type
-     * @return trimmed parser
-     */
+    /** Trims whitespace around the given parser. */
     public static <A> Taker<A> trim(Taker<A> parser) {
         return new Taker<>(in -> {
             Input trimmedInput = skipWhitespace(in);
@@ -74,12 +56,7 @@ public class Lexical {
         return in;
     }
 
-    /**
-     * Matches a sequence of letters and returns them as a string.
-     * <pre>{@code
-     * word.parse("Hello123").value(); // "Hello"
-     * }</pre>
-     */
+    /** Matches a sequence of letters. */
     public static final Taker<String> word = Taker.takeWhile(CharPredicate.letter);
 
     /**
@@ -88,15 +65,7 @@ public class Lexical {
     public static final Taker<String> line = Taker.takeUntil(CharPredicate.is('\n'));
 
 
-    /**
-     * Collects characters until the first occurrence of the given needle.
-     * <pre>{@code
-     * takeUntil("-->").parse("comment-->").value(); // "comment"
-     * }</pre>
-     *
-     * @param needle delimiter string
-     * @return characters before the needle
-     */
+    /** Collects characters until the first occurrence of the given needle. */
     public static Taker<String> takeUntil(String needle) {
         return Taker.takeUntil(needle);
     }
@@ -122,17 +91,7 @@ public class Lexical {
 
 
 
-    /**
-     * Matches an exact string of characters.
-     * <pre>{@code
-     * string("if").parse("if").value(); // "if"
-     * }</pre>
-     *
-     * @param str exact string to match
-     * @return a parser matching the string
-     * @see #regex(String)
-     * @see #chr(char)
-     */
+    /** Matches an exact string of characters. */
     public static Taker<String> string(String str) {
         return new Taker<>(in -> {
             if (str.isEmpty()) {
@@ -162,15 +121,7 @@ public class Lexical {
         });
     }
 
-    /**
-     * Matches any single character from the provided string.
-     * <pre>{@code
-     * oneOf("aeiou").parse("e").value(); // 'e'
-     * }</pre>
-     *
-     * @param str acceptable characters
-     * @return a parser matching any character in the string
-     */
+    /** Matches any single character from the provided string. */
     public static Taker<Character> oneOf(String str) {
         if (str == null || str.isEmpty()) {
             return Combinators.fail("any character in empty string");
@@ -189,17 +140,7 @@ public class Lexical {
         return satisfy("character in set [" + str + "]", (CharPredicate) charSet::contains);
     }
 
-    /**
-     * Matches input against a regular expression pattern.
-     * <pre>{@code
-     * regex("[a-z]+", Pattern.CASE_INSENSITIVE).parse("ABC").value(); // "ABC"
-     * }</pre>
-     *
-     * @param regex regular expression pattern
-     * @param flags Pattern flags
-     * @return a parser matching the regex
-     * @see Pattern
-     */
+    /** Matches input against a regular expression pattern. */
     public static Taker<String> regex(String regex, int flags) {
         Pattern pattern = Pattern.compile(regex, flags);
 
@@ -218,31 +159,13 @@ public class Lexical {
         });
     }
 
-    /**
-     * Matches input against a regular expression pattern using default flags.
-     * <pre>{@code
-     * regex("\\d+").parse("123").value(); // "123"
-     * }</pre>
-     *
-     * @param regex regular expression pattern
-     * @return a parser matching the regex
-     * @see #regex(String, int)
-     */
+    /** Matches input against a regular expression pattern using default flags. */
     public static Taker<String> regex(String regex) {
         return regex(regex, 0);
     }
 
 
-    /**
-     * Parses a string enclosed in quotes with support for escape sequences.
-     * <p>
-     * This version uses an {@link IntObjectMap} for escape character mappings to avoid boxing.
-     *
-     * @param quote   the character used for quoting (e.g., '"')
-     * @param escape  the character used for escaping (e.g., '\\')
-     * @param escapes an {@link IntObjectMap} of escape characters to their literal values
-     * @return a parser that matches an escaped string and returns its unescaped content
-     */
+    /** Parses a string enclosed in quotes with support for escape sequences. */
     private static Taker<String> escapedString(char quote, char escape, IntObjectMap<Character> escapes) {
 
         return new Taker<>(in -> {
@@ -295,23 +218,7 @@ public class Lexical {
         });
     }
 
-    /**
-     * Parses a string enclosed in quotes with support for escape sequences.
-     * <p>
-     * This parser is optimized for performance by directly scanning the input data.
-     * It handles:
-     * <ul>
-     *   <li>Finding the opening quote (must match exactly at the current position)</li>
-     *   <li>Scanning for the closing quote</li>
-     *   <li>Handling escape sequences defined in the provided map</li>
-     *   <li>Correctly reporting errors for unclosed strings or invalid escape sequences</li>
-     * </ul>
-     *
-     * @param quote   the character used for quoting (e.g., '"')
-     * @param escape  the character used for escaping (e.g., '\\')
-     * @param escapes a map of escape characters to their literal values (e.g., 'n' -> '\n')
-     * @return a parser that matches an escaped string and returns its unescaped content
-     */
+    /** Parses a string enclosed in quotes with support for escape sequences. */
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
         IntObjectMap<Character> map = new IntObjectMap<>();
         escapes.forEach(map::put);
@@ -320,30 +227,12 @@ public class Lexical {
 
 
 
-    /**
-     * Matches a specific character.
-     * <pre>{@code
-     * chr(',').parse(",").value(); // ','
-     * }</pre>
-     *
-     * @param c character to match
-     * @return a parser matching the character
-     * @see Combinators#is
-     */
+    /** Matches a specific character. */
     public static Taker<Character> chr(char c) {
         return Combinators.is(c);
     }
 
-    /**
-     * Matches a single character matching the given predicate.
-     * <pre>{@code
-     * chr(Character::isDigit).parse("1").value(); // '1'
-     * }</pre>
-     *
-     * @param predicate condition for the character
-     * @return a parser matching characters by predicate
-     * @see Combinators#satisfy
-     */
+    /** Matches a single character matching the given predicate. */
     public static Taker<Character> chr(CharPredicate predicate) {
         return satisfy("<character>", predicate);
     }

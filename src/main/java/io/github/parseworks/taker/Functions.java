@@ -1,33 +1,8 @@
 package io.github.parseworks.taker;
 
-/**
- * The `Functions` class provides a set of functional interfaces for functions with various arities.
- * These interfaces can be used to define functions that take multiple arguments and return a result.
- *
- * <p>Each functional interface in this class represents a function with a specific number of arguments,
- * ranging from three to eight. These interfaces are useful for functional programming and can be used
- * in lambda expressions, method references, and other functional contexts.</p>
- *
- * <p>Example usage:</p>
- * <pre>{@code
- * Functions.Func3<Integer, Integer, Integer, Integer> addThreeNumbers = (a, b, c) -> a + b + c;
- * int result = addThreeNumbers.apply(1, 2, 3); // result is 6
- * }</pre>
- *
- * @author jason bailey
- * @version $Id: $Id
- * @see java.util.function.Function
- * @see java.util.function.BiFunction
- */
+/** Functional interfaces for functions with arity 3 to 8. */
 public class Functions {
-    /**
-     * Function of arity 3.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 3. */
     @FunctionalInterface
     public interface Func3<A, B, C, R> {
         /**
@@ -41,15 +16,7 @@ public class Functions {
         R apply(A a, B b, C c);
     }
 
-    /**
-     * Function of arity 4.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <D> the function's fourth argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 4. */
     @FunctionalInterface
     public interface Func4<A, B, C, D, R> {
 
@@ -66,16 +33,7 @@ public class Functions {
 
     }
 
-    /**
-     * Function of arity 5.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <D> the function's fourth argument type
-     * @param <E> the function's fifth argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 5. */
     @FunctionalInterface
     public interface Func5<A, B, C, D, E, R> {
 
@@ -93,17 +51,7 @@ public class Functions {
 
     }
 
-    /**
-     * Function of arity 6.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <D> the function's fourth argument type
-     * @param <E> the function's fifth argument type
-     * @param <G> the function's sixth argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 6. */
     @FunctionalInterface
     public interface Func6<A, B, C, D, E, G, R> {
         /**
@@ -120,18 +68,7 @@ public class Functions {
         R apply(A a, B b, C c, D d, E e, G g);
     }
 
-    /**
-     * Function of arity 7.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <D> the function's fourth argument type
-     * @param <E> the function's fifth argument type
-     * @param <G> the function's sixth argument type
-     * @param <H> the function's seventh argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 7. */
     @FunctionalInterface
     public interface Func7<A, B, C, D, E, G, H, R> {
 
@@ -151,19 +88,7 @@ public class Functions {
 
     }
 
-    /**
-     * Function of arity 8.
-     *
-     * @param <A> the function's left argument type
-     * @param <B> the function's right argument type
-     * @param <C> the function's third argument type
-     * @param <D> the function's fourth argument type
-     * @param <E> the function's fifth argument type
-     * @param <G> the function's sixth argument type
-     * @param <H> the function's seventh argument type
-     * @param <I> the function's eighth argument type
-     * @param <R> the function's return type
-     */
+    /** Function of arity 8. */
     @FunctionalInterface
     public interface Func8<A, B, C, D, E, G, H, I, R> {
 

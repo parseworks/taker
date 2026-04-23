@@ -8,7 +8,22 @@ import io.github.parseworks.taker.TextInput;
  * This class is immutable and now stores only position and data. Line, column, and line content
  * are computed lazily on demand to reduce memory and copying.
  */
-public record CharSequenceInput(int position, CharSequence data) implements TextInput {
+public final class CharSequenceInput implements TextInput {
+
+    private final int position;
+    private final CharSequence data;
+    private volatile int[] lineOffsets;
+
+    public CharSequenceInput(int position, CharSequence data) {
+        this.position = position;
+        this.data = data;
+    }
+
+    private CharSequenceInput(int position, CharSequence data, int[] lineOffsets) {
+        this.position = position;
+        this.data = data;
+        this.lineOffsets = lineOffsets;
+    }
 
     /**
      * Constructs a new {@code CharSequenceInput} starting at the beginning of the given {@code CharSequence}.
@@ -19,38 +34,65 @@ public record CharSequenceInput(int position, CharSequence data) implements Text
         this(0, data);
     }
 
+    private int[] getLineOffsets() {
+        int[] offsets = lineOffsets;
+        if (offsets == null) {
+            synchronized (this) {
+                offsets = lineOffsets;
+                if (offsets == null) {
+                    offsets = computeLineOffsets(data);
+                    lineOffsets = offsets;
+                }
+            }
+        }
+        return offsets;
+    }
+
+    private static int[] computeLineOffsets(CharSequence data) {
+        int[] temp = new int[Math.min(data.length() / 20 + 10, 1000)];
+        int count = 0;
+        temp[count++] = 0;
+        for (int i = 0; i < data.length(); i++) {
+            if (data.charAt(i) == '\n') {
+                if (count == temp.length) {
+                    temp = java.util.Arrays.copyOf(temp, temp.length * 2);
+                }
+                temp[count++] = i + 1;
+            }
+        }
+        return java.util.Arrays.copyOf(temp, count);
+    }
+
+    @Override
+    public int position() {
+        return position;
+    }
+
+    @Override
+    public CharSequence data() {
+        return data;
+    }
+
     // --- Derived properties (computed lazily) ---
     @Override
     public int line() {
-        return computeLineAndColumn(this.data, this.position)[0];
+        int[] offsets = getLineOffsets();
+        int idx = java.util.Arrays.binarySearch(offsets, position);
+        if (idx >= 0) return idx + 1;
+        return -idx - 1;
     }
 
     @Override
     public int column() {
-        return computeLineAndColumn(this.data, this.position)[1];
+        int[] offsets = getLineOffsets();
+        int idx = java.util.Arrays.binarySearch(offsets, position);
+        if (idx >= 0) return 1;
+        int lineStart = offsets[-idx - 2];
+        return position - lineStart + 1;
     }
 
-    private static int[] computeLineAndColumn(CharSequence data, int position) {
-        int line = 1;
-        int column = 1;
-        for (int i = 0; i < position && i < data.length(); i++) {
-            if (data.charAt(i) == '\n') {
-                line++;
-                column = 1;
-            } else {
-                column++;
-            }
-        }
-        return new int[] { line, column };
-    }
-
-    private static int totalLines(CharSequence data) {
-        if (data.isEmpty()) return 1; // treat empty as a single empty line
-        int lines = 1;
-        for (int i = 0; i < data.length(); i++) {
-            if (data.charAt(i) == '\n') lines++;
-        }
-        return lines;
+    private static int totalLines(CharSequence data, int[] offsets) {
+        return offsets.length;
     }
 
     /**
@@ -77,7 +119,7 @@ public record CharSequenceInput(int position, CharSequence data) implements Text
         if (isEof()) {
             throw new IllegalStateException("End of input");
         }
-        return new CharSequenceInput(position + 1, data);
+        return new CharSequenceInput(position + 1, data, lineOffsets);
     }
 
     /**
@@ -91,7 +133,7 @@ public record CharSequenceInput(int position, CharSequence data) implements Text
         int newPosition = position + offset;
         if (newPosition > data.length()) newPosition = data.length();
         if (newPosition < 0) newPosition = 0;
-        return new CharSequenceInput(newPosition, data);
+        return new CharSequenceInput(newPosition, data, lineOffsets);
     }
 
     /**
@@ -100,21 +142,16 @@ public record CharSequenceInput(int position, CharSequence data) implements Text
     @Override
     public String getLine(int lineNumber) {
         if (lineNumber < 1) return null;
-        int currentLine = 1;
-        int lineStart = 0;
-        for (int i = 0; i <= data.length(); i++) {
-            boolean atEnd = (i == data.length());
-            char c = atEnd ? '\n' : data.charAt(i);
-            if (c == '\n') {
-                if (currentLine == lineNumber) {
-                    return data.subSequence(lineStart, i).toString();
-                }
-                currentLine++;
-                lineStart = i + 1;
-            }
+        int[] offsets = getLineOffsets();
+        if (lineNumber > offsets.length) return null;
+        int start = offsets[lineNumber - 1];
+        int end;
+        if (lineNumber == offsets.length) {
+            end = data.length();
+        } else {
+            end = offsets[lineNumber] - 1; // Exclude newline
         }
-        // If requesting last line and no trailing newline, handled in loop via atEnd
-        return null;
+        return data.subSequence(start, end).toString();
     }
 
     /**
@@ -142,7 +179,8 @@ public record CharSequenceInput(int position, CharSequence data) implements Text
         // Even at EOF, render a caret-based snippet to provide consistent context
         int line = line();
         int column = column();
-        int total = totalLines(data);
+        int[] offsets = getLineOffsets();
+        int total = offsets.length;
         int startLine = Math.max(1, line - linesBefore);
         int endLine = Math.min(total, line + linesAfter);
 

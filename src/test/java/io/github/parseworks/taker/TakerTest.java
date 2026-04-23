@@ -622,7 +622,7 @@ public class TakerTest {
         Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
         //this would return the list on the case of an optional number.
         // Verify the result
-        assertTrue(!result.matches(),"result should be an error");
+        assertFalse(result.matches(), "result should be an error");
     }
 
     @Test

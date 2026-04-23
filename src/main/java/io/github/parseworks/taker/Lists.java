@@ -40,13 +40,7 @@ public final class Lists {
         return Collections.unmodifiableList(result);
     }
 
-    /**
-     * Reverses the order of elements in a list.
-     *
-     * @param list the list to reverse
-     * @param <T>  the type of elements in the list
-     * @return a new unmodifiable list with elements in reverse order
-     */
+    /** Reverses the order of elements in a list. */
     private static <T> List<T> reverse(List<T> list) {
         List<T> result = new ArrayList<>(list);
         Collections.reverse(result);
@@ -62,14 +56,7 @@ public final class Lists {
         return Collections.unmodifiableList(result);
     }
 
-    /**
-     * Filters elements of a list based on a predicate.
-     *
-     * @param list      the list to filter
-     * @param predicate the predicate to apply to each element
-     * @param <T>       the type of elements in the list
-     * @return a new unmodifiable list containing only elements that satisfy the predicate
-     */
+    /** Filters elements of a list based on a predicate. */
     private static <T> List<T> filter(List<T> list, Predicate<? super T> predicate) {
         List<T> result = new ArrayList<>(list.size());
         for (T item : list) {
@@ -99,12 +86,7 @@ public final class Lists {
         return result;
     }
 
-    /**
-     * Joins the string representation of all elements in a list.
-     *
-     * @param list the list to join
-     * @return a string containing all elements concatenated
-     */
+    /** Joins the string representation of all elements in a list. */
     public static String join(List<?> list) {
         if (list == null || list.isEmpty()) {
             return "";

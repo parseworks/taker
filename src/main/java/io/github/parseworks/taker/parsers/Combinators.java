@@ -19,14 +19,7 @@ public class Combinators {
     private Combinators() {
     }
 
-    /**
-     * Matches any single input element of the specified type.
-     * <pre>{@code
-     * any(Character.class).parse("abc").value(); // 'a'
-     * }</pre>
-     *
-     * @return a parser that matches any single input element
-     */
+    /** Matches any single character. */
     public static Taker<Character> any() {
         return new Taker<>(input -> {
             if (input.isEof()) {
@@ -37,17 +30,7 @@ public class Combinators {
         });
     }
 
-    /**
-     * Unconditionally throws an exception from the supplier.
-     * <pre>{@code
-     * Taker<Object> critical = throwError(() -> new IllegalStateException("Fail"));
-     * }</pre>
-     *
-     * @param supplier exception supplier
-     * @param <I>      input type
-     * @return a parser that always throws
-     * @see #fail()
-     */
+    /** Unconditionally throws an exception. */
     public static <I> Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
         return new Taker<>(in -> {
             throw sneakyThrow(supplier.get());
@@ -63,16 +46,7 @@ public class Combinators {
     }
 
 
-    /**
-     * Matches the current input element against a set of possible values.
-     * <pre>{@code
-     * oneOf('1', '2', '3').parse("1").value(); // '1'
-     * }</pre>
-     *
-     * @param items values to match against
-     * @return a parser matching any of the items
-     * @see #is(Object)
-     */
+    /** Matches any of the given characters. */
     public static Taker<Character> oneOf(char... items) {
         if (items == null || items.length == 0) {
             return fail("any character in empty set");
@@ -107,14 +81,7 @@ public class Combinators {
         return new Taker<>(in -> new NoMatch<A>(in, expected));
     }
 
-    /**
-     * Succeeds if the provided parser fails, returning the current input element.
-     * <pre>{@code
-     * not(Lexical.chr(Character::isDigit)).parse("a").value(); // 'a'
-     * }</pre>
-     *
-     * @param parser parser to negate
-     */
+    /** Succeeds if the provided parser fails. */
     public static <A> Taker<Character> not(Taker<A> parser) {
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
@@ -128,17 +95,7 @@ public class Combinators {
         });
     }
 
-    /**
-     * Succeeds if the current input element is not equal to the provided value.
-     * <pre>{@code
-     * isNot(',').parse("a").value(); // 'a'
-     * }</pre>
-     *
-     * @param value value to exclude
-     * @return a parser matching anything except the value
-     * @see #not(Taker)
-     * @see #is(Object)
-     */
+    /** Matches anything except the given character. */
     public static Taker<Character> isNot(char value) {
         return new Taker<>(in -> {
             if (in.isEof()) {
@@ -154,14 +111,7 @@ public class Combinators {
     }
 
 
-    /**
-     * Tries multiple parsers in sequence until one succeeds.
-     *
-     * @param parsers list of parsers to try
-     * @param <A>     result type
-     * @return a choice parser
-     * @see Taker#or(Taker)
-     */
+    /** Matches the first succeeding parser in the list. */
     public static <A> Taker<A> oneOf(List<Taker<A>> parsers) {
         if (parsers.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one parser defined");
@@ -193,24 +143,13 @@ public class Combinators {
         });
     }
 
-    /**
-     * Tries each of the provided parsers in order and succeeds with the first match.
-     */
+    /** Matches the first succeeding parser. */
     @SafeVarargs
     public static <A> Taker<A> oneOf(Taker<A>... parsers) {
         return oneOf(Arrays.asList(parsers));
     }
 
-    /**
-     * Applies multiple parsers in sequence and collects their results in a list.
-     * <pre>{@code
-     * sequence(Arrays.asList(p1, p2, p3)).parse("123").value(); // [1, 2, 3]
-     * }</pre>
-     *
-     * @param parsers parsers to apply
-     * @param <A>     result type
-     * @return a sequence parser
-     */
+    /** Applies multiple parsers in sequence. */
     public static <A> Taker<List<A>> sequence(List<Taker<A>> parsers) {
         return new Taker<>(in -> {
             List<A> results = new ArrayList<>();
@@ -241,41 +180,43 @@ public class Combinators {
         return parserA.then(parserB).then(parserC);
     }
 
-    /**
-     * Matches any character between the given opening and closing parsers.
-     */
+    /** Matches a character between open and close parsers. */
     public static <A, B, C> Taker<A> between(Taker<B> open, Taker<A> parser, Taker<C> close) {
-        return open.skipThen(parser).thenSkip(close);
+        return new Taker<>(in -> {
+            Input current = in;
+            if (open != null) {
+                Result<B> resOpen = open.apply(current);
+                if (!resOpen.matches()) return resOpen.cast();
+                current = resOpen.input();
+            }
+            Result<A> resParser = parser.apply(current);
+            if (!resParser.matches()) return resParser;
+            current = resParser.input();
+            if (close != null) {
+                Result<C> resClose = close.apply(current);
+                if (!resClose.matches()) return resClose.cast();
+                current = resClose.input();
+            }
+            return new Match<>(resParser.value(), current);
+        });
     }
 
-    /**
-     * Matches any character between the given bracket parser.
-     */
+    /** Matches a character between bracket parsers. */
     public static <A, B> Taker<A> between(Taker<B> bracket, Taker<A> parser) {
         return between(bracket, parser, bracket);
     }
 
-    /**
-     * Matches any character between the given opening and closing characters.
-     */
+    /** Matches a character between open and close characters. */
     public static <A> Taker<A> between(char open, Taker<A> parser, char close) {
         return between(Lexical.chr(open), parser, Lexical.chr(close));
     }
 
-    /**
-     * Matches any character between the given bracket character.
-     */
+    /** Matches a character between bracket characters. */
     public static <A> Taker<A> between(char bracket, Taker<A> parser) {
         return between(bracket, parser, bracket);
     }
 
-    /**
-     * Parses a single character that satisfies the given predicate.
-     *
-     * @param expectedType error message if not satisfied
-     * @param predicate    condition to satisfy
-     * @return a satisfy parser
-     */
+    /** Matches a character satisfying the predicate. */
     public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
         return new Taker<>(in -> {
             if (in.isEof()) {
@@ -290,9 +231,7 @@ public class Combinators {
         });
     }
 
-    /**
-     * Matches the current input item against the provided value.
-     */
+    /** Matches the given value. */
     public static <A> Taker<A> is(A equivalence) {
         return new Taker<>(in -> {
             if (in.isEof()) {
