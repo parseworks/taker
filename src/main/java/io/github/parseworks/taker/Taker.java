@@ -309,14 +309,19 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
 
+    private static final ThreadLocal<Integer> depth = ThreadLocal.withInitial(() -> 0);
+
     /**
      * Creates a parser that logs its progress and results to standard output while behaving exactly like this parser.
      * <p>
-     * The {@code logSystemOut} method wraps this parser with logging functionality that prints information about:
+     * The {@code systemOut} method wraps this parser with logging functionality that prints information about:
      * <ul>
      *   <li>The input position where parsing starts</li>
      *   <li>Whether parsing succeeded or failed</li>
      *   <li>The parsed value (on success) or error message (on failure)</li>
+     *   <li>Nesting level for composite parsers</li>
+     *   <li>Input snippet at the current position</li>
+     *   <li>Time taken to parse</li>
      * </ul>
      * <p>
      * This method is particularly useful for:
@@ -325,33 +330,64 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *   <li>Understanding why certain inputs fail to parse</li>
      *   <li>Tracing the execution of complex parser combinations</li>
      * </ul>
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Create a parser for integers with logging
-     * Taker<Integer> debugParser = Numeric.integer.logSystemOut();
-     *
-     * // When parsing "123", outputs:
-     * // Taker starting at position: 0 succeeded with value: 123
-     *
-     * // When parsing "abc", outputs:
-     * // Taker starting at position: 0 failed: Expected digit but found 'a'
-     * }</pre>
      *
      * @return a new parser that logs its progress while behaving like this parser
-     * @see Result for the structure of success and failure results that are logged
+     * @see #systemOut(String)
      */
-    public Taker<A> logSystemOut() {
+    public Taker<A> systemOut() {
+        return systemOut(null);
+    }
+
+    /**
+     * Creates a parser that logs its progress and results to standard output with a custom label.
+     *
+     * @param label a descriptive name for this parser to include in logs
+     * @return a new parser that logs its progress
+     */
+    public Taker<A> systemOut(String label) {
         return new Taker<>(input -> {
-            System.out.print("Taker starting at position: " + input.position());
-            Result<A> result = this.apply(input);
-            if (result.matches()) {
-                System.out.println(" succeeded with value: " + result.value());
-            } else {
-                System.out.println(" failed: " + result.error());
+            int currentDepth = depth.get();
+            String indent = "  ".repeat(currentDepth);
+            String name = label != null ? label : "Taker";
+            String snippet = getSnippet(input);
+
+            System.out.println(String.format("%s%s starting at pos %d: [%s]",
+                    indent, name, input.position(), snippet));
+
+            depth.set(currentDepth + 1);
+            long start = System.nanoTime();
+            try {
+                Result<A> result = this.apply(input);
+                long elapsed = System.nanoTime() - start;
+                double ms = elapsed / 1_000_000.0;
+
+                if (result.matches()) {
+                    System.out.println(String.format("%s%s succeeded in %.3fms with value: %s",
+                            indent, name, ms, result.value()));
+                } else {
+                    System.out.println(String.format("%s%s failed in %.3fms: %s",
+                            indent, name, ms, result.error()));
+                }
+                return result;
+            } finally {
+                depth.set(currentDepth);
             }
-            return result;
         });
+    }
+
+    private String getSnippet(Input input) {
+        StringBuilder sb = new StringBuilder();
+        Input temp = input;
+        for (int i = 0; i < 20 && !temp.isEof(); i++) {
+            char c = temp.current();
+            if (c == '\n') sb.append("\\n");
+            else if (c == '\r') sb.append("\\r");
+            else if (c == '\t') sb.append("\\t");
+            else sb.append(c);
+            temp = temp.next();
+        }
+        if (!temp.isEof()) sb.append("...");
+        return sb.toString();
     }
 
 
