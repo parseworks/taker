@@ -49,6 +49,86 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void locatedWrapsSuccessfulValueWithConsumedOffsets() {
+        Result<Located<String>> result = Lexical.regex("[A-Za-z]+").located().parse(Input.of("name = value"));
+
+        assertTrue(result.matches());
+        assertEquals("name", result.value().value());
+        assertEquals(0, result.value().start());
+        assertEquals(4, result.value().end());
+        assertEquals(4, result.value().length());
+        assertEquals(4, result.input().position());
+    }
+
+    @Test
+    void locatedUsesCurrentInputPositionAsStartOffset() {
+        Input input = Input.of("let name").skip(4);
+
+        Result<Located<String>> result = Lexical.word.located().parse(input);
+
+        assertTrue(result.matches());
+        assertEquals("name", result.value().value());
+        assertEquals(4, result.value().start());
+        assertEquals(8, result.value().end());
+        assertEquals(8, result.input().position());
+    }
+
+    @Test
+    void locatedCoversWholeComposedParser() {
+        Taker<String> keyValue = Lexical.word
+            .thenSkip(chr('='))
+            .then(Lexical.word)
+            .map((key, value) -> key + ":" + value);
+
+        Result<Located<String>> result = keyValue.located().parse("name=value;");
+
+        assertTrue(result.matches());
+        assertEquals("name:value", result.value().value());
+        assertEquals(0, result.value().start());
+        assertEquals(10, result.value().end());
+        assertEquals(10, result.input().position());
+    }
+
+    @Test
+    void locatedCanBeAppliedToSubParsersForAstStyleMapping() {
+        Taker<String> spaces = Taker.takeWhile(c -> c == ' ').orElse("");
+        Taker<Located<String>> identifier = Lexical.word.located();
+        Taker<List<Located<String>>> assignment = identifier
+            .thenSkip(spaces)
+            .thenSkip(chr('='))
+            .thenSkip(spaces)
+            .then(identifier)
+            .map((left, right) -> List.of(left, right));
+
+        Result<List<Located<String>>> result = assignment.parse("name = value");
+
+        assertTrue(result.matches());
+        assertEquals(new Located<>("name", 0, 4), result.value().get(0));
+        assertEquals(new Located<>("value", 7, 12), result.value().get(1));
+    }
+
+    @Test
+    void locatedPropagatesFailureWithoutChangingFailurePosition() {
+        Result<Located<Character>> result = chr('a').located().parse("b");
+
+        assertFalse(result.matches());
+        assertEquals(ResultType.NO_MATCH, result.type());
+        assertEquals(0, result.input().position());
+    }
+
+    @Test
+    void locatedSupportsZeroWidthSuccessfulParsers() {
+        Result<Located<String>> result = Taker.pure("empty").located().parse("abc");
+
+        assertTrue(result.matches());
+        assertEquals("empty", result.value().value());
+        assertEquals(0, result.value().start());
+        assertEquals(0, result.value().end());
+        assertEquals(0, result.value().length());
+        assertEquals(0, result.input().position());
+    }
+
+    @Test
     void flatMapChoosesNextParserFromPreviousValue() {
         Taker<String> parser = chr('3').map(Character::getNumericValue)
             .flatMap(n -> chr('a').repeat(n).map(TakerSemanticContractTest::join));

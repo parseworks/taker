@@ -31,6 +31,7 @@ The following types are intended to be stable public API:
 - `TextInput`: input extension that can report line, column, and snippets.
 - `Result<A>`: parser result abstraction.
 - `Failure<A>`: result subtype for failures.
+- `Located<A>`: value wrapper with zero-based source offsets.
 - `ResultType`: result category, currently `MATCH`, `NO_MATCH`, and `PARTIAL`.
 - `CharPredicate`: character predicate helper type.
 - `ApplyBuilder`: fluent sequence builder returned by `Taker.then`.
@@ -150,6 +151,16 @@ An empty string delimiter succeeds with the empty string and consumes no input.
 
 `parser.map(f)` applies `f` only to a successful parser value. Failures are
 propagated unchanged.
+
+### `located`
+
+`parser.located()` applies `parser` and wraps a successful value in
+`Located<A>`. The recorded `start` offset is the parser's starting
+`Input.position()`. The recorded `end` offset is the successful result input's
+`position()`. Offsets are zero-based, with `start` inclusive and `end` exclusive.
+
+`located()` is opt-in and does not change input consumption. Failures are
+propagated unchanged and do not allocate a `Located` value.
 
 ### `flatMap`
 

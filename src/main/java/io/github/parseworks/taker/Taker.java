@@ -803,6 +803,28 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return new Taker<>(in -> apply(in).map(func));
     }
 
+    /**
+     * Wraps this parser's successful value with the consumed source offsets.
+     * <pre>{@code
+     * Located<String> id = Lexical.word.located().parse("name = value").value();
+     * id.value(); // "name"
+     * id.start(); // 0
+     * id.end();   // 4
+     * }</pre>
+     *
+     * @return a parser returning the value and zero-based start/end offsets
+     */
+    public Taker<Located<A>> located() {
+        return new Taker<>(in -> {
+            int start = in.position();
+            Result<A> result = this.apply(in);
+            if (!result.matches()) {
+                return result.cast();
+            }
+            return new Match<>(new Located<>(result.value(), start, result.input().position()), result.input());
+        });
+    }
+
     /** Parses one or more elements separated by a delimiter. */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
         return this.then(commit(sep.skipThen(this)).zeroOrMore()).map(a -> l -> Lists.prepend(a, l));
