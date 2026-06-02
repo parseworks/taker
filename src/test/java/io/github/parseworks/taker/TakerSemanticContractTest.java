@@ -216,6 +216,24 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void choiceReportsOnlyFailuresAtFarthestPosition() {
+        Taker<String> shallow = new Taker<>(input -> new io.github.parseworks.taker.impl.result.NoMatch<>(input, "shallow"));
+        Taker<String> deepA = string("abz").expecting("abz");
+        Taker<String> deepB = string("aby").expecting("aby");
+
+        Result<String> result = oneOf(shallow, deepA, deepB).parse("abx");
+
+        assertFalse(result.matches());
+        assertEquals(2, result.input().position());
+        Failure<?> failure = (Failure<?>) result;
+        assertNotNull(failure.combinedFailures());
+        assertEquals(2, failure.combinedFailures().size());
+        assertTrue(result.error().contains("expected abz"));
+        assertTrue(result.error().contains("expected aby"));
+        assertFalse(result.error().contains("expected shallow"));
+    }
+
+    @Test
     void committedFailureStopsLaterAlternatives() {
         Taker<String> parser = Taker.commit(string("ab")).or(string("ac"));
 

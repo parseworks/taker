@@ -7,7 +7,7 @@
 *   **Backtracking Control**: The library distinguishes between a total failure to match (`NO_MATCH`) and a failure that occurred after some input was already consumed (`PARTIAL`).
     *   Sequential combinators like `then`, `skipThen`, and `thenSkip` propagate failures as-is. They do not automatically generate `PARTIAL` failures unless explicitly wrapped in `commit`.
     *   Parsers that attempt multiple options, such as `oneOf` or `or`, will stop and report a `PARTIAL` failure immediately if a branch returns a `PARTIAL` result.
-    *   If all branches in `oneOf` fail with `NO_MATCH` (no input consumed), it will collect all failures into a "Combined Failure" result which lists out all the branch failures.
+    *   If all branches in `oneOf` fail with `NO_MATCH`, it keeps the failures reported at the farthest input position. If multiple branches fail at that same position, it combines them into a result that lists out those branch failures.
 *   **The `commit` and `expecting` Methods**:
     *   `expecting(label)` provides a wrapper on the parser that replaces the default error message with a domain-specific label. This allows us to provide a cleaner series of error messages while preserving the original failure as the cause.
     *   The `commit` combinator explicitly turns a parser's failure into a `PARTIAL` failure if it has consumed any input. This "commits" the parser to the current branch and prevents subsequent `oneOf` or `or` alternatives from being tried. By default, most combinators are non-committing and will return a `NO_MATCH` that allows backtracking, even if some input was consumed.

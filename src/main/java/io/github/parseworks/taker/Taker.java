@@ -1086,7 +1086,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) return result;
-            return new NoMatch<>(input, label, (Failure<?>) result);
+            return new NoMatch<>(result.input(), label, (Failure<?>) result);
         });
     }
 

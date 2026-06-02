@@ -118,6 +118,7 @@ public class Combinators {
         }
         return new Taker<>(in -> {
             List<Failure<A>> failures = null;
+            int farthestFailurePosition = -1;
 
             for (Taker<A> parser : parsers) {
                 Result<A> result = parser.apply(in);
@@ -130,6 +131,14 @@ public class Combinators {
                     return result;
                 }
 
+                int failurePosition = result.input() == null ? -1 : result.input().position();
+                if (failurePosition < farthestFailurePosition) {
+                    continue;
+                }
+                if (failurePosition > farthestFailurePosition) {
+                    farthestFailurePosition = failurePosition;
+                    failures = null;
+                }
                 if (failures == null){
                     failures = new ArrayList<>();
                 }

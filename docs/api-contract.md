@@ -197,8 +197,10 @@ main parser, then the closing parser or character, returning the main value.
 
 - the first successful alternative wins;
 - a `PARTIAL` failure stops choice immediately and is returned;
-- if all alternatives fail with `NO_MATCH`, the failures are combined so the
-  formatted diagnostic can report multiple expectations.
+- if all alternatives fail with `NO_MATCH`, only failures at the farthest
+  reported input position are kept;
+- failures tied at that farthest position are combined so the formatted
+  diagnostic can report multiple expectations.
 
 `oneOf` requires at least one parser.
 
