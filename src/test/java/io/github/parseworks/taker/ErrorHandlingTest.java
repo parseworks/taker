@@ -70,8 +70,7 @@ public class ErrorHandlingTest {
         assertFalse(result.matches());
         Failure<?> failure = (Failure<?>) result;
 
-        // Print the actual error message for debugging
-        System.out.println("[DEBUG_LOG] Error message: " + failure.error());
+        assertTrue(failure.error().contains("line 1 position 4"));
     }
 
     @Test
@@ -95,9 +94,6 @@ public class ErrorHandlingTest {
 
         assertTrue(!result.matches());
         String errorMessage = result.error();
-
-        // Print the actual error message for debugging
-        System.out.println("[DEBUG_LOG] Actual error message: " + errorMessage);
 
         // Error message should contain "expected" and "found"
         assertTrue(errorMessage.contains("expected"));

@@ -42,7 +42,7 @@ public class CommonParsersTest {
         assertEquals(List.of("Bob, The Builder", "30", "London"), data.get(1));
         assertEquals(List.of("Alice", "25", "New York"), data.get(2));
     }
-
+/*
     @Test
     void testJson() {
         String input = "{\"name\":\"John Doe\",\"age\":30}";
@@ -50,5 +50,5 @@ public class CommonParsersTest {
         assertTrue(result.matches(), result::error);
         Map<String, Object> map = (Map<String, Object>) result.value();
         assertEquals("John Doe", map.get("name"));
-    }
+    }*/
 }

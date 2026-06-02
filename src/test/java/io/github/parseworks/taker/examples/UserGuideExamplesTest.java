@@ -160,7 +160,7 @@ public class UserGuideExamplesTest {
         String invalidInput = "{name=John,age="; // Missing closing brace
         Result<Map<String, String>> invalidResult = objectParser.parse(Input.of(invalidInput));
         assertFalse(invalidResult.matches());
-        invalidResult.errorOptional().ifPresent(System.out::println);
+        assertTrue(invalidResult.errorOptional().isPresent());
     }
 
     /**

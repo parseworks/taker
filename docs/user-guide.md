@@ -65,7 +65,7 @@ implementation 'io.github.parseworks:parseworks:2.2.0'
 
 ## Basic Concepts
 
-### Parser<I, A>
+### Taker<A>
 A `Parser` is a function transforming `Input<I>` into a `Result<I, A>`. Usually, `I` is `Character` for text parsing.
 
 ### Input<I>
@@ -84,7 +84,7 @@ The simplest parser matches a literal string.
 ```java
 
 
-Parser<String> hello = string("hello");
+Taker<String> hello = string("hello");
 Result<String> result = hello.parse(Input.of("hello world"));
 
 if(result.
@@ -101,7 +101,7 @@ Use `then`, `skipThen`, and `thenSkip` to sequence parsers.
 
 ```java
 // Match "hello", skip a space, then match "world"
-Parser<String> helloWorld = string("hello")
+Taker<String> helloWorld = string("hello")
     .thenSkip(chr(' '))
     .then(string("world"))
     .map(h -> w -> h + " " + w);
@@ -119,7 +119,7 @@ class KV {
 }
 
 // key=value
-Parser<KV> kvParser = Lexical.regex("[a-z]+")
+Taker<KV> kvParser = Lexical.regex("[a-z]+")
     .thenSkip(chr('='))
     .then(Lexical.regex("[^\\n]*"))
     .map(k -> v -> new KV(k, v));
@@ -129,7 +129,7 @@ Parser<KV> kvParser = Lexical.regex("[a-z]+")
 
 ```java
 // Taker for multiple key-value pairs separated by newlines
-Parser<List<KV>> configParser = kvParser
+Taker<List<KV>> configParser = kvParser
     .oneOrMoreSeparatedBy(Lexical.chr('\n'));
 
 // Parse a configuration file
@@ -160,7 +160,7 @@ If a parser fails, the error message usually says what it was looking for (e.g.,
 
 ```java
 // Better: "Expected identifier" instead of "Expected [A-Za-z]..."
-Parser<String> id = regex("[A-Za-z]+")
+Taker<String> id = regex("[A-Za-z]+")
     .expecting("identifier");
 ```
 
@@ -169,8 +169,8 @@ Parser<String> id = regex("[A-Za-z]+")
 Use `fail(String message)` inside a `flatMap` for validation or `orElse` for specific error cases.
 
 ```java
-Parser<Integer> positive = number.flatMap(n -> 
-    n > 0 ? Parser.pure(n) : fail("a positive number")
+Taker<Integer> positive = number.flatMap(n -> 
+    n > 0 ? Taker.pure(n) : fail("a positive number")
 );
 ```
 
@@ -199,13 +199,13 @@ number ::= [0-9]+
 
 ```java
 // Taker for numbers
-Parser<Integer> number = Lexical.regex("[0-9]+")
+Taker<Integer> number = Lexical.regex("[0-9]+")
     .map(Integer::parseInt);
 
 // Create references for recursive parsers
-Parser<Integer> expr = Parser.ref();
-Parser<Integer> term = Parser.ref();
-Parser<Integer> factor = Parser.ref();
+Taker<Integer> expr = Taker.ref();
+Taker<Integer> term = Taker.ref();
+Taker<Integer> factor = Taker.ref();
 ```
 
 #### Step 3: Define the factor parser
@@ -215,7 +215,7 @@ import static parsers.io.github.parseworks.taker.Combinators.oneOf;
 import static parsers.io.github.parseworks.taker.Lexical.trim;
 
 // Factor can be a number or an expression in parentheses
-Parser<Integer> parenFactor = Lexical.chr('(')
+Taker<Integer> parenFactor = Lexical.chr('(')
     .skipThen(trim(expr))
     .thenSkip(Lexical.chr(')'));
 
@@ -232,11 +232,11 @@ factor.
 import java.util.function.BinaryOperator;
 
 // Parser for multiplication operator
-Parser<BinaryOperator<Integer>> mulOp = trim(Lexical.chr('*'))
+Taker<BinaryOperator<Integer>> mulOp = trim(Lexical.chr('*'))
     .as((a, b) -> a * b);
 
 // Taker for division operator
-Parser<BinaryOperator<Integer>> divOp = trim(Lexical.chr('/'))
+Taker<BinaryOperator<Integer>> divOp = trim(Lexical.chr('/'))
     .as((a, b) -> a / b);
 
 // Term handles multiplication and division
@@ -249,11 +249,11 @@ term.set(
 
 ```java
 // Taker for addition operator
-Parser<BinaryOperator<Integer>> addOp = trim(Lexical.chr('+'))
+Taker<BinaryOperator<Integer>> addOp = trim(Lexical.chr('+'))
     .as(Integer::sum);
 
 // Taker for subtraction operator
-Parser<BinaryOperator<Integer>> subOp = trim(Lexical.chr('-'))
+Taker<BinaryOperator<Integer>> subOp = trim(Lexical.chr('-'))
     .as((a, b) -> a - b);
 
 // Expression handles addition and subtraction
@@ -293,7 +293,7 @@ for (String expression : expressions) {
 
 ### Recursive Parsers
 
-Recursive parsers are essential for parsing nested structures like expressions, JSON, XML, etc. parseWorks provides the `Parser.ref()` method to create recursive parsers.
+Recursive parsers are essential for parsing nested structures like expressions, JSON, XML, etc. parseWorks provides the `Taker.ref()` method to create recursive parsers.
 
 #### Example: JSON Parser
 
@@ -303,12 +303,12 @@ Here's a simplified example of a JSON parser:
 import parsers.io.github.parseworks.taker.Lexical;
 
 // Create references for recursive parsers
-Parser<Object> jsonValue = Parser.ref();
-    Parser<Map<String, Object>> jsonObject = Parser.ref();
-    Parser<List<Object>> jsonArray = Parser.ref();
+Taker<Object> jsonValue = Taker.ref();
+    Taker<Map<String, Object>> jsonObject = Taker.ref();
+    Taker<List<Object>> jsonArray = Taker.ref();
 
     // Taker for JSON strings
-    Parser<String> jsonString = Lexical.chr('"')
+    Taker<String> jsonString = Lexical.chr('"')
         .skipThen(
             Combinators.oneOf(
                 Combinators.satisfy("<escaped-char>", (Character c) -> c == '\\').skipThen(Combinators.any(Character.class)),
@@ -319,17 +319,17 @@ Parser<Object> jsonValue = Parser.ref();
         .map(Lists::join);
 
     // Taker for JSON numbers
-    Parser<Double> jsonNumber = Lexical.regex("-?[0-9]+(\\.[0-9]+)?")
+    Taker<Double> jsonNumber = Lexical.regex("-?[0-9]+(\\.[0-9]+)?")
         .map(Double::parseDouble);
 
     // Taker for JSON booleans
-    Parser<Boolean> jsonBoolean = Combinators.oneOf(
+    Taker<Boolean> jsonBoolean = Combinators.oneOf(
         Lexical.string("true").as(Boolean.TRUE),
         Lexical.string("false").as(Boolean.FALSE)
     );
 
     // Taker for JSON null
-    Parser<Object> jsonNull = Lexical.string("null").as(null);
+    Taker<Object> jsonNull = Lexical.string("null").as(null);
 
 // Taker for JSON arrays
 jsonArray.
@@ -350,7 +350,7 @@ jsonArray.
     );
 
     // Taker for JSON objects
-    Parser<Map.Entry<String, Object>> jsonProperty = jsonString
+    Taker<Map.Entry<String, Object>> jsonProperty = jsonString
         .thenSkip(Lexical.trim(Lexical.chr(':')))
         .then(jsonValue)
         .map(key -> value -> (Map.Entry<String, Object>) new AbstractMap.SimpleEntry<>(key, value));
@@ -424,7 +424,7 @@ Here are some tips for optimizing parser performance:
 
 ### Core Classes
 
-- **Parser<I, A>**: The main interface for parsers
+- **Taker<A>**: The main interface for parsers
 - **Input<I>**: Represents a position in a stream of tokens
 - **Result<I, A>**: Represents the outcome of parsing
 - **Combinators**: Utility class with methods for creating and combining parsers
@@ -487,12 +487,12 @@ If you're experiencing performance issues with complex parsers, try:
 
 1. **Use `orElse` for better error messages**:
    ```java
-   Parser<A> parser = actualParser.orElse(fail("Custom error message"));
+   Taker<A> parser = actualParser.orElse(fail("Custom error message"));
    ```
 
 2. **Print intermediate results**:
    ```java
-   Parser<A> debugParser = actualParser.map(result -> {
+   Taker<A> debugParser = actualParser.map(result -> {
     System.out.println("Parsed: " + result);
     return result;
    });

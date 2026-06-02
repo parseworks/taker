@@ -1,12 +1,11 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Input;
+import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
-
-import java.util.List;
-import java.util.function.Function;
 
 import static io.github.parseworks.taker.Taker.pure;
 import static io.github.parseworks.taker.parsers.Combinators.satisfy;
@@ -15,7 +14,7 @@ import static io.github.parseworks.taker.parsers.Lexical.chr;
 public class Numeric {
 
     /** Matches a non-zero digit (1-9). */
-    public static final Taker<Character> nonZeroDigit = satisfy( "<nonZeroDigit>", (CharPredicate) (c -> c != '0' && Character.isDigit(c)));
+    public static final Taker<Character> nonZeroDigit = satisfy("<nonZeroDigit>", (CharPredicate) (c -> c != '0' && Character.isDigit(c)));
 
 
     /** Matches a single digit (0-9). */
@@ -33,7 +32,7 @@ public class Numeric {
     private static final Taker<Integer> unsignedIntegerZero = chr('0').as(0);
 
     /** Matches '0' and returns 0L. */
-    private static final Taker<Long> unsignedLongZero = chr('0').as( 0L);
+    private static final Taker<Long> unsignedLongZero = chr('0').as(0L);
 
 
     /** Matches an unsigned integer without leading zeros. */
@@ -50,27 +49,61 @@ public class Numeric {
         .skipThen(integer);
 
     /** Matches an unsigned long without leading zeros. */
-    public static final Taker<Long> unsignedLong = unsignedLongZero.or(
-        nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
-            .map((d, ds) -> {
-                String s = d + ds;
-                try {
-                    return Long.parseLong(s);
-                } catch (NumberFormatException e) {
-                    // If it fails to parse as positive long, it might be 9223372036854775808 (abs of Long.MIN_VALUE)
-                    // or a real overflow. But the original code used custom fold that allowed overflow.
-                    // To match Long.MIN_VALUE test case, we need to handle it.
-                    if (s.equals("9223372036854775808")) {
-                        return Long.MIN_VALUE; // This is a bit hacky but works for the map(s -> s ? l : -l) if l is MIN_VALUE and -l is also MIN_VALUE... wait
-                    }
-                    return Long.MAX_VALUE;
-                }
-            })
-    );
+    public static final Taker<Long> unsignedLong = unsignedLongZero.or(longDigits(false));
 
     /** Matches a signed long. */
-    public static final Taker<Long> longValue = sign.then(unsignedLong)
-        .map((s, l) -> s ? l : -l);
+    public static final Taker<Long> longValue = new Taker<>(in -> {
+        Input current = in;
+        boolean positive = true;
+        if (!current.isEof()) {
+            char c = current.current();
+            if (c == '+' || c == '-') {
+                positive = c == '+';
+                current = current.next();
+            }
+        }
+
+        Result<Long> result = longDigits(!positive).apply(current);
+        if (!result.matches()) {
+            return result.cast();
+        }
+
+        long value = result.value();
+        return new Match<>(positive ? value : -value, result.input());
+    });
+
+    private static Taker<Long> longDigits(boolean allowLongMinAbs) {
+        return new Taker<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<>(in, "long value");
+            }
+
+            CharSequence data = in.data();
+            int start = in.position();
+            char first = data.charAt(start);
+            if (first == '0') {
+                return new Match<>(0L, in.next());
+            }
+            if (first < '1' || first > '9') {
+                return new NoMatch<>(in, "long value");
+            }
+
+            int current = start + 1;
+            while (current < data.length() && Character.isDigit(data.charAt(current))) {
+                current++;
+            }
+
+            String digits = data.subSequence(start, current).toString();
+            if (allowLongMinAbs && digits.equals("9223372036854775808")) {
+                return new Match<>(Long.MIN_VALUE, in.skip(current - start));
+            }
+            try {
+                return new Match<>(Long.parseLong(digits), in.skip(current - start));
+            } catch (NumberFormatException e) {
+                return new NoMatch<>(in.skip(current - start), "long value within range");
+            }
+        });
+    }
 
     /** Matches a double-precision floating point number. */
     public static final Taker<Double> doubleValue = new Taker<>(in -> {

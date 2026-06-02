@@ -33,7 +33,6 @@ public class OneOfCombinedFailureTest {
         assertTrue(msg.contains("Reasons at this location:"), "Should include reasons section");
         assertTrue(msg.contains("- expected option B"), "Should include second alternative reason");
         assertTrue(msg.contains("- expected option C"), "Should include third alternative reason");
-        System.out.println(msg);
         // Optional: sanity check that a location indicator exists
         assertTrue(msg.contains("line ") || msg.contains("position "), "Should include location information");
     }

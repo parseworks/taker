@@ -518,7 +518,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Taker<Integer> intParser = integer;
      *
      * // Create an input from a string containing mixed content
-     * Input input = Input.fromString("123 abc 456 def 789");
+     * Input input = Input.of("123 abc 456 def 789");
      *
      * // Iterate over all integers in the input
      * Iterator<Integer> numbers = intParser.iterateParse(input);

@@ -93,6 +93,6 @@ Reasons at this location:
 - expected escaped string
 ```
 
-##  License
+## License
 
-[Include License Information Here]
+This project does not currently declare a license. Add one before distributing or publishing the library.

@@ -96,14 +96,14 @@ Start with basic parsers for simple elements:
 
 ```java
 // Taker for a single digit
-Parser<Integer> digit = chr(Character::isDigit)
+Taker<Integer> digit = chr(Character::isDigit)
     .map(c -> Character.getNumericValue(c));
 
 // Taker for a specific string
-Parser<String> keyword = string("if");
+Taker<String> keyword = string("if");
 
 // Taker for a regular expression
-Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
+Taker<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 ```
 
 ### Combining Parsers
@@ -112,7 +112,7 @@ Combine basic parsers to create more complex ones:
 
 ```java
 // Taker for a number (one or more digits)
-Parser<Integer> number = digit.oneOrMore()
+Taker<Integer> number = digit.oneOrMore()
     .map(digits -> {
         int result = 0;
         for (int d : digits) {
@@ -122,7 +122,7 @@ Parser<Integer> number = digit.oneOrMore()
     });
 
 // Taker for a key-value pair
-Parser<KeyValue> keyValueParser = identifier
+Taker<KeyValue> keyValueParser = identifier
     .thenSkip(chr('='))
     .then(identifier)
     .map(key -> value -> new KeyValue(key, value));
@@ -134,9 +134,9 @@ Use recursive parsers for nested structures:
 
 ```java
 // Create references for recursive parsers
-Parser<Expression> expr = Parser.ref();
-Parser<Expression> term = Parser.ref();
-Parser<Expression> factor = Parser.ref();
+Taker<Expression> expr = Taker.ref();
+Taker<Expression> term = Taker.ref();
+Taker<Expression> factor = Taker.ref();
 
 // Define the factor parser (numbers or parenthesized expressions)
 factor.set(
@@ -222,7 +222,7 @@ class JsonObjectBuilder {
     }
 }
 
-Parser<Map<String, Object>> jsonObject = chr('{')
+Taker<Map<String, Object>> jsonObject = chr('{')
     .skipThen(
         jsonString
             .thenSkip(chr(':'))
@@ -246,15 +246,15 @@ The Factory pattern can be used to create parsers for different types:
 
 ```java
 class ParserFactory {
-    public static Parser<Expression> createExpressionParser() {
+    public static Taker<Expression> createExpressionParser() {
         // Implementation
     }
 
-    public static Parser<Statement> createStatementParser() {
+    public static Taker<Statement> createStatementParser() {
         // Implementation
     }
 
-    public static Parser<Program> createProgramParser() {
+    public static Taker<Program> createProgramParser() {
         // Implementation
     }
 }
@@ -271,7 +271,7 @@ Write unit tests for each parser component:
 ```java
 @Test
 public void testNumberParser() {
-    Parser<Integer> parser = number;
+    Taker<Integer> parser = number;
     
     // Test valid inputs
     assertEquals(42, parser.parse(Input.of("42")).value());
@@ -289,7 +289,7 @@ Test the integration of parser components:
 ```java
 @Test
 public void testExpressionParser() {
-    Parser<Expression> parser = expr;
+    Taker<Expression> parser = expr;
     
     // Test simple expressions
     Expression result1 = parser.parse(Input.of("1+2")).value();
@@ -313,7 +313,7 @@ Use these techniques for debugging parsers:
 
 ## Performance Considerations
 
-#TODO#
+## Additional Design Notes
 
 ## Case Studies
 
@@ -325,23 +325,23 @@ A simple calculator parser that evaluates arithmetic expressions:
 
 ```java
 // Create references for recursive parsers
-Parser<Integer> expr = Parser.ref();
-Parser<Integer> term = Parser.ref();
-Parser<Integer> factor = Parser.ref();
+Taker<Integer> expr = Taker.ref();
+Taker<Integer> term = Taker.ref();
+Taker<Integer> factor = Taker.ref();
 
 // Define the factor parser (numbers or parenthesized expressions)
-Parser<Integer> number = numeric.map(Character::getNumericValue);
-Parser<Integer> parenExpr = chr('(').skipThen(expr).thenSkip(chr(')'));
+Taker<Integer> number = numeric.map(Character::getNumericValue);
+Taker<Integer> parenExpr = chr('(').skipThen(expr).thenSkip(chr(')'));
 factor.set(oneOf(number, parenExpr));
 
 // Define the term parser (factors with multiplication/division)
-Parser<BinaryOperator<Integer>> mulOp = chr('*').map(op -> (a, b) -> a * b);
-Parser<BinaryOperator<Integer>> divOp = chr('/').map(op -> (a, b) -> a / b);
+Taker<BinaryOperator<Integer>> mulOp = chr('*').map(op -> (a, b) -> a * b);
+Taker<BinaryOperator<Integer>> divOp = chr('/').map(op -> (a, b) -> a / b);
 term.set(factor.chainLeftZeroOrMore(oneOf(mulOp, divOp), 0));
 
 // Define the expression parser (terms with addition/subtraction)
-Parser<BinaryOperator<Integer>> addOp = chr('+').map(op -> (a, b) -> a + b);
-Parser<BinaryOperator<Integer>> subOp = chr('-').map(op -> (a, b) -> a - b);
+Taker<BinaryOperator<Integer>> addOp = chr('+').map(op -> (a, b) -> a + b);
+Taker<BinaryOperator<Integer>> subOp = chr('-').map(op -> (a, b) -> a - b);
 expr.set(term.chainLeftZeroOrMore(oneOf(addOp, subOp), 0));
 
 // Parse and evaluate an expression
@@ -355,12 +355,12 @@ A parser for JSON data:
 
 ```java
 // Create references for recursive parsers
-Parser<Object> jsonValue = Parser.ref();
-Parser<Map<String, Object>> jsonObject = Parser.ref();
-Parser<List<Object>> jsonArray = Parser.ref();
+Taker<Object> jsonValue = Taker.ref();
+Taker<Map<String, Object>> jsonObject = Taker.ref();
+Taker<List<Object>> jsonArray = Taker.ref();
 
 // Taker for JSON strings
-Parser<String> jsonString = chr('"')
+Taker<String> jsonString = chr('"')
     .skipThen(
         oneOf(
             chr('\\').skipThen(any(Character.class)),
@@ -390,15 +390,15 @@ Parser<String> jsonString = chr('"')
     });
 
 // Taker for JSON numbers
-Parser<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
+Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
     .map(Double::parseDouble);
 
 // Taker for JSON booleans
-Parser<Boolean> jsonBoolean = string("true").as(true)
+Taker<Boolean> jsonBoolean = string("true").as(true)
     .or(string("false").as(false));
 
 // Taker for JSON null
-Parser<Object> jsonNull = string("null").as(null);
+Taker<Object> jsonNull = string("null").as(null);
 
 // Taker for JSON arrays
 jsonArray.set(

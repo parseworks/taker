@@ -22,7 +22,7 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
  * Common text parsers for characters, strings, and whitespace.
  * <pre>{@code
  * Taker<String> greeting =
- *     Lexical.string("Hello").thenSkip(Lexical.whitespace).then(Lexical.word);
+ *     Lexical.string("Hello").thenSkip(Taker.takeWhile(CharPredicate.whitespace)).then(Lexical.word);
  * }</pre>
  */
 public class Lexical {
@@ -60,7 +60,7 @@ public class Lexical {
     public static final Taker<String> word = Taker.takeWhile(CharPredicate.letter);
 
     /**
-     * Matches a single whitespace character.
+     * Matches characters until a newline.
      */
     public static final Taker<String> line = Taker.takeUntil(CharPredicate.is('\n'));
 

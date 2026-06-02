@@ -43,9 +43,9 @@ Useful for addition, subtraction, etc., where `1+2+3` should be `(1+2)+3`.
 
 ```java
 // Define a number parser
-Parser<Integer> number = Lexical.digit.oneOrMore().map(Lists::join).map(Integer::parseInt);
+Taker<Integer> number = Numeric.numeric.oneOrMore().map(Lists::join).map(Integer::parseInt);
 
-Parser<Integer> addition = number.chainLeftZeroOrMore(
+Taker<Integer> addition = number.chainLeftZeroOrMore(
     chr('+').as((a, b) -> a + b),
     0
 );
@@ -55,7 +55,7 @@ Parser<Integer> addition = number.chainLeftZeroOrMore(
 Useful for exponentiation, where `2^3^2` should be `2^(3^2)`.
 
 ```java
-Parser<Integer> power = number.chainRightZeroOrMore(
+Taker<Integer> power = number.chainRightZeroOrMore(
     chr('^').as((a, b) -> (int)Math.pow(a, b)),
     1
 );
@@ -63,19 +63,19 @@ Parser<Integer> power = number.chainRightZeroOrMore(
 
 ### Recursive Parsers
 
-For nested structures (JSON, expressions), use `Parser.ref()`. This creates a placeholder that you `set()` later, allowing the parser to refer to itself.
+For nested structures (JSON, expressions), use `Taker.ref()`. This creates a placeholder that you `set()` later, allowing the parser to refer to itself.
 
 ```java
-Parser<Integer> number = Lexical.digit.oneOrMore().map(Lists::join).map(Integer::parseInt);
-Parser<Expr> expr = Parser.ref();
+Taker<Integer> number = Numeric.numeric.oneOrMore().map(Lists::join).map(Integer::parseInt);
+Taker<Expr> expr = Taker.ref();
 
 // Parens: ( expr )
-Parser<Expr> parens = chr('(')
+Taker<Expr> parens = chr('(')
     .skipThen(expr)
     .thenSkip(chr(')'));
 
 // A factor is a number OR a parenthesized expression
-Parser<Expr> factor = number.map(Literal::new).or(parens);
+Taker<Expr> factor = number.map(Literal::new).or(parens);
 
 // Close the loop
 expr.set(factor); 
@@ -97,18 +97,18 @@ A common "gotcha": `takeWhile` requires a **parser** that returns `Boolean`, not
 
 ```java
 // Correct: passing a parser that returns Boolean
-Parser<Boolean> isAlpha = chr(Character::isLetter).as(true);
-Parser<String> word = any(Character.class).takeWhile(isAlpha);
+Taker<Boolean> isAlpha = chr(Character::isLetter).as(true);
+Taker<String> word = any(Character.class).takeWhile(isAlpha);
 
 // Cleaner alternative if you just want to match characters:
-Parser<String> word2 = chr(Character::isLetter).zeroOrMore();
+Taker<String> word2 = chr(Character::isLetter).zeroOrMore();
 ```
 
 `zeroOrMoreUntil` is useful for consuming items until a specific terminator is reached:
 
 ```java
 // Parse everything until a semicolon
-Parser<String> content = any(Character.class).zeroOrMoreUntil(chr(';'));
+Taker<String> content = any(Character.class).zeroOrMoreUntil(chr(';'));
 ```
 
 ### Negation and Validation {#negation-and-validation}
@@ -120,7 +120,7 @@ The `not` method creates a parser that succeeds if the provided parser fails, an
 ```java
 // Parse any character that is not a digit
 // We use not() to check the condition, then any() to actually consume the character
-Parser<Character> notDigit = not(chr(Character::isDigit)).skipThen(any(Character.class));
+Taker<Character> notDigit = not(chr(Character::isDigit)).skipThen(any(Character.class));
 ```
 
 #### isNot
@@ -129,7 +129,7 @@ The `isNot` method creates a parser that succeeds if the current input item is n
 
 ```java
 // Parse any character except 'x'
-Parser<Character> notX = isNot('x');
+Taker<Character> notX = isNot('x');
 ```
 
 #### Validation Errors
@@ -138,9 +138,9 @@ For custom validation:
 
 ```java
 // Parse a positive number
-Parser<Integer> positiveNumber = number.flatMap(n -> {
+Taker<Integer> positiveNumber = number.flatMap(n -> {
     if (n > 0) {
-        return Parser.pure(n);
+        return Taker.pure(n);
     } else {
         return fail("positive number");
     }
@@ -157,14 +157,14 @@ parseWorks provides several ways to create custom error messages:
 
 ```java
 // Create a parser that fails with a custom error message
-Parser<String> customError = fail("Expected a specific pattern");
+Taker<String> customError = fail("Expected a specific pattern");
 ```
 
 #### Using orElse with fail
 
 ```java
 // Try to parse a number, or fail with a custom error message
-Parser<Integer> numberOrError = number.orElse(fail("Expected a number"));
+Taker<Integer> numberOrError = number.orElse(fail("Expected a number"));
 ```
 
 ### Error Types
@@ -173,13 +173,13 @@ parseWorks provides different ways to fail:
 
 ```java
 // Syntax error (input doesn't match expected pattern)
-Parser<String> syntaxError = fail("Expected a valid syntax");
+Taker<String> syntaxError = fail("Expected a valid syntax");
 
 // Validation error (input parsed but failed validation)
-Parser<String> validationError = fail("Expected a valid value");
+Taker<String> validationError = fail("Expected a valid value");
 
 // Generic error
-Parser<String> genericError = fail("Something went wrong");
+Taker<String> genericError = fail("Something went wrong");
 ```
 
 ### Recovery Strategies
@@ -190,7 +190,7 @@ The `or` method provides a way to try an alternative parser if the first one fai
 
 ```java
 // Try to parse a number, or a string if that fails
-Parser<Object> numberOrString = number.map(n -> (Object)n)
+Taker<Object> numberOrString = number.map(n -> (Object)n)
     .or(string("null").map(s -> (Object)null));
 ```
 
@@ -200,7 +200,7 @@ The `orElse` method provides a way to return a default value if the parser fails
 
 ```java
 // Try to parse a number, or return 0 if that fails
-Parser<Integer> numberOrZero = number.orElse(0);
+Taker<Integer> numberOrZero = number.orElse(0);
 ```
 
 #### Using optional
@@ -210,7 +210,7 @@ The `optional` method creates a parser that optionally applies the parser. It re
 ```java
 // Parse an optional sign followed by a number
 // then() returns an ApplyBuilder, which allows combining results
-Parser<Integer> signedNumber = chr('-').optional()
+Taker<Integer> signedNumber = chr('-').optional()
     .then(number)
     .map(optSign -> num -> optSign.isPresent() ? -num : num);
 ```
@@ -235,13 +235,13 @@ Operator precedence can be handled by creating separate parsers for each precede
 // factor ::= number | '(' expr ')'
 
 // Create references for recursive parsers
-Parser<Integer> expr = Parser.ref();
-Parser<Integer> term = Parser.ref();
-Parser<Integer> factor = Parser.ref();
+Taker<Integer> expr = Taker.ref();
+Taker<Integer> term = Taker.ref();
+Taker<Integer> factor = Taker.ref();
 
 // Factor can be a number or an expression in parentheses
-Parser<Integer> numberFactor = number;
-Parser<Integer> parenFactor = chr('(')
+Taker<Integer> numberFactor = number;
+Taker<Integer> parenFactor = chr('(')
     .skipThen(expr)
     .thenSkip(chr(')'));
 
@@ -250,9 +250,9 @@ factor.set(
 );
 
 // Term handles multiplication and division (higher precedence)
-Parser<BinaryOperator<Integer>> mulOp = chr('*')
+Taker<BinaryOperator<Integer>> mulOp = chr('*')
     .as((a, b) -> a * b);
-Parser<BinaryOperator<Integer>> divOp = chr('/')
+Taker<BinaryOperator<Integer>> divOp = chr('/')
     .as((a, b) -> a / b);
 
 term.set(
@@ -260,9 +260,9 @@ term.set(
 );
 
 // Expression handles addition and subtraction (lower precedence)
-Parser<BinaryOperator<Integer>> addOp = chr('+')
+Taker<BinaryOperator<Integer>> addOp = chr('+')
     .as((a, b) -> a + b);
-Parser<BinaryOperator<Integer>> subOp = chr('-')
+Taker<BinaryOperator<Integer>> subOp = chr('-')
     .as((a, b) -> a - b);
 
 expr.set(
@@ -282,8 +282,8 @@ As mentioned earlier, left recursion can cause infinite loops. Here's a more det
 // expr ::= term ('+' expr)?
 
 // Implementation with right recursion:
-Parser<Integer> expr = Parser.ref();
-Parser<Integer> term = number;
+Taker<Integer> expr = Taker.ref();
+Taker<Integer> term = number;
 
 expr.set(
     term.then(
@@ -298,7 +298,7 @@ Ambiguity in grammars can lead to unexpected parsing results. parseWorks uses or
 
 ```java
 // This parser will always choose the first matching alternative
-Parser<String> ambiguous = oneOf(string("if"), string("ifelse"));
+Taker<String> ambiguous = oneOf(string("if"), string("ifelse"));
 
 // For input "ifelse", it will parse "if" and leave "else" unparsed
 ```
@@ -311,12 +311,12 @@ Here's a simplified example of a JSON parser:
 
 ```java
 // Create references for recursive parsers
-Parser<Object> jsonValue = Parser.ref();
-Parser<Map<String, Object>> jsonObject = Parser.ref();
-Parser<List<Object>> jsonArray = Parser.ref();
+Taker<Object> jsonValue = Taker.ref();
+Taker<Map<String, Object>> jsonObject = Taker.ref();
+Taker<List<Object>> jsonArray = Taker.ref();
 
 // Taker for JSON strings
-Parser<String> jsonString = chr('"')
+Taker<String> jsonString = chr('"')
     .skipThen(
         oneOf(
             chr('\\').skipThen(any(Character.class)),
@@ -327,15 +327,15 @@ Parser<String> jsonString = chr('"')
     .map(Lists::join);
 
 // Taker for JSON numbers
-Parser<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
+Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
     .map(Double::parseDouble);
 
 // Taker for JSON booleans
-Parser<Boolean> jsonBoolean = string("true").as(true)
+Taker<Boolean> jsonBoolean = string("true").as(true)
     .or(string("false").as(false));
 
 // Taker for JSON null
-Parser<Object> jsonNull = string("null").as(null);
+Taker<Object> jsonNull = string("null").as(null);
 
 // Taker for JSON arrays
 jsonArray.set(
@@ -392,19 +392,19 @@ enum BinOp {
 }
 
 // Create a parser for expressions with variables
-Parser<UnaryOperator<Integer>> expr = Parser.ref();
+Taker<UnaryOperator<Integer>> expr = Taker.ref();
 
 // Taker for variables (x)
-Parser<UnaryOperator<Integer>> var = chr('x')
+Taker<UnaryOperator<Integer>> var = chr('x')
     .map(x -> v -> v);  // Identity function that returns the variable value
 
 // Taker for numbers (constants)
-Parser<UnaryOperator<Integer>> num = regex("\\d+")
+Taker<UnaryOperator<Integer>> num = regex("\\d+")
     .map(Integer::parseInt)
     .map(i -> v -> i);  // Constant function that ignores the variable value
 
 // Taker for binary operators
-Parser<BinOp> binOp = oneOf(
+Taker<BinOp> binOp = oneOf(
     chr('+').as(BinOp.ADD),
     chr('-').as(BinOp.SUB),
     chr('*').as(BinOp.MUL),
@@ -412,7 +412,7 @@ Parser<BinOp> binOp = oneOf(
 );
 
 // Taker for binary expressions
-Parser<UnaryOperator<Integer>> binExpr = chr('(')
+Taker<UnaryOperator<Integer>> binExpr = chr('(')
     .skipThen(expr)
     .then(binOp)
     .then(expr.thenSkip(chr(')')))
@@ -490,36 +490,36 @@ class IfStatement implements Statement {
 }
 
 // Create the parsers
-Parser<Statement> statement = Parser.ref();
-Parser<List<Statement>> statements = Parser.ref();
+Taker<Statement> statement = Taker.ref();
+Taker<List<Statement>> statements = Taker.ref();
 
 // Taker for identifiers
-Parser<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
+Taker<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 
 // Taker for numbers
-Parser<Integer> number = regex("\\d+").map(Integer::parseInt);
+Taker<Integer> number = regex("\\d+").map(Integer::parseInt);
 
 // Taker for strings
-Parser<String> stringLiteral = chr('"')
+Taker<String> stringLiteral = chr('"')
     .skipThen(chr(c -> c != '"').zeroOrMore())
     .thenSkip(chr('"'))
     .map(Lists::join);
 
 // Taker for print statements
-Parser<Statement> printStatement = string("print")
+Taker<Statement> printStatement = string("print")
     .skipThen(stringLiteral)
     .thenSkip(chr(';'))
     .map(PrintStatement::new);
 
 // Taker for assignment statements
-Parser<Statement> assignStatement = identifier
+Taker<Statement> assignStatement = identifier
     .thenSkip(string("="))
     .then(number)
     .thenSkip(chr(';'))
     .map(var -> val -> new AssignStatement(var, val));
 
 // Taker for if statements
-Parser<Statement> ifStatement = string("if")
+Taker<Statement> ifStatement = string("if")
     .skipThen(chr('('))
     .skipThen(identifier)
     .thenSkip(chr(')'))
@@ -570,10 +570,10 @@ parseWorks can be combined with other libraries to create more powerful parsing 
 
 ```java
 // Combine with Jackson for JSON processing
-Parser<JsonNode> jsonParser = /* JSON parser implementation */;
+Taker<JsonNode> jsonParser = /* JSON parser implementation */;
 ObjectMapper mapper = new ObjectMapper();
 
-Parser<MyObject> myObjectParser = jsonParser.map(jsonNode -> {
+Taker<MyObject> myObjectParser = jsonParser.map(jsonNode -> {
     try {
         return mapper.treeToValue(jsonNode, MyObject.class);
     } catch (JsonProcessingException e) {
@@ -590,7 +590,7 @@ Here are some strategies for testing parsers:
 // Test a parser with various inputs
 @Test
 public void testNumberParser() {
-    Parser<Integer> parser = number;
+    Taker<Integer> parser = number;
     
     // Test valid inputs
     assertEquals(42, parser.parse(Input.of("42")).get());
@@ -615,7 +615,7 @@ For complex parsers, it's often beneficial to use a modular design:
 ```java
 // Define a parser module interface
 interface ParserModule<T> {
-    Parser<T> getParser();
+    Taker<T> getParser();
 }
 
 // Implement modules for different parts of the grammar
@@ -627,7 +627,7 @@ class ExpressionModule implements ParserModule<Expression> {
     }
     
     @Override
-    public Parser<Expression> getParser() {
+    public Taker<Expression> getParser() {
         return termModule.getParser().chainLeftZeroOrMore(
             oneOf(
                 chr('+').as((a, b) -> new BinaryExpression(a, Operator.ADD, b)),
@@ -646,7 +646,7 @@ class TermModule implements ParserModule<Expression> {
     }
     
     @Override
-    public Parser<Expression> getParser() {
+    public Taker<Expression> getParser() {
         return factorModule.getParser().chainLeftZeroOrMore(
             oneOf(
                 chr('*').as((a, b) -> new BinaryExpression(a, Operator.MULTIPLY, b)),
@@ -661,7 +661,7 @@ class TermModule implements ParserModule<Expression> {
 FactorModule factorModule = new FactorModule();
 TermModule termModule = new TermModule(factorModule);
 ExpressionModule expressionModule = new ExpressionModule(termModule);
-Parser<Expression> expressionParser = expressionModule.getParser();
+Taker<Expression> expressionParser = expressionModule.getParser();
 ```
 
 ## Troubleshooting
@@ -675,11 +675,11 @@ One common pitfall is infinite recursion, which can happen when a parser refers 
 ```java
 // This will cause infinite recursion in most parser libraries
 // parseWorks will detect and mitigate this specific example
-Parser<String> badRecursion = Parser.ref();
+Taker<String> badRecursion = Taker.ref();
 badRecursion.set(badRecursion.or(string("x")));
 
 // Fix: Ensure the recursive parser makes progress before recursing
-Parser<String> goodRecursion = Parser.ref();
+Taker<String> goodRecursion = Taker.ref();
 goodRecursion.set(string("x").then(goodRecursion).optional().map(opt -> "x" + opt.orElse("")));
 ```
 
@@ -689,30 +689,30 @@ Another common pitfall is greedy matching, which can consume more input than int
 
 ```java
 // This will greedily consume all characters until the end of input
-Parser<String> greedy = regex(".*");
+Taker<String> greedy = regex(".*");
 
 // Fix: Use a non-greedy quantifier or be more specific
-Parser<String> nonGreedy = regex(".*?");
-Parser<String> specific = regex("[a-zA-Z]+");
+Taker<String> nonGreedy = regex(".*?");
+Taker<String> specific = regex("[a-zA-Z]+");
 ```
 
 ### Avoiding Regex for Common Patterns
 
 While `regex()` is powerful, it carries overhead and can be less readable for simple patterns. parseWorks provides efficient alternatives:
 
-- **Identifiers**: Use `Lexical.identifier` instead of `regex("[a-zA-Z_][a-zA-Z0-9_]*")`.
+- **Identifiers**: Use a named parser for identifiers instead of repeating `regex("[a-zA-Z_][a-zA-Z0-9_]*")`.
 - **Hexadecimal**: Use `Numeric.hex` instead of `regex("[0-9a-fA-F]+")`.
 - **Custom character sets**: Use `satisfy()` with predicates.
 
 ```java
 // Instead of regex:
-Parser<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
+Taker<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 
 // Use the built-in non-regex version:
-Parser<String> id = Lexical.identifier;
+Taker<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 
 // Or build your own:
-Parser<String> myPattern = satisfy("<start>", Character::isLetter)
+Taker<String> myPattern = satisfy("<start>", Character::isLetter)
     .then(satisfy("<part>", Character::isLetterOrDigit).zeroOrMore())
     .map((first, rest) -> first + Lists.join(rest));
 ```
@@ -723,10 +723,10 @@ The order of alternatives in `oneOf` (and `or`) can affect the parsing result:
 
 ```java
 // This will always parse "if" and never "ifelse"
-Parser<String> badOrder = oneOf(string("if"), string("ifelse"));
+Taker<String> badOrder = oneOf(string("if"), string("ifelse"));
 
 // Fix: Order from most specific to least specific
-Parser<String> goodOrder = oneOf(string("ifelse"), string("if"));
+Taker<String> goodOrder = oneOf(string("ifelse"), string("if"));
 ```
 
 ### Debugging Techniques
@@ -737,17 +737,17 @@ You can add tracing to your parsers to see what's happening during parsing:
 
 ```java
 // Add tracing to a parser
-Parser<Integer> tracedParser = number.map(n -> {
+Taker<Integer> tracedParser = number.map(n -> {
     System.out.println("Parsed number: " + n);
     return n;
 });
 ```
 #### Log to output
 
-The `logSystemOut` method allows you to log the parsing process to the system output, which is invaluable for debugging complex combinators:
+The `systemOut` method allows you to log the parsing process to the system output, which is invaluable for debugging complex combinators:
 
 ```java
-Parser<String> myParser = string("foo").or(string("bar")).logSystemOut();
+Taker<String> myParser = string("foo").or(string("bar")).systemOut();
 ```
 
 #### Use `expecting` to redefine error messages
@@ -755,7 +755,7 @@ Parser<String> myParser = string("foo").or(string("bar")).logSystemOut();
 The `expecting` method allows you to provide a more user-friendly name for a parser, which will be used in error messages when the parser fails to match.
 
 ```java
-Parser<String> identifier = Lexical.identifier
+Taker<String> identifier = regex("[a-zA-Z_][a-zA-Z0-9_]*")
     .expecting("an identifier");
 
 // If this fails, the error message will say "Expected an identifier" 
@@ -769,7 +769,7 @@ Custom error messages can help identify where parsing is failing:
 
 ```java
 // Add custom error messages
-Parser<Integer> withErrorMessage = number.orElse(fail("Expected a number here"));
+Taker<Integer> withErrorMessage = number.orElse(fail("Expected a number here"));
 ```
 
 #### Incremental Development
@@ -778,11 +778,11 @@ Build your parser incrementally, testing each part as you go:
 
 ```java
 // Start with simple parsers
-Parser<String> identifier = Lexical.identifier;
+Taker<String> identifier = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 assertTrue(identifier.parse(Input.of("abc123")).matches());
 
 // Add more complex parsers
-Parser<Statement> assignStatement = identifier
+Taker<Statement> assignStatement = identifier
     .thenSkip(string("="))
     .then(number)
     .thenSkip(chr(';'))

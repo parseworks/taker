@@ -142,6 +142,10 @@ public class NumericParsersTest {
         assertTrue(largeNumberResult.matches());
         assertEquals(Long.MAX_VALUE, largeNumberResult.value());
 
+        // Test overflow
+        Result<Long> overflowResult = unsignedLong.parse("9223372036854775808");
+        assertFalse(overflowResult.matches());
+
         // Test leading zero followed by other digits (should only parse the zero)
         Result<Long> leadingZeroResult = unsignedLong.parse("0123");
         assertTrue(leadingZeroResult.matches());
@@ -178,6 +182,13 @@ public class NumericParsersTest {
         Result<Long> largeNegativeResult = longValue.parse("-9223372036854775808"); // Long.MIN_VALUE
         assertTrue(largeNegativeResult.matches());
         assertEquals(Long.MIN_VALUE, largeNegativeResult.value());
+
+        // Test overflow
+        Result<Long> positiveOverflowResult = longValue.parse("9223372036854775808");
+        assertFalse(positiveOverflowResult.matches());
+
+        Result<Long> negativeOverflowResult = longValue.parse("-9223372036854775809");
+        assertFalse(negativeOverflowResult.matches());
 
         // Test zero
         Result<Long> zeroResult = longValue.parse("0");

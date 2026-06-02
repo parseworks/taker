@@ -103,32 +103,20 @@ public class SimpleHtmlParserTest {
         int textCount = 0;
         int commentCount = 0;
 
-        System.out.println("[DEBUG_LOG] Parsed elements:");
         for (SimpleHtmlParser.Element element : elements) {
             if (element instanceof SimpleHtmlParser.StartTag tag) {
                 startTagCount++;
-                System.out.println("[DEBUG_LOG] StartTag: " + tag.getName() + ", attrs: " + tag.getAttributes());
             } else if (element instanceof SimpleHtmlParser.EndTag tag) {
                 endTagCount++;
-                System.out.println("[DEBUG_LOG] EndTag: " + tag.getName());
             } else if (element instanceof SimpleHtmlParser.TextData text) {
                 textCount++;
-                String displayText = text.getText().replace("\n", "\\n").replace("\r", "\\r");
-                if (displayText.length() > 30) {
-                    displayText = displayText.substring(0, 27) + "...";
-                }
-                System.out.println("[DEBUG_LOG] TextData: " + displayText);
             } else if (element instanceof SimpleHtmlParser.Declaration declaration) {
                 if (declaration.getName().equals("--")){
                     commentCount++;
-                    System.out.println("[DEBUG_LOG] Comment: " + declaration.getAttributeValue("data"));
                 }
 
             }
         }
-
-        System.out.println("[DEBUG_LOG] Counts - Start tags: " + startTagCount + ", End tags: " + endTagCount + 
-                           ", Text: " + textCount + ", Comments: " + commentCount);
 
         assertTrue(startTagCount > 0, "Should have start tags");
         assertTrue(endTagCount > 0, "Should have end tags");

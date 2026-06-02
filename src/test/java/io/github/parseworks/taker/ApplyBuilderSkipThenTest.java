@@ -50,9 +50,7 @@ public class ApplyBuilderSkipThenTest {
         // If it doesn't wind back, it will be a PartialMatch at 'X' (pos 2).
         // If it winds back, it will be a NoMatch at '1' (pos 0), and orElse will try "12X".
         Result<Character> resCombined = combined.parse("12X");
-        System.out.println("[DEBUG_LOG] resCombined: " + resCombined);
-        System.out.println("[DEBUG_LOG] resCombined matches: " + resCombined.matches());
-        System.out.println("[DEBUG_LOG] resCombined input position: " + resCombined.input().position());
+        assertTrue(!resCombined.matches());
 
         Result<String> result = withOr.parse("12X");
         assertTrue(result.matches(), "Should match 12X because skipThen should have wound back");
