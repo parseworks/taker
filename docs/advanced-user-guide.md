@@ -43,7 +43,7 @@ Useful for addition, subtraction, etc., where `1+2+3` should be `(1+2)+3`.
 
 ```java
 // Define a number parser
-Taker<Integer> number = Numeric.numeric.oneOrMore().map(Lists::join).map(Integer::parseInt);
+Taker<Integer> number = Numeric.numeric.oneOrMore().map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining())).map(Integer::parseInt);
 
 Taker<Integer> addition = number.chainLeftZeroOrMore(
     chr('+').as((a, b) -> a + b),
@@ -66,7 +66,7 @@ Taker<Integer> power = number.chainRightZeroOrMore(
 For nested structures (JSON, expressions), use `Taker.ref()`. This creates a placeholder that you `set()` later, allowing the parser to refer to itself.
 
 ```java
-Taker<Integer> number = Numeric.numeric.oneOrMore().map(Lists::join).map(Integer::parseInt);
+Taker<Integer> number = Numeric.numeric.oneOrMore().map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining())).map(Integer::parseInt);
 Taker<Expr> expr = Taker.ref();
 
 // Parens: ( expr )
@@ -324,7 +324,7 @@ Taker<String> jsonString = chr('"')
         ).zeroOrMore()
     )
     .thenSkip(chr('"'))
-    .map(Lists::join);
+    .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
 
 // Taker for JSON numbers
 Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
@@ -503,7 +503,7 @@ Taker<Integer> number = regex("\\d+").map(Integer::parseInt);
 Taker<String> stringLiteral = chr('"')
     .skipThen(chr(c -> c != '"').zeroOrMore())
     .thenSkip(chr('"'))
-    .map(Lists::join);
+    .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
 
 // Taker for print statements
 Taker<Statement> printStatement = string("print")
@@ -714,7 +714,7 @@ Taker<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 // Or build your own:
 Taker<String> myPattern = satisfy("<start>", Character::isLetter)
     .then(satisfy("<part>", Character::isLetterOrDigit).zeroOrMore())
-    .map((first, rest) -> first + Lists.join(rest));
+    .map((first, rest) -> first + rest.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
 ```
 
 ### Order of Alternatives

@@ -316,7 +316,7 @@ Taker<Object> jsonValue = Taker.ref();
             ).zeroOrMore()
         )
         .thenSkip(Lexical.chr('"'))
-        .map(Lists::join);
+        .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
 
     // Taker for JSON numbers
     Taker<Double> jsonNumber = Lexical.regex("-?[0-9]+(\\.[0-9]+)?")

@@ -1,7 +1,6 @@
 package io.github.parseworks.taker.examples;
 
 import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Lists;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.parsers.Lexical;
@@ -123,7 +122,7 @@ public class UserGuideExamplesTest {
         // Taker for values (any string until the end of line)
         Taker<String> valueParser = chr(c -> c != '\n' && c != ',' && c != '}')
             .oneOrMore()
-            .map(Lists::join)
+            .map(UserGuideExamplesTest::join)
             .expecting("value");
 
         // Taker for a key-value pair
@@ -275,5 +274,13 @@ public class UserGuideExamplesTest {
         public String toString() {
             return key + "=" + value;
         }
+    }
+
+    private static String join(List<?> list) {
+        StringBuilder sb = new StringBuilder();
+        for (Object item : list) {
+            sb.append(item);
+        }
+        return sb.toString();
     }
 }

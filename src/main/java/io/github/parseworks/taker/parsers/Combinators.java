@@ -117,9 +117,6 @@ public class Combinators {
             throw new IllegalArgumentException("There must be at least one parser defined");
         }
         return new Taker<>(in -> {
-            if (in.isEof()) {
-                return new NoMatch<>(in, "eof before `oneOf` parser");
-            }
             List<Failure<A>> failures = null;
 
             for (Taker<A> parser : parsers) {

@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 /**
  * Utility functions for working with {@link List} in a functional style.
  */
-public final class Lists {
+final class Lists {
 
     private Lists() {
     }

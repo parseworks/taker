@@ -93,6 +93,11 @@ Reasons at this location:
 - expected escaped string
 ```
 
+## API Contract
+
+The intended public API and parser semantics are documented in
+[docs/api-contract.md](docs/api-contract.md).
+
 ## License
 
 This project does not currently declare a license. Add one before distributing or publishing the library.

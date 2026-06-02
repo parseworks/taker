@@ -18,5 +18,5 @@ An error object should never need to concatenate strings or preprocess input to 
 
 ### API Design
 *   **Builder Pattern**: Complex sequences are handled via `ApplyBuilder`, providing a fluent API for combining multiple results (e.g., `p1.then(p2).then(p3).map((v1, v2, v3) -> ...)`). This avoids deeply nested tuples and keeps the code readable.
-*   **Fluent Interface**: Most combinators are available as instance methods on the `Parser` class, allowing for a readable, "left-to-right" parsing specification (e.g., `parser.zeroOrMore().optional()`).
-*   **Functional Core**: The `Parser` class itself is built around a single functional interface `in -> Result`, but provides a rich set of instance methods to facilitate composition without requiring manual implementation of that interface in most cases.
+*   **Fluent Interface**: Most combinators are available as instance methods on the `Taker` class, allowing for a readable, "left-to-right" parsing specification (e.g., `parser.zeroOrMore().optional()`).
+*   **Functional Core**: The `Taker` class itself is built around a single functional interface `in -> Result`, but provides a rich set of instance methods to facilitate composition without requiring manual implementation of that interface in most cases.

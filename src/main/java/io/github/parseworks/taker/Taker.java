@@ -987,6 +987,9 @@ public class Taker<A> implements Function<Input, Result<A>>{
             try {
                 return applyHandler.apply(in);
             } catch (RuntimeException e) {
+                if (e instanceof IllegalStateException && "Taker not initialized".equals(e.getMessage())) {
+                    throw e;
+                }
                 return new NoMatch<>(in, "parser to function correctly");
             } finally {
                 stack.pop();
@@ -1073,7 +1076,10 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * This allows for dynamic parsing based on the result of the current parser.
      * <pre>{@code
      * Taker<String> p = Numeric.unsignedInteger.flatMap(n ->
-     *     Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n)).map(Lists::join)
+     *     Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n))
+     *         .map(chars -> chars.stream()
+     *             .map(String::valueOf)
+     *             .collect(java.util.stream.Collectors.joining()))
      * );
      * p.parse("3,aaa").value(); // "aaa"
      * }</pre>
