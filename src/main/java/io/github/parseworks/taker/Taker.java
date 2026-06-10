@@ -1062,13 +1062,13 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param <B> the result type of the recovery function
      * @return a new parser that applies the recovery function if this parser fails
      */
-    public <B> Taker<B> recoverWith(Function<NoMatch<A>, Result<B>> recovery) {
+    public <B> Taker<B> recoverWith(Function<Failure<A>, Result<B>> recovery) {
         return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) {
                 return result.cast();
             }
-            return recovery.apply((NoMatch<A>) result);
+            return recovery.apply((Failure<A>) result);
         });
     }
 

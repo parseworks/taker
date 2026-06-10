@@ -78,6 +78,15 @@ public class NumericParsersTest {
         assertTrue(multiDigitResult.matches());
         assertEquals(123, multiDigitResult.value());
 
+        // Test max value
+        Result<Integer> maxValueResult = unsignedInteger.parse("2147483647");
+        assertTrue(maxValueResult.matches());
+        assertEquals(Integer.MAX_VALUE, maxValueResult.value());
+
+        // Test overflow
+        Result<Integer> overflowResult = unsignedInteger.parse("2147483648");
+        assertFalse(overflowResult.matches());
+
         // Test leading zero followed by other digits (should only parse the zero)
         Result<Integer> leadingZeroResult = unsignedInteger.parse("0123");
         assertTrue(leadingZeroResult.matches());
@@ -104,6 +113,22 @@ public class NumericParsersTest {
         Result<Integer> negativeResult = integer.parse("-123");
         assertTrue(negativeResult.matches());
         assertEquals(-123, negativeResult.value());
+
+        // Test boundary values
+        Result<Integer> maxValueResult = integer.parse("2147483647");
+        assertTrue(maxValueResult.matches());
+        assertEquals(Integer.MAX_VALUE, maxValueResult.value());
+
+        Result<Integer> minValueResult = integer.parse("-2147483648");
+        assertTrue(minValueResult.matches());
+        assertEquals(Integer.MIN_VALUE, minValueResult.value());
+
+        // Test overflow
+        Result<Integer> positiveOverflowResult = integer.parse("2147483648");
+        assertFalse(positiveOverflowResult.matches());
+
+        Result<Integer> negativeOverflowResult = integer.parse("-2147483649");
+        assertFalse(negativeOverflowResult.matches());
 
         // Test zero
         Result<Integer> zeroResult = integer.parse("0");
@@ -260,27 +285,36 @@ public class NumericParsersTest {
     @Test
     public void testNumber() {
         // Test single digit
-        Result<Integer> singleDigitResult = integer.parse("5");
+        Result<Long> singleDigitResult = number.parse("5");
         assertTrue(singleDigitResult.matches());
-        assertEquals(5, singleDigitResult.value());
+        assertEquals(5L, singleDigitResult.value());
 
         // Test multiple digits
-        Result<Integer> multiDigitResult = integer.parse("123");
+        Result<Long> multiDigitResult = number.parse("123");
         assertTrue(multiDigitResult.matches());
-        assertEquals(123, multiDigitResult.value());
+        assertEquals(123L, multiDigitResult.value());
 
         // Test leading zero
-        Result<Integer> leadingZeroResult = integer.parse("0123");
+        Result<Long> leadingZeroResult = number.parse("0123");
         assertTrue(leadingZeroResult.matches());
-        assertEquals(0, leadingZeroResult.value());
+        assertEquals(123L, leadingZeroResult.value());
+
+        // Test boundary values
+        Result<Long> maxValueResult = number.parse("9223372036854775807");
+        assertTrue(maxValueResult.matches());
+        assertEquals(Long.MAX_VALUE, maxValueResult.value());
+
+        // Test overflow
+        Result<Long> overflowResult = number.parse("9223372036854775808");
+        assertFalse(overflowResult.matches());
 
         // Test zero
-        Result<Integer> zeroResult = integer.parse("0");
+        Result<Long> zeroResult = number.parse("0");
         assertTrue(zeroResult.matches());
-        assertEquals(0, zeroResult.value());
+        assertEquals(0L, zeroResult.value());
 
         // Test failure for non-digit
-        Result<Integer> nonDigitResult = integer.parse("a");
+        Result<Long> nonDigitResult = number.parse("a");
         assertFalse(nonDigitResult.matches());
     }
 
@@ -305,6 +339,15 @@ public class NumericParsersTest {
         Result<Long> zeroResult = hex.parse("0x0");
         assertTrue(zeroResult.matches());
         assertEquals(0, zeroResult.value());
+
+        // Test max value
+        Result<Long> maxValueResult = hex.parse("0x7fffffffffffffff");
+        assertTrue(maxValueResult.matches());
+        assertEquals(Long.MAX_VALUE, maxValueResult.value());
+
+        // Test overflow
+        Result<Long> overflowResult = hex.parse("0x8000000000000000");
+        assertFalse(overflowResult.matches());
 
         // Test failure for invalid prefix
         Result<Long> invalidPrefixResult = hex.parse("0y1a");

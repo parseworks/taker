@@ -36,22 +36,69 @@ public class Numeric {
 
 
     /** Matches an unsigned integer without leading zeros. */
-    public static final Taker<Integer> unsignedInteger = unsignedIntegerZero.or(
-        nonZeroDigit.then(Taker.takeWhile(CharPredicate.digit).orElse(""))
-            .map((d, ds) -> Integer.parseInt(d + ds))
-    );
+    public static final Taker<Integer> unsignedInteger = unsignedIntegerZero.or(integerDigits(false));
 
     /** Matches a signed integer. */
-    public static final Taker<Integer> integer = sign.then(unsignedInteger)
-        .map((sign, i) -> sign ? i : -i);
+    public static final Taker<Integer> integer = new Taker<>(in -> {
+        Input current = in;
+        boolean positive = true;
+        if (!current.isEof()) {
+            char c = current.current();
+            if (c == '+' || c == '-') {
+                positive = c == '+';
+                current = current.next();
+            }
+        }
+
+        Result<Integer> result = integerDigits(!positive).apply(current);
+        if (!result.matches()) {
+            return result.cast();
+        }
+
+        int value = result.value();
+        return new Match<>(positive ? value : -value, result.input());
+    });
 
     private static final Taker<Integer> exponent = (chr('e').or(chr('E')))
         .skipThen(integer);
 
+    private static Taker<Integer> integerDigits(boolean allowIntegerMinAbs) {
+        return new Taker<>(in -> {
+            if (in.isEof()) {
+                return new NoMatch<>(in, "integer value");
+            }
+
+            CharSequence data = in.data();
+            int start = in.position();
+            char first = data.charAt(start);
+            if (first == '0') {
+                return new Match<>(0, in.next());
+            }
+            if (first < '1' || first > '9') {
+                return new NoMatch<>(in, "integer value");
+            }
+
+            int current = start + 1;
+            while (current < data.length() && Character.isDigit(data.charAt(current))) {
+                current++;
+            }
+
+            String digits = data.subSequence(start, current).toString();
+            if (allowIntegerMinAbs && digits.equals("2147483648")) {
+                return new Match<>(Integer.MIN_VALUE, in.skip(current - start));
+            }
+            try {
+                return new Match<>(Integer.parseInt(digits), in.skip(current - start));
+            } catch (NumberFormatException e) {
+                return new NoMatch<>(in.skip(current - start), "integer value within range");
+            }
+        });
+    }
+
     /** Matches an unsigned long without leading zeros. */
     public static final Taker<Long> unsignedLong = unsignedLongZero.or(longDigits(false));
 
-    /** Matches a signed long. */
+    /** Matches signed long. */
     public static final Taker<Long> longValue = new Taker<>(in -> {
         Input current = in;
         boolean positive = true;
@@ -148,7 +195,25 @@ public class Numeric {
         }
     });
 
-    public static final Taker<Long> number = Taker.takeWhile(CharPredicate.digit).map(Long::parseLong);
+    public static final Taker<Long> number = new Taker<>(in -> {
+        CharSequence data = in.data();
+        int start = in.position();
+        int current = start;
+
+        while (current < data.length() && Character.isDigit(data.charAt(current))) {
+            current++;
+        }
+
+        if (current == start) {
+            return new NoMatch<>(in, "number");
+        }
+
+        try {
+            return new Match<>(Long.parseLong(data.subSequence(start, current).toString()), in.skip(current - start));
+        } catch (NumberFormatException e) {
+            return new NoMatch<>(in.skip(current - start), "long value within range");
+        }
+    });
 
     private static final Taker<String> hexDigits = Taker.takeWhile(
             (CharPredicate) (c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
@@ -157,6 +222,16 @@ public class Numeric {
     /** Matches a hexadecimal integer with "0x" or "0X" prefix. */
     public static final Taker<Long> hex = Lexical.string("0x").or(Lexical.string("0X"))
         .skipThen(hexDigits)
-        .map(h -> Long.parseLong(h, 16));
+        .flatMap(Numeric::parseHex);
+
+    private static Taker<Long> parseHex(String digits) {
+        return new Taker<>(in -> {
+            try {
+                return new Match<>(Long.parseLong(digits, 16), in);
+            } catch (NumberFormatException e) {
+                return new NoMatch<>(in, "hex value within range");
+            }
+        });
+    }
 
 }

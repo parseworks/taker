@@ -397,6 +397,4 @@ These should be resolved before a 1.0 release:
   remain public but explicitly unsupported?
 - Should `Lexical.trim` skip all `Character.isWhitespace` characters rather than
   only ASCII space?
-- Should `Numeric.number` fail on long overflow in the same structured way as
-  `longValue`?
 - Should performance tests move to JMH so unit tests stay deterministic?

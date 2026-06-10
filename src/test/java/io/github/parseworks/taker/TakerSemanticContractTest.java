@@ -361,6 +361,18 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void recoverWithReceivesCommittedFailure() {
+        Result<String> result = Taker.commit(string("ab")).recoverWith(failure -> {
+            assertEquals(ResultType.PARTIAL, failure.type());
+            return Taker.pure("recovered").apply(failure.input());
+        }).parse("ax");
+
+        assertTrue(result.matches());
+        assertEquals("recovered", result.value());
+        assertEquals(1, result.input().position());
+    }
+
+    @Test
     void expectingRelabelsFailureAndPreservesCause() {
         Result<Character> result = chr('a').expecting("letter a").parse("b");
 

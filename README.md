@@ -98,6 +98,21 @@ Reasons at this location:
 The intended public API and parser semantics are documented in
 [docs/api-contract.md](docs/api-contract.md).
 
+## Benchmarks
+
+JMH benchmarks live under `src/jmh/java` and are opt-in so normal test runs stay
+fast and deterministic.
+
+```bash
+mvn -Pjmh test-compile exec:exec
+```
+
+Common JMH options are exposed as Maven properties:
+
+```bash
+mvn -Pjmh test-compile exec:exec "-Djmh.include=parseNumber" "-Djmh.warmupIterations=5" "-Djmh.measurementIterations=5" "-Djmh.forks=2"
+```
+
 ## License
 
 This project does not currently declare a license. Add one before distributing or publishing the library.
