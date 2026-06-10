@@ -4,7 +4,6 @@ import io.github.parseworks.taker.impl.IntObjectMap;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import io.github.parseworks.taker.impl.result.PartialMatch;
-import io.github.parseworks.taker.parsers.Chains;
 import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Lexical;
 
@@ -14,8 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static io.github.parseworks.taker.parsers.Chains.chain;
-import static io.github.parseworks.taker.parsers.Combinators.is;
+
 /**
  * Core parser class for consuming input and producing results of type {@code A}.
  * <pre>{@code

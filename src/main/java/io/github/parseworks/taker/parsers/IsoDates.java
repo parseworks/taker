@@ -1,11 +1,10 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.Taker;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;

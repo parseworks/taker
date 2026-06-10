@@ -10,9 +10,7 @@ import io.github.parseworks.taker.impl.result.NoMatch;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

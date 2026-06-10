@@ -1,13 +1,12 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.Taker;
+
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.*;
 
 public class Csv {
 
