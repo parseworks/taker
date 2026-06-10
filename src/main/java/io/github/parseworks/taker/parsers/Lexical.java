@@ -34,24 +34,115 @@ public class Lexical {
      */
     public static final Taker<Character> alphaNumeric = satisfy( "<alphanumeric>", (CharPredicate) Character::isLetterOrDigit);
 
-    /** Trims whitespace around the given parser. */
+    /**
+     * Matches one or more ASCII space characters ({@code ' '}).
+     * <p>
+     * This parser does not match tabs, newlines, or other whitespace characters.
+     */
+    public static final Taker<String> spaces = Taker.takeWhile(CharPredicate.is(' '));
+
+    /**
+     * Matches one or more Java whitespace characters according to
+     * {@link Character#isWhitespace(char)}.
+     * <p>
+     * This includes line separators such as {@code '\n'} and {@code '\r'}, so
+     * use it only when crossing line boundaries is intended by the grammar.
+     */
+    public static final Taker<String> whitespace = Taker.takeWhile(CharPredicate.whitespace);
+
+    /**
+     * Trims ASCII spaces around the given parser.
+     * <p>
+     * This is intentionally conservative: it skips only {@code ' '} and does
+     * not skip tabs, newlines, or other Unicode whitespace. Use
+     * {@link #trimWhitespace(Taker)} when line-breaking whitespace should be
+     * ignored too.
+     */
     public static <A> Taker<A> trim(Taker<A> parser) {
+        return trimSpaces(parser);
+    }
+
+    /**
+     * Trims ASCII spaces around the given parser.
+     * <p>
+     * This is an explicit alias for {@link #trim(Taker)}. It is useful in
+     * grammars where newlines are meaningful and should not be skipped by token
+     * parsing.
+     */
+    public static <A> Taker<A> trimSpaces(Taker<A> parser) {
         return new Taker<>(in -> {
-            Input trimmedInput = skipWhitespace(in);
+            Input trimmedInput = skipSpaces(in);
             Result<A> result = parser.apply(trimmedInput);
             if (result.matches()) {
-                trimmedInput = skipWhitespace(result.input());
+                trimmedInput = skipSpaces(result.input());
                 return new Match<>(result.value(), trimmedInput);
             }
             return result;
         });
     }
 
-    private static Input skipWhitespace(Input in) {
+    /**
+     * Trims Java whitespace around the given parser.
+     * <p>
+     * This skips every character accepted by {@link Character#isWhitespace(char)},
+     * including tabs and line separators. Prefer {@link #trim(Taker)} or
+     * {@link #trimSpaces(Taker)} when newlines have grammatical meaning.
+     */
+    public static <A> Taker<A> trimWhitespace(Taker<A> parser) {
+        return new Taker<>(in -> {
+            Input trimmedInput = skipCharacterWhitespace(in);
+            Result<A> result = parser.apply(trimmedInput);
+            if (result.matches()) {
+                trimmedInput = skipCharacterWhitespace(result.input());
+                return new Match<>(result.value(), trimmedInput);
+            }
+            return result;
+        });
+    }
+
+    /**
+     * Trims caller-defined ignored input around the given parser.
+     * <p>
+     * The {@code ignored} parser is applied repeatedly before and after
+     * {@code parser}. It should consume at least one character when it succeeds.
+     * If it succeeds without advancing, trimming stops to avoid an infinite
+     * loop.
+     */
+    public static <A> Taker<A> lexeme(Taker<A> parser, Taker<?> ignored) {
+        return new Taker<>(in -> {
+            Input trimmedInput = skipIgnored(in, ignored);
+            Result<A> result = parser.apply(trimmedInput);
+            if (result.matches()) {
+                trimmedInput = skipIgnored(result.input(), ignored);
+                return new Match<>(result.value(), trimmedInput);
+            }
+            return result;
+        });
+    }
+
+    private static Input skipSpaces(Input in) {
         while (!in.isEof() && in.current() == ' ') {
             in = in.next();
         }
         return in;
+    }
+
+    private static Input skipCharacterWhitespace(Input in) {
+        while (!in.isEof() && Character.isWhitespace(in.current())) {
+            in = in.next();
+        }
+        return in;
+    }
+
+    private static Input skipIgnored(Input in, Taker<?> ignored) {
+        Input current = in;
+        while (true) {
+            Result<?> result = ignored.apply(current);
+            if (!result.matches() || result.input().position() == current.position()) {
+                return current;
+            }
+            current = result.input();
+        }
     }
 
     /** Matches a sequence of letters. */

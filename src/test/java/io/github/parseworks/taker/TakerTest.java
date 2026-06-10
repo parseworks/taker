@@ -442,11 +442,61 @@ public class TakerTest {
     public void testTrim() {
         Taker<Character> parser = trim(chr('a'));
 
-        // Test with whitespace before and after
+        // Test with spaces before and after
         Result<Character> result = parser.parse("  a  ");
         assertTrue(result.matches());
         assertEquals('a', result.value());
         assertTrue(result.input().isEof());
+    }
+
+    @Test
+    public void testTrimDoesNotSkipNewlines() {
+        Taker<Character> parser = trim(chr('a'));
+
+        Result<Character> before = parser.parse("\na");
+        assertFalse(before.matches());
+        assertEquals(0, before.input().position());
+
+        Result<Character> after = parser.parse(" a\n");
+        assertTrue(after.matches());
+        assertEquals('a', after.value());
+        assertEquals(2, after.input().position());
+    }
+
+    @Test
+    public void testTrimSpacesIsExplicitAliasForSpaceOnlyTrim() {
+        Taker<Character> parser = trimSpaces(chr('a'));
+
+        Result<Character> result = parser.parse("  a  ");
+        assertTrue(result.matches());
+        assertEquals('a', result.value());
+        assertTrue(result.input().isEof());
+
+        Result<Character> newline = parser.parse("\na");
+        assertFalse(newline.matches());
+    }
+
+    @Test
+    public void testTrimWhitespaceSkipsTabsAndNewlines() {
+        Taker<Character> parser = trimWhitespace(chr('a'));
+
+        Result<Character> result = parser.parse("\t\na \r\n");
+        assertTrue(result.matches());
+        assertEquals('a', result.value());
+        assertTrue(result.input().isEof());
+    }
+
+    @Test
+    public void testLexemeUsesCallerDefinedIgnoredInput() {
+        Taker<Character> parser = lexeme(chr('a'), chr('\t').oneOrMore());
+
+        Result<Character> tabs = parser.parse("\t\ta\t");
+        assertTrue(tabs.matches());
+        assertEquals('a', tabs.value());
+        assertTrue(tabs.input().isEof());
+
+        Result<Character> spaces = parser.parse(" a");
+        assertFalse(spaces.matches());
     }
 
     @Test

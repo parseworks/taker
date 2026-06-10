@@ -323,8 +323,18 @@ code paths that require quiet output.
 - `regex(pattern, flags)` matches with `Matcher.lookingAt()` from the current
   input position.
 - `oneOf(chars)` matches one character from the supplied character set.
-- `trim(parser)` skips ASCII spaces around `parser`. It does not currently skip
-  tabs, newlines, or other Unicode whitespace.
+- `spaces` matches one or more ASCII spaces (`' '`) and does not match tabs,
+  newlines, or other whitespace.
+- `whitespace` matches one or more characters accepted by
+  `Character.isWhitespace`, including line separators.
+- `trim(parser)` skips ASCII spaces around `parser`. It does not skip tabs,
+  newlines, or other Unicode whitespace.
+- `trimSpaces(parser)` is an explicit alias for `trim(parser)`.
+- `trimWhitespace(parser)` skips `Character.isWhitespace` around `parser`,
+  including line separators. Use it only when crossing line boundaries is part
+  of the grammar.
+- `lexeme(parser, ignored)` repeatedly applies caller-defined ignored input
+  before and after `parser`.
 - `word` matches one or more letters.
 - `line` consumes until a newline and does not consume the newline.
 - `escapedString(quote, escape, escapes)` parses a quoted string and applies the
@@ -395,6 +405,4 @@ These should be resolved before a 1.0 release:
 - Should `ResultError` be removed, renamed, or merged with `Failure`?
 - Should concrete result and input implementations become package-private, or
   remain public but explicitly unsupported?
-- Should `Lexical.trim` skip all `Character.isWhitespace` characters rather than
-  only ASCII space?
 - Should performance tests move to JMH so unit tests stay deterministic?

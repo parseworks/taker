@@ -240,13 +240,13 @@ public class Combinators {
     public static <A> Taker<A> is(A equivalence) {
         return new Taker<>(in -> {
             if (in.isEof()) {
-                return new NoMatch<A>(in, String.valueOf(equivalence));
+                return new NoMatch<>(in, String.valueOf(equivalence));
             }
             char item = in.current();
             if (Objects.equals(item, equivalence)) {
-                return new Match<A>((A) (Character) item, in.next());
+                return new Match<>(equivalence, in.next());
             } else {
-                return new NoMatch<A>(in, String.valueOf(equivalence));
+                return new NoMatch<>(in, String.valueOf(equivalence));
             }
         });
     }

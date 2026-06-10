@@ -63,6 +63,11 @@ String output = kvPair.parse("User: Bob").value();
 // Output: User => Bob
 ```
 
+`Lexical.trim(parser)` is intentionally space-only: it skips ASCII `' '` around
+a token, but not tabs or newlines. Use `trimWhitespace(parser)` when Java
+whitespace, including line breaks, should be ignored, or `lexeme(parser,
+ignored)` when the grammar needs a custom whitespace/comment policy.
+
 ### Recursive Grammars
 
 Handle nested structures with ease:
