@@ -1,527 +1,329 @@
-# parseWorks User Guide
+# Taker User Guide
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [Basic Concepts](#basic-concepts)
 4. [Quick Start](#quick-start)
-   1. [Basic String Match](#1-basic-string-match)
-   2. [Composition with `then`](#2-composition-with-then)
-   3. [Handling Structured Data](#3-handling-structured-data)
-   4. [Tutorial 4: Error Handling](#tutorial-4-error-handling)
-   5. [Tutorial 5: Creating a Calculator Parser](#tutorial-5-creating-a-calculator-parser)
+   1. [Basic String Match](#basic-string-match)
+   2. [Composition with `then`](#composition-with-then)
+   3. [Structured Data](#structured-data)
+   4. [Error Handling](#error-handling)
+   5. [Calculator Parser](#calculator-parser)
 5. [Advanced Usage](#advanced-usage)
    1. [Recursive Parsers](#recursive-parsers)
-   2. [Performance Optimization](#performance-optimization)
+   2. [Scanner Primitives](#scanner-primitives)
+   3. [Performance Optimization](#performance-optimization)
 6. [API Reference](#api-reference)
 7. [Troubleshooting](#troubleshooting)
 8. [Best Practices](#best-practices)
 
 ## Introduction
 
-parseWorks is a Java library for building LLR(*) parsers using parser combinators. Instead of external grammar files or code generation, you define your grammar directly in Java. It's designed to be lightweight, thread-safe, and provides helpful diagnostics when parsing fails.
+Taker is a parser-combinator library for Java 21+. Instead of using external
+grammar files or code generation, you define grammars directly in Java by
+combining small parsers into larger ones.
+
+The API favors readable method names such as `thenSkip`, `skipThen`,
+`zeroOrMore`, and `oneOrMoreSeparatedBy`. It also provides scanner primitives
+such as `collectChars`, `skipWhile`, and `countWhile` for efficient character
+runs.
 
 ### Key Features
 
-- **Composable Combinators**: Build complex grammars by nesting simple parsers.
-- **Detailed Diagnostics**: Error messages pinpoint exactly where and why a parse failed.
-- **Thread-Safe**: Immutable parsers and input streams.
-- **Zero Dependencies**: Requires only Java 17+ (JUnit for tests).
-- **Failsafes**: Built-in detection for left-recursion and infinite loops on empty inputs.
+- **Composable combinators**: build complex grammars from small parsers.
+- **Detailed diagnostics**: failures report expected input and source context.
+- **Recursive grammars**: use `Taker.ref()` and `set(...)`.
+- **Source spans**: use `located()` when AST nodes need start/end offsets.
+- **Scanner primitives**: handle whitespace, identifiers, and raw text without
+  per-character parser allocation.
+- **Java 21 baseline**: the Maven build uses `maven.compiler.release=21`.
 
 ## Installation
 
 ### Maven
-Add this to your `pom.xml`:
 
 ```xml
-<dependency>
-   <groupId>io.github.parseworks</groupId>
-   <artifactId>parseworks</artifactId>
-   <version>2.2.0</version>
-</dependency>
-```
-
-For the latest `SNAPSHOT`:
-```xml
-<repositories>
-  <repository>
-    <id>sonatype-snapshots</id>
-    <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-  </repository>
-</repositories>
-
 <dependency>
   <groupId>io.github.parseworks</groupId>
-  <artifactId>parseworks</artifactId>
-  <version>2.2.1-SNAPSHOT</version>
+  <artifactId>taker</artifactId>
+  <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
 
 ### Gradle
+
 ```groovy
-implementation 'io.github.parseworks:parseworks:2.2.0'
+implementation 'io.github.parseworks:taker:1.0-SNAPSHOT'
 ```
 
 ## Basic Concepts
 
-### Taker<A>
-A `Parser` is a function transforming `Input<I>` into a `Result<I, A>`. Usually, `I` is `Character` for text parsing.
+### `Taker<A>`
 
-### Input<I>
-Wraps the source data (e.g., String, char array) and tracks the current position.
+A `Taker<A>` is a parser that consumes an `Input` and returns a `Result<A>`.
+Successful results contain a parsed value and the next input position.
 
-### Result<I, A>
-The outcome of a parse attempt:
-- **Match**: Success. Contains the value `A` and the remaining `Input`.
-- **Failure**: No match. Can be a simple mismatch or a `PartialMatch` (where part of a sequence matched before failing).
+### `Input`
+
+`Input` wraps a character sequence and tracks the current zero-based position.
+Inputs are immutable: advancing returns a new cursor.
+
+### `Result<A>`
+
+A result is either:
+
+- **Match**: parsing succeeded and produced a value.
+- **Failure**: parsing failed with structured diagnostic information.
+- **Partial failure**: parsing committed far enough that alternatives should not
+  be tried.
+
+Use `matches()`, `value()`, `input()`, and `error()` to inspect results.
 
 ## Quick Start
 
-### 1. Basic String Match
-The simplest parser matches a literal string.
+### Basic String Match
 
 ```java
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 
+import static io.github.parseworks.taker.parsers.Lexical.string;
 
 Taker<String> hello = string("hello");
-Result<String> result = hello.parse(Input.of("hello world"));
+Result<String> result = hello.parse("hello world");
 
-if(result.
-
-matches()){
-    System.out.
-
-println("Got: "+result.value()); // "hello"
-    }
+if (result.matches()) {
+    System.out.println("Got: " + result.value());
+}
 ```
 
-### 2. Composition with `then`
-Use `then`, `skipThen`, and `thenSkip` to sequence parsers.
+### Composition with `then`
+
+Use `then`, `thenSkip`, and `skipThen` to sequence parsers.
 
 ```java
-// Match "hello", skip a space, then match "world"
+import io.github.parseworks.taker.Taker;
+
+import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.string;
+
 Taker<String> helloWorld = string("hello")
     .thenSkip(chr(' '))
     .then(string("world"))
-    .map(h -> w -> h + " " + w);
+    .map((left, right) -> left + " " + right);
 
-System.out.println(helloWorld.parse(Input.of("hello world")).value());
+System.out.println(helloWorld.parse("hello world").value());
 ```
 
-### 3. Handling Structured Data
-For anything more complex than strings, use `map` to build your domain objects.
+### Structured Data
+
+For anything more complex than strings, use `map` to build domain objects.
 
 ```java
-class KV {
-    final String k, v;
-    KV(String k, String v) { this.k = k; this.v = v; }
-}
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Taker;
 
-// key=value
-Taker<KV> kvParser = Lexical.regex("[a-z]+")
-    .thenSkip(chr('='))
-    .then(Lexical.regex("[^\\n]*"))
-    .map(k -> v -> new KV(k, v));
-```
+import static io.github.parseworks.taker.Taker.collectChars;
+import static io.github.parseworks.taker.parsers.Lexical.chr;
 
-#### Step 4: Parse multiple key-value pairs
+record KV(String key, String value) {}
 
-```java
-// Taker for multiple key-value pairs separated by newlines
-Taker<List<KV>> configParser = kvParser
-    .oneOrMoreSeparatedBy(Lexical.chr('\n'));
-
-// Parse a configuration file
-String config = "server=localhost\nport=8080\nuser=admin";
-Result<List<KV>> result = configParser.parse(Input.of(config));
-
-// Process the result
-result.handle(
-    match -> {
-        System.out.println("Configuration loaded:");
-        match.value().forEach(kv -> System.out.println("  " + kv.k + ": " + kv.v));
-        return null;
-    },
-    noMatch -> {
-        System.err.println("Failed to parse configuration: " + noMatch.error());
-        return null;
-    }
-);
-```
-
-### Tutorial 4: Error Handling
-
-By default, parseWorks tries to give useful error messages, but you can improve them by adding labels to your parsers.
-
-#### Using `expecting(...)`
-
-If a parser fails, the error message usually says what it was looking for (e.g., "Expected '='"). Often you want a more high-level description. `expecting(String label)` replaces the default "Expected ..." with your own text.
-
-```java
-// Better: "Expected identifier" instead of "Expected [A-Za-z]..."
-Taker<String> id = regex("[A-Za-z]+")
+Taker<String> identifier = collectChars(CharPredicate.asciiLetterOrDigit)
     .expecting("identifier");
+Taker<String> lineValue = collectChars(CharPredicate.lineBreak.negate())
+    .expecting("value");
+
+Taker<KV> kvParser = identifier
+    .thenSkip(chr('='))
+    .then(lineValue)
+    .map(KV::new);
+
+Taker<java.util.List<KV>> configParser = kvParser.oneOrMoreSeparatedBy(chr('\n'));
 ```
 
-#### Custom Failures
+### Error Handling
 
-Use `fail(String message)` inside a `flatMap` for validation or `orElse` for specific error cases.
+Use `expecting(...)` at grammar boundaries to make failures more helpful.
 
 ```java
-Taker<Integer> positive = number.flatMap(n -> 
-    n > 0 ? Taker.pure(n) : fail("a positive number")
+Taker<String> identifier = collectChars(CharPredicate.asciiLetterOrDigit)
+    .expecting("identifier");
+
+Result<String> result = identifier.parse("=value");
+if (!result.matches()) {
+    System.err.println(result.error());
+}
+```
+
+Use `flatMap` with `Taker.pure(...)` and `Combinators.fail(...)` for semantic
+validation after syntax has parsed.
+
+```java
+import static io.github.parseworks.taker.Taker.pure;
+import static io.github.parseworks.taker.parsers.Combinators.fail;
+import static io.github.parseworks.taker.parsers.Numeric.integer;
+
+Taker<Integer> positive = integer.flatMap(n ->
+    n > 0 ? pure(n) : fail("positive integer")
 );
 ```
 
-### Tutorial 5: Creating a Calculator Parser
-
-In this tutorial, we'll create a parser for a simple calculator that can evaluate arithmetic expressions.
-
-#### Step 1: Define the expression grammar
-
-Our calculator will support:
-- Numbers (integers)
-- Addition and subtraction
-- Multiplication and division
-- Parentheses for grouping
-
-The grammar can be defined as:
-
-```
-expr   ::= term ('+' term | '-' term)*
-term   ::= factor ('*' factor | '/' factor)*
-factor ::= number | '(' expr ')'
-number ::= [0-9]+
-```
-
-#### Step 2: Create parsers for the basic elements
+### Calculator Parser
 
 ```java
-// Taker for numbers
-Taker<Integer> number = Lexical.regex("[0-9]+")
-    .map(Integer::parseInt);
+import io.github.parseworks.taker.Taker;
 
-// Create references for recursive parsers
+import java.util.function.BinaryOperator;
+
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.trim;
+import static io.github.parseworks.taker.parsers.Numeric.integer;
+
 Taker<Integer> expr = Taker.ref();
 Taker<Integer> term = Taker.ref();
 Taker<Integer> factor = Taker.ref();
-```
 
-#### Step 3: Define the factor parser
-
-```java
-import static parsers.io.github.parseworks.taker.Combinators.oneOf;
-import static parsers.io.github.parseworks.taker.Lexical.trim;
-
-// Factor can be a number or an expression in parentheses
-Taker<Integer> parenFactor = Lexical.chr('(')
+Taker<Integer> parenFactor = chr('(')
     .skipThen(trim(expr))
-    .thenSkip(Lexical.chr(')'));
+    .thenSkip(chr(')'));
 
-factor.
+factor.set(trim(integer.or(parenFactor)));
 
-    set(
-        trim(oneOf(number, parenFactor))
-    );
-```
+Taker<BinaryOperator<Integer>> mulOp = trim(chr('*')).as((a, b) -> a * b);
+Taker<BinaryOperator<Integer>> divOp = trim(chr('/')).as((a, b) -> a / b);
+term.set(factor.chainLeftOneOrMore(oneOf(mulOp, divOp)).or(factor));
 
-#### Step 4: Define the term parser (multiplication and division)
+Taker<BinaryOperator<Integer>> addOp = trim(chr('+')).as(Integer::sum);
+Taker<BinaryOperator<Integer>> subOp = trim(chr('-')).as((a, b) -> a - b);
+expr.set(term.chainLeftOneOrMore(oneOf(addOp, subOp)).or(term));
 
-```java
-import java.util.function.BinaryOperator;
-
-// Parser for multiplication operator
-Taker<BinaryOperator<Integer>> mulOp = trim(Lexical.chr('*'))
-    .as((a, b) -> a * b);
-
-// Taker for division operator
-Taker<BinaryOperator<Integer>> divOp = trim(Lexical.chr('/'))
-    .as((a, b) -> a / b);
-
-// Term handles multiplication and division
-term.set(
-    factor.chainLeftZeroOrMore(oneOf(mulOp, divOp), 0)
-);
-```
-
-#### Step 5: Define the expression parser (addition and subtraction)
-
-```java
-// Taker for addition operator
-Taker<BinaryOperator<Integer>> addOp = trim(Lexical.chr('+'))
-    .as(Integer::sum);
-
-// Taker for subtraction operator
-Taker<BinaryOperator<Integer>> subOp = trim(Lexical.chr('-'))
-    .as((a, b) -> a - b);
-
-// Expression handles addition and subtraction
-expr.set(
-    term.chainLeftZeroOrMore(oneOf(addOp, subOp), 0)
-);
-```
-
-#### Step 6: Use the calculator
-
-```java
-// Parse and evaluate expressions
-String[] expressions = {
-    "2 + 3",
-    "2 * 3 + 4",
-    "2 + 3 * 4",
-    "(2 + 3) * 4",
-    "8 / 4 / 2"
-};
-
-for (String expression : expressions) {
-    Result<Integer> result = expr.parseAll(Input.of(expression));
-    result.handle(
-        match -> {
-            System.out.println(expression + " = " + match.value());
-            return null;
-        },
-        noMatch -> {
-            System.err.println("Failed to parse " + expression + ": " + noMatch.error());
-            return null;
-        }
-    );
-}
+System.out.println(expr.parseAll("(2 + 3) * 4").value());
 ```
 
 ## Advanced Usage
 
 ### Recursive Parsers
 
-Recursive parsers are essential for parsing nested structures like expressions, JSON, XML, etc. parseWorks provides the `Taker.ref()` method to create recursive parsers.
-
-#### Example: JSON Parser
-
-Here's a simplified example of a JSON parser:
+Recursive parsers are essential for nested grammars such as expressions, JSON,
+HTML, and programming languages. Create a placeholder with `Taker.ref()`, build
+parsers that refer to it, then initialize it with `set(...)`.
 
 ```java
-import parsers.io.github.parseworks.taker.Lexical;
+Taker<String> nested = Taker.ref();
+Taker<String> parens = chr('(')
+    .skipThen(nested)
+    .thenSkip(chr(')'));
 
-// Create references for recursive parsers
-Taker<Object> jsonValue = Taker.ref();
-    Taker<Map<String, Object>> jsonObject = Taker.ref();
-    Taker<List<Object>> jsonArray = Taker.ref();
-
-    // Taker for JSON strings
-    Taker<String> jsonString = Lexical.chr('"')
-        .skipThen(
-            Combinators.oneOf(
-                Combinators.satisfy("<escaped-char>", (Character c) -> c == '\\').skipThen(Combinators.any(Character.class)),
-                Combinators.satisfy("<string-char>", (Character c) -> c != '"' && c != '\\')
-            ).zeroOrMore()
-        )
-        .thenSkip(Lexical.chr('"'))
-        .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
-
-    // Taker for JSON numbers
-    Taker<Double> jsonNumber = Lexical.regex("-?[0-9]+(\\.[0-9]+)?")
-        .map(Double::parseDouble);
-
-    // Taker for JSON booleans
-    Taker<Boolean> jsonBoolean = Combinators.oneOf(
-        Lexical.string("true").as(Boolean.TRUE),
-        Lexical.string("false").as(Boolean.FALSE)
-    );
-
-    // Taker for JSON null
-    Taker<Object> jsonNull = Lexical.string("null").as(null);
-
-// Taker for JSON arrays
-jsonArray.
-
-    set(
-        Lexical.chr('[')
-        .
-
-    skipThen(Lexical.trim(jsonValue).
-
-    zeroOrMoreSeparatedBy(Lexical.trim(Lexical.chr(','))))
-    .
-
-    thenSkip(Lexical.chr(']'))
-    .
-
-    map(values ->(List<Object>)new ArrayList<>(values))
-    );
-
-    // Taker for JSON objects
-    Taker<Map.Entry<String, Object>> jsonProperty = jsonString
-        .thenSkip(Lexical.trim(Lexical.chr(':')))
-        .then(jsonValue)
-        .map(key -> value -> (Map.Entry<String, Object>) new AbstractMap.SimpleEntry<>(key, value));
-
-jsonObject.
-
-    set(
-        Lexical.chr('{')
-        .
-
-    skipThen(Lexical.trim(jsonProperty).
-
-    zeroOrMoreSeparatedBy(Lexical.trim(Lexical.chr(','))))
-    .
-
-    thenSkip(Lexical.chr('}'))
-    .
-
-    map(entries ->{
-    Map<String, Object> map = new HashMap<>();
-            for(
-    Map.Entry<String, Object> entry :entries){
-    map.
-
-    put(entry.getKey(),entry.
-
-    getValue());
-    }
-    return map;
-        })
-            );
-
-// Any JSON value
-            jsonValue.
-
-    set(
-        Combinators.oneOf(
-            jsonString.map(s ->(Object)s),
-    jsonNumber.
-
-    map(n ->(Object)n),
-    jsonBoolean.
-
-    map(b ->(Object)b),
-    jsonNull,
-    jsonObject.
-
-    map(o ->(Object)o),
-    jsonArray.
-
-    map(a ->(Object)a)
-    )
-    );
+nested.set(collectChars(CharPredicate.asciiLetter).or(parens));
 ```
+
+### Scanner Primitives
+
+Use scanner primitives for consecutive raw input characters:
+
+```java
+Taker<String> word = Taker.collectChars(CharPredicate.asciiLetter);
+Taker<Void> spaces = Taker.skipWhile(CharPredicate.horizontalWhitespace);
+Taker<Integer> indentWidth = Taker.countWhile(CharPredicate.is(' '));
+```
+
+Prefer these over `chr(predicate).oneOrMore()` or
+`chr(predicate).collectString()` for long character runs. Repeated character
+parsers are more flexible, but allocate per parser step.
 
 ### Performance Optimization
 
-Here are some tips for optimizing parser performance:
-
-1. **Reuse parsers**: Create parsers once and reuse them instead of creating new ones for each parse operation.
-
-2. **Use scanner primitives for character runs**: Prefer `Taker.collectChars(predicate)` or `Taker.takeWhile(predicate)` when you need matched text from consecutive input characters. Prefer `Taker.skipWhile(predicate)` for ignored text such as whitespace, and `Taker.countWhile(predicate)` when only the span length matters. Avoid `chr(predicate).oneOrMore()` or `chr(predicate).collectString()` for long raw character runs.
-
-3. **Use `trim` wisely**: The `trim` combinator is convenient, but repeated token-level trimming can add overhead. Apply it where the grammar needs it, and use `skipWhile` for simple ignored character runs.
-
-4. **Avoid excessive backtracking**: Try to make your parsers more deterministic to reduce backtracking.
-
-5. **Use `oneOf` with care**: When using `oneOf`, order the parsers from most specific to least specific to reduce the number of attempts.
-
-6. **Consider using memoization**: For complex parsers that are called repeatedly, consider implementing memoization to cache results.
+1. **Reuse parsers**: define common parsers once, often as `static final`.
+2. **Use scanner primitives for character runs**: prefer `collectChars`,
+   `takeWhile`, `skipWhile`, and `countWhile`.
+3. **Use `trim` at token boundaries**: avoid wrapping every single character
+   parser.
+4. **Order alternatives carefully**: put longer or more specific `oneOf`
+   alternatives first.
+5. **Use `commit` intentionally**: once a grammar branch is chosen, committing
+   can improve error locality and avoid confusing backtracking.
 
 ## API Reference
 
-### Core Classes
+### Core Types
 
-- **Taker<A>**: The main interface for parsers
-- **Input<I>**: Represents a position in a stream of tokens
-- **Result<I, A>**: Represents the outcome of parsing
-- **Combinators**: Utility class with methods for creating and combining parsers
+- **`Taker<A>`**: core parser type.
+- **`Input`**: immutable input cursor.
+- **`Result<A>`**: parser result.
+- **`Failure<A>`**: structured parser failure.
+- **`Located<A>`**: parsed value plus start/end offsets.
+- **`CharPredicate`**: named character predicate helper.
 
-### Common Parser Combinators
+See [api-contract.md](api-contract.md) for the compatibility contract and
+complete semantics.
 
-- **string(String s)**: Creates a parser that recognizes the given string
-- **regex(String pattern)**: Creates a parser that recognizes the given regex pattern
-- **collectChars(CharPredicate predicate)**: Greedily collects one or more matching input characters
-- **skipWhile(CharPredicate predicate)**: Greedily skips zero or more matching input characters without materializing text
-- **countWhile(CharPredicate predicate)**: Greedily consumes zero or more matching input characters and returns the count
-- **chr(char c)**: Creates a parser that recognizes the given character
-- **oneOf(Parser... parsers)**: Creates a parser that tries each parser in sequence until one succeeds
-- **oneOrMore()**: Creates a parser that applies the parser one or more times
-- **zeroOrMore()**: Creates a parser that applies the parser zero or more times
-- **optional()**: Creates a parser that optionally applies the parser
-- **between(Parser open, Parser close)**: Creates a parser that applies the parser between the open and close parsers
-- **oneOrMoreSeparatedBy(Parser separator)**: Creates a parser that applies the parser one or more times, separated by the separator parser
-- **zeroOrMoreSeparatedBy(Parser separator)**: Creates a parser that applies the parser zero or more times, separated by the separator parser
+### Common Parsers and Combinators
 
-### Result Handling
-
-- **matches()**: Returns true if the result is a Match
-- **error()**: Returns the error if the result is a NoMatch
-- **value()**: Returns the parsed value if the result is a Match
-- **handle(Function<Result<I, A>, R> onMatch, Function<Result<I, A>, R> onNoMatch)**: Handles both Match and NoMatch cases
+- **`Lexical.string(String)`**: matches an exact string.
+- **`Lexical.regex(String)`**: matches a Java regular expression at the current
+  input position.
+- **`Lexical.chr(char)`**: matches one exact character.
+- **`Lexical.chr(CharPredicate)`**: matches one character satisfying a
+  predicate.
+- **`Taker.collectChars(CharPredicate)`**: collects one or more matching input
+  characters.
+- **`Taker.skipWhile(CharPredicate)`**: skips zero or more matching input
+  characters without materializing text.
+- **`Taker.countWhile(CharPredicate)`**: consumes zero or more matching input
+  characters and returns the count.
+- **`Combinators.oneOf(...)`**: tries alternatives in order.
+- **`optional()`**: returns `Optional<A>`.
+- **`oneOrMoreSeparatedBy(separator)`**: parses one or more separated values.
+- **`foldSeparatedBy(separator, identity, accumulator)`**: folds separated
+  values without allocating an intermediate list.
 
 ## Troubleshooting
 
-### Common Issues
+### Parser Does Not Consume All Input
 
-#### Parser doesn't consume all input
-
-If your parser doesn't consume all the input, you might want to use `parse` instead of `parseAll`:
+Use `parseAll(...)` when trailing input should be rejected:
 
 ```java
-// This will fail if there's unconsumed input
-Result<A> result = parser.parseAll(Input.of("input"));
+Result<Integer> result = integer.parseAll("42x");
+assert !result.matches();
 ```
 
-#### Left recursion issues
+Use `parse(...)` when a prefix match is acceptable.
 
-Left recursion can cause infinite loops. parseWorks has built-in protection against this, but it's still best to avoid left recursion when possible. Use right-recursion instead:
+### Left Recursion
+
+Left recursion can cause infinite loops in parser combinator libraries. Taker
+has recursion protection, but grammar rules should still consume input before
+recursing.
 
 ```java
-// Avoid this (left recursion):
-expr.set(expr.then(op).then(term).map(...));
+// Problematic:
+expr.set(expr.then(chr('+')).then(term).map(...));
 
-// Use this instead (right recursion):
-expr.set(term.then(op.then(expr).optional()).map(...));
+// Safer:
+expr.set(term.then(chr('+').skipThen(expr).optional()).map(...));
 ```
 
-#### Performance issues with complex parsers
+### Performance Issues
 
-If you're experiencing performance issues with complex parsers, try:
+If a parser allocates heavily or parses slowly:
 
-1. Simplifying your grammar
-2. Breaking down complex parsers into smaller, reusable components
-3. Using scanner primitives for raw character spans, especially whitespace, identifiers, comments, and line content
-4. Using more specific parsers instead of general ones
-5. Avoiding excessive backtracking
+1. Replace raw character repetitions with scanner primitives.
+2. Break complex parsers into reusable tokens.
+3. Reduce overlapping alternatives in `oneOf`.
+4. Use built-in parsers such as `Numeric.integer` and `Numeric.doubleValue`.
+5. Run the JMH profile described in the README.
 
-### Debugging Tips
-
-1. **Use `orElse` for better error messages**:
-   ```java
-   Taker<A> parser = actualParser.orElse(fail("Custom error message"));
-   ```
-
-2. **Print intermediate results**:
-   ```java
-   Taker<A> debugParser = actualParser.map(result -> {
-    System.out.println("Parsed: " + result);
-    return result;
-   });
-   ```
-
-3. **Check the error position**:
-   ```java
-   result.handle(
-       match -> { /* ... */ },
-       noMatch -> {
-           System.err.println("Error at position " + noMatch.input().position());
-           System.err.println("Input: " + noMatch.input());
-           System.err.println("Message: " + noMatch.error());
-           return null;
-       }
-   );
-   ```
-   
 ## Best Practices
 
-1. **Keep it small**: Break complex grammars into small, named parsers. It's easier to test and debug.
-2. **Name your parsers**: Instead of nesting everything, use descriptive variable names.
-3. **Use `expecting()` at boundaries**: Don't label every single `chr()`, but do label major components like `identifier`, `statement`, or `expression`.
-4. **Test edge cases**: Empty input, unexpected characters, and unfinished sequences are where parsers usually fail.
-5. **Prefer `Lexical` for speed**: When parsing common patterns like numbers or identifiers, `Lexical.regex` or `Lexical.chr` are often faster and clearer than building them from individual character parsers.
-6. **Watch out for backtracking**: The `oneOf` combinator tries parsers in order. Put the most specific or longest matches first to avoid unnecessary work or incorrect matches.
+1. **Keep parsers small and named**: named parsers are easier to test and debug.
+2. **Label grammar boundaries**: use `expecting(...)` for user-facing concepts.
+3. **Prefer built-ins**: use `Numeric`, `Lexical`, and `Combinators` before
+   writing custom logic.
+4. **Be explicit about whitespace**: choose `trimSpaces`, `trimWhitespace`,
+   `skipWhile`, or `lexeme` according to the grammar.
+5. **Test semantic contracts**: empty input, partial input, trailing input, and
+   invalid alternatives are where parser behavior matters most.

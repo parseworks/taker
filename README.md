@@ -139,4 +139,4 @@ mvn -Pjmh test-compile exec:exec "-Djmh.prof=gc"
 
 ## License
 
-This project does not currently declare a license. Add one before distributing or publishing the library.
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
