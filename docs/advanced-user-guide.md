@@ -82,7 +82,7 @@ Taker<Expr> factor = number.map(Literal::new).or(parens);
 expr.set(factor); 
 ```
 
-### Repetition Nuances {#repetition-nuances}
+### Repetition Nuances
 
 While `zeroOrMore` and `oneOrMore` are common, you often need stricter bounds.
 
@@ -92,7 +92,7 @@ While `zeroOrMore` and `oneOrMore` are common, you often need stricter bounds.
 - `repeatAtMost(n)`: At most `n` times.
 - `zeroOrMoreUntil(terminator)`: Consume items until the `terminator` parser matches.
 
-### `takeWhile` and `zeroOrMoreUntil` {#takewhile-and-zeroormoreuntil}
+### `takeWhile` and `zeroOrMoreUntil`
 
 `takeWhile` consumes one or more consecutive input characters while a
 `CharPredicate` succeeds. It is a scanner primitive: use it when the grammar is
@@ -119,7 +119,7 @@ a larger composition, but they allocate per parser step.
 Taker<String> content = Taker.takeUntil(CharPredicate.is(';'));
 ```
 
-### Negation and Validation {#negation-and-validation}
+### Negation and Validation
 
 #### not
 
@@ -223,7 +223,7 @@ Taker<Integer> signedNumber = chr('-').optional()
     .map(optSign -> num -> optSign.isPresent() ? -num : num);
 ```
 
-## Performance Tips {#performance-tips}
+## Performance Tips
 
 1. **Static Reuse**: Define common parsers (keywords, delimiters) as `static final` fields. Creating parsers on-the-fly inside a loop is a major performance killer.
 2. **Scanner Primitives for Character Runs**: Use `collectChars`/`takeWhile` for matched text, `skipWhile` for ignored text, and `countWhile` when only the length matters. These avoid the per-character allocation cost of repeated `chr(predicate)` parsers.
@@ -314,7 +314,7 @@ Taker<String> ambiguous = oneOf(string("if"), string("ifelse"));
 
 ## Advanced Examples
 
-### JSON Parser {#json-parser}
+### JSON Parser
 
 Here's a simplified example of a JSON parser:
 
@@ -383,7 +383,7 @@ jsonValue.set(
 );
 ```
 
-### Expression Evaluator with Variables {#expression-evaluator-with-variables}
+### Expression Evaluator with Variables
 
 Here's an example of an expression evaluator that can handle variables:
 
