@@ -56,7 +56,7 @@ public class UserGuideExamplesTest {
         Taker<String> worldParser = Lexical.string("world");
 
         // Taker for whitespace
-        Taker<String> whitespaceParser = chr(' ').oneOrMore().as("");
+        Taker<String> whitespaceParser = chr(' ').skipOneOrMore().as("");
 
         // Taker for "hello world" that ignores whitespace
         Taker<String> cleanerParser = helloParser
@@ -121,8 +121,7 @@ public class UserGuideExamplesTest {
 
         // Taker for values (any string until the end of line)
         Taker<String> valueParser = chr(c -> c != '\n' && c != ',' && c != '}')
-            .oneOrMore()
-            .map(UserGuideExamplesTest::join)
+            .collectString()
             .expecting("value");
 
         // Taker for a key-value pair
@@ -135,16 +134,12 @@ public class UserGuideExamplesTest {
         // Taker for a JSON-like object
         Taker<Map<String, String>> objectParser = chr('{')
             .skipThen(
-                keyValueParser.oneOrMoreSeparatedBy(Lexical.string(","))
-            )
-            .thenSkip(chr('}'))
-            .map(pairs -> {
-                Map<String, String> map = new HashMap<>();
-                for (KeyValue kv : pairs) {
+                keyValueParser.<String, Map<String, String>>foldSeparatedByFrom(Lexical.string(","), HashMap::new, (map, kv) -> {
                     map.put(kv.getKey(), kv.getValue());
-                }
-                return map;
-            });
+                    return map;
+                })
+            )
+            .thenSkip(chr('}'));
 
         // Test with valid input
         String validInput = "{name=John,age=30}";

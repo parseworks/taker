@@ -154,10 +154,9 @@ public class SimpleHtmlParser {
 
         // Attribute list parser - parse multiple attributes
         attributeList.set(
-            attribute.zeroOrMore().map(kvs -> {
-                Map<String,String> m = new HashMap<>(Math.max(4, kvs.size()*2));
-                for (KV kv : kvs) m.put(kv.k, kv.v);
-                return m;
+            attribute.foldZeroOrMoreFrom(() -> new HashMap<>(4), (attrs, kv) -> {
+                attrs.put(kv.k, kv.v);
+                return attrs;
             })
         );
 

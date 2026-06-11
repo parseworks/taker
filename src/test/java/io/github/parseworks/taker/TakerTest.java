@@ -31,7 +31,7 @@ public class TakerTest {
     @Test
     public void testRecursiveParser() {
         Taker<String> expr = Taker.ref();
-        Taker<String> atom = chr(Character::isLetter).oneOrMore().map(Lists::join);
+        Taker<String> atom = chr(Character::isLetter).collectString();
         Taker<String> grouped = expr.between('(', ')');
         expr.set(atom.or(grouped));
 
@@ -59,13 +59,7 @@ public class TakerTest {
     @Test
     public void testBetweenSameBracket() {
         // Create a parser for content (letters)
-        Taker<String> content = chr(Character::isLetter).oneOrMore().map(chars -> {
-            StringBuilder sb = new StringBuilder();
-            for (var c : chars) {
-                sb.append(c);
-            }
-            return sb.toString();
-        });
+        Taker<String> content = chr(Character::isLetter).collectString();
 
         // Create a parser that parses content between matching quote characters
         Taker<String> quotedParser = content.between('"');

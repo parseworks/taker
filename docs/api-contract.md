@@ -255,6 +255,25 @@ Successful repetition returns an unmodifiable list.
 
 `oneOrMore()` is `repeat(1, Integer.MAX_VALUE)`.
 
+### Allocation-conscious repetition
+
+`foldZeroOrMore(identity, accumulator)` and
+`foldOneOrMore(identity, accumulator)` repeat this parser and fold each value
+into an accumulator instead of allocating an
+intermediate list.
+
+`foldZeroOrMoreFrom(identitySupplier, accumulator)` and
+`foldOneOrMoreFrom(identitySupplier, accumulator)` are the mutable-accumulator forms.
+The supplier is called once per parse to avoid sharing mutable state across
+parse calls.
+
+`skipZeroOrMore()` and `skipOneOrMore()` repeat this parser and discard parsed
+values.
+
+`collectString()` applies this parser one or more times and concatenates parsed
+values with `String.valueOf(value)`. It is the allocation-conscious equivalent
+of `oneOrMore().map(Lists::join)`.
+
 ### `zeroOrMoreUntil` and `oneOrMoreUntil`
 
 These parsers repeat until the terminator parser succeeds. The terminator is
@@ -268,6 +287,14 @@ Separated parsers parse values with a separator parser between them.
 `oneOrMoreSeparatedBy(sep)` requires at least one value.
 
 `zeroOrMoreSeparatedBy(sep)` returns an empty list when the first value is absent.
+
+`foldSeparatedBy(sep, identity, accumulator)` and
+`foldZeroOrMoreSeparatedBy(sep, identity, accumulator)` are allocation-conscious
+alternatives that fold separated values without allocating an intermediate list.
+
+`foldSeparatedByFrom(sep, identitySupplier, accumulator)` and
+`foldZeroOrMoreSeparatedByFrom(sep, identitySupplier, accumulator)` are the
+mutable-accumulator forms.
 
 ### `onlyIf`
 

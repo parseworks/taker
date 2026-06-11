@@ -8,8 +8,10 @@ import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -37,7 +39,13 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the constant value
      */
     public <R> Taker<R> as(R value) {
-        return this.skipThen(pure(value));
+        return new Taker<>(in -> {
+            Result<A> result = this.apply(in);
+            if (!result.matches()) {
+                return result.cast();
+            }
+            return new Match<>(value, result.input());
+        });
     }
 
     /** Matches a character matching the predicate. */
@@ -432,7 +440,13 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for collecting zero or more occurrences of a pattern
      */
     public Taker<Optional<A>> optional() {
-        return this.map(Optional::of).orElse(Optional.empty());
+        return new Taker<>(in -> {
+            Result<A> result = this.apply(in);
+            if (!result.matches()) {
+                return new Match<>(Optional.empty(), in);
+            }
+            return new Match<>(Optional.of(result.value()), result.input());
+        });
     }
 
     /**
@@ -781,7 +795,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /** Parses zero or more elements separated by a delimiter. */
     public <SEP> Taker<List<A>> zeroOrMoreSeparatedBy(Taker<SEP> sep) {
-        return this.oneOrMoreSeparatedBy(sep).or(pure(Collections.emptyList()));
+        return separatedBy(sep, 0);
     }
 
     /**
@@ -823,7 +837,322 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /** Parses one or more elements separated by a delimiter. */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
-        return this.then(commit(sep.skipThen(this)).zeroOrMore()).map(a -> l -> Lists.prepend(a, l));
+        return separatedBy(sep, 1);
+    }
+
+    private <SEP> Taker<List<A>> separatedBy(Taker<SEP> sep, int min) {
+        Objects.requireNonNull(sep, "sep");
+        return new Taker<>(in -> {
+            List<A> values = new ArrayList<>();
+            Result<A> first = this.apply(in);
+            if (!first.matches()) {
+                if (first.type() == ResultType.PARTIAL) {
+                    return first.cast();
+                }
+                if (min == 0) {
+                    return new Match<>(Collections.emptyList(), in);
+                }
+                return first.cast();
+            }
+
+            values.add(first.value());
+            Input current = first.input();
+
+            while (true) {
+                Result<SEP> sepResult = sep.apply(current);
+                if (!sepResult.matches()) {
+                    if (sepResult.type() == ResultType.PARTIAL) {
+                        return sepResult.cast();
+                    }
+                    return new Match<>(Collections.unmodifiableList(values), current);
+                }
+
+                Result<A> next = this.apply(sepResult.input());
+                if (!next.matches()) {
+                    if (next.type() == ResultType.PARTIAL) {
+                        return next.cast();
+                    }
+                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
+                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
+                    }
+                    return new Match<>(Collections.unmodifiableList(values), current);
+                }
+
+                if (current.position() == next.input().position()) {
+                    return new NoMatch<>(current, "separator and parser to consume input during separated repetition");
+                }
+
+                values.add(next.value());
+                current = next.input();
+            }
+        });
+    }
+
+    /**
+     * Repeatedly applies this parser and folds each value into an accumulator.
+     * <p>
+     * Unlike {@link #zeroOrMore()}, this does not allocate an intermediate
+     * {@link List}. Use {@link #foldZeroOrMoreFrom(Supplier, BiFunction)} when
+     * the accumulator is mutable.
+     *
+     * @param identity initial accumulator value
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <B> Taker<B> foldZeroOrMore(B identity, BiFunction<? super B, ? super A, ? extends B> accumulator) {
+        return foldZeroOrMoreFrom(() -> identity, accumulator);
+    }
+
+    /**
+     * Repeatedly applies this parser and folds each value into a fresh accumulator.
+     * <p>
+     * This succeeds even when this parser matches zero times.
+     *
+     * @param identitySupplier supplies a fresh accumulator for each parse
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <B> Taker<B> foldZeroOrMoreFrom(
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldRepeated(0, identitySupplier, accumulator);
+    }
+
+    /**
+     * Applies this parser one or more times and folds each value into an accumulator.
+     * <p>
+     * Unlike {@link #oneOrMore()}, this does not allocate an intermediate
+     * {@link List}. Use {@link #foldOneOrMoreFrom(Supplier, BiFunction)} when
+     * the accumulator is mutable.
+     *
+     * @param identity initial accumulator value
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <B> Taker<B> foldOneOrMore(B identity, BiFunction<? super B, ? super A, ? extends B> accumulator) {
+        return foldOneOrMoreFrom(() -> identity, accumulator);
+    }
+
+    /**
+     * Applies this parser one or more times and folds each value into a fresh accumulator.
+     *
+     * @param identitySupplier supplies a fresh accumulator for each parse
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <B> Taker<B> foldOneOrMoreFrom(
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldRepeated(1, identitySupplier, accumulator);
+    }
+
+    private <B> Taker<B> foldRepeated(
+        int min,
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        Objects.requireNonNull(identitySupplier, "identitySupplier");
+        Objects.requireNonNull(accumulator, "accumulator");
+        return new Taker<>(in -> {
+            B accumulated = identitySupplier.get();
+            Input current = in;
+            int count = 0;
+
+            while (true) {
+                Result<A> parsed = this.apply(current);
+                if (!parsed.matches()) {
+                    if (parsed.type() == ResultType.PARTIAL) {
+                        return parsed.cast();
+                    }
+                    if (count >= min) {
+                        return new Match<>(accumulated, current);
+                    }
+                    return new NoMatch<>(current, "at least " + min + " repetition(s)", (Failure<?>) parsed);
+                }
+                if (current.position() == parsed.input().position()) {
+                    return new NoMatch<>(current, "parser to consume input during folded repetition");
+                }
+                accumulated = accumulator.apply(accumulated, parsed.value());
+                current = parsed.input();
+                count++;
+            }
+        });
+    }
+
+    /**
+     * Applies this parser one or more times separated by {@code sep}, folding
+     * values into an accumulator without allocating an intermediate list.
+     *
+     * @param sep separator parser
+     * @param identity initial accumulator value
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <SEP> separator result type
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <SEP, B> Taker<B> foldSeparatedBy(
+        Taker<SEP> sep,
+        B identity,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldSeparatedByFrom(sep, () -> identity, accumulator);
+    }
+
+    /**
+     * Applies this parser one or more times separated by {@code sep}, folding
+     * values into a fresh accumulator without allocating an intermediate list.
+     *
+     * @param sep separator parser
+     * @param identitySupplier supplies a fresh accumulator for each parse
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <SEP> separator result type
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <SEP, B> Taker<B> foldSeparatedByFrom(
+        Taker<SEP> sep,
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldSeparatedBy(sep, 1, identitySupplier, accumulator);
+    }
+
+    /**
+     * Applies this parser zero or more times separated by {@code sep}, folding
+     * values into an accumulator without allocating an intermediate list.
+     *
+     * @param sep separator parser
+     * @param identity initial accumulator value
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <SEP> separator result type
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <SEP, B> Taker<B> foldZeroOrMoreSeparatedBy(
+        Taker<SEP> sep,
+        B identity,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldZeroOrMoreSeparatedByFrom(sep, () -> identity, accumulator);
+    }
+
+    /**
+     * Applies this parser zero or more times separated by {@code sep}, folding
+     * values into a fresh accumulator without allocating an intermediate list.
+     *
+     * @param sep separator parser
+     * @param identitySupplier supplies a fresh accumulator for each parse
+     * @param accumulator combines the current accumulator and parsed value
+     * @param <SEP> separator result type
+     * @param <B> accumulator/result type
+     * @return a parser returning the folded accumulator
+     */
+    public <SEP, B> Taker<B> foldZeroOrMoreSeparatedByFrom(
+        Taker<SEP> sep,
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        return foldSeparatedBy(sep, 0, identitySupplier, accumulator);
+    }
+
+    private <SEP, B> Taker<B> foldSeparatedBy(
+        Taker<SEP> sep,
+        int min,
+        Supplier<? extends B> identitySupplier,
+        BiFunction<? super B, ? super A, ? extends B> accumulator
+    ) {
+        Objects.requireNonNull(sep, "sep");
+        Objects.requireNonNull(identitySupplier, "identitySupplier");
+        Objects.requireNonNull(accumulator, "accumulator");
+        return new Taker<>(in -> {
+            B accumulated = identitySupplier.get();
+            Result<A> first = this.apply(in);
+            if (!first.matches()) {
+                if (first.type() == ResultType.PARTIAL) {
+                    return first.cast();
+                }
+                if (min == 0) {
+                    return new Match<>(accumulated, in);
+                }
+                return first.cast();
+            }
+
+            accumulated = accumulator.apply(accumulated, first.value());
+            Input current = first.input();
+
+            while (true) {
+                Result<SEP> sepResult = sep.apply(current);
+                if (!sepResult.matches()) {
+                    if (sepResult.type() == ResultType.PARTIAL) {
+                        return sepResult.cast();
+                    }
+                    return new Match<>(accumulated, current);
+                }
+
+                Result<A> next = this.apply(sepResult.input());
+                if (!next.matches()) {
+                    if (next.type() == ResultType.PARTIAL) {
+                        return next.cast();
+                    }
+                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
+                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
+                    }
+                    return new Match<>(accumulated, current);
+                }
+
+                if (current.position() == next.input().position()) {
+                    return new NoMatch<>(current, "separator and parser to consume input during folded separated repetition");
+                }
+
+                accumulated = accumulator.apply(accumulated, next.value());
+                current = next.input();
+            }
+        });
+    }
+
+    /**
+     * Repeatedly applies this parser and discards all parsed values.
+     * <p>
+     * This is useful for skipping comments, whitespace, or delimiters without
+     * allocating a {@link List}.
+     *
+     * @return a parser returning {@code null} after consuming zero or more matches
+     */
+    public Taker<Void> skipZeroOrMore() {
+        return skipRepeated(0);
+    }
+
+    /**
+     * Applies this parser one or more times and discards all parsed values.
+     *
+     * @return a parser returning {@code null} after consuming one or more matches
+     */
+    public Taker<Void> skipOneOrMore() {
+        return skipRepeated(1);
+    }
+
+    private Taker<Void> skipRepeated(int min) {
+        return foldRepeated(min, () -> null, (ignored, value) -> null);
+    }
+
+    /**
+     * Applies this parser one or more times and concatenates parsed values using
+     * {@link String#valueOf(Object)}.
+     * <p>
+     * This is an allocation-conscious replacement for
+     * {@code oneOrMore().map(Lists::join)}.
+     *
+     * @return a parser returning the concatenated parsed values
+     */
+    public Taker<String> collectString() {
+        return foldOneOrMoreFrom(StringBuilder::new, (builder, value) -> builder.append(value))
+            .map(StringBuilder::toString);
     }
 
     /** Initializes a parser reference with another parser's behavior. */

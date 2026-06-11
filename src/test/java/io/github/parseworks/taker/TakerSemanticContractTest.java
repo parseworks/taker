@@ -2,6 +2,7 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -303,6 +304,99 @@ public class TakerSemanticContractTest {
         assertTrue(result.matches());
         assertEquals(List.of('a', 'a', 'a'), result.value());
         assertThrows(UnsupportedOperationException.class, () -> result.value().add('a'));
+    }
+
+    @Test
+    void foldZeroOrMoreAccumulatesWithoutRequiringMatches() {
+        Result<Integer> result = chr(Character::isDigit)
+            .foldZeroOrMore(0, (sum, digit) -> sum + Character.digit(digit, 10))
+            .parse("123abc");
+
+        assertTrue(result.matches());
+        assertEquals(6, result.value());
+        assertEquals(3, result.input().position());
+
+        Result<Integer> empty = chr(Character::isDigit)
+            .foldZeroOrMore(0, (sum, digit) -> sum + Character.digit(digit, 10))
+            .parse("abc");
+
+        assertTrue(empty.matches());
+        assertEquals(0, empty.value());
+        assertEquals(0, empty.input().position());
+    }
+
+    @Test
+    void foldOneOrMoreRequiresAtLeastOneMatch() {
+        Result<Integer> result = chr(Character::isDigit)
+            .foldOneOrMore(0, (sum, digit) -> sum + Character.digit(digit, 10))
+            .parse("abc");
+
+        assertFalse(result.matches());
+        assertEquals(0, result.input().position());
+    }
+
+    @Test
+    void foldSupplierCreatesFreshAccumulatorPerParse() {
+        Taker<StringBuilder> parser = chr(Character::isLetter)
+            .foldZeroOrMoreFrom(StringBuilder::new, StringBuilder::append);
+
+        Result<StringBuilder> first = parser.parse("ab");
+        Result<StringBuilder> second = parser.parse("cd");
+
+        assertTrue(first.matches());
+        assertTrue(second.matches());
+        assertEquals("ab", first.value().toString());
+        assertEquals("cd", second.value().toString());
+        assertNotSame(first.value(), second.value());
+    }
+
+    @Test
+    void foldSeparatedByAccumulatesValuesAndCommitsTrailingSeparator() {
+        Result<Integer> result = Numeric.integer
+            .foldSeparatedBy(chr(','), 0, Integer::sum)
+            .parse("1,2,3");
+
+        assertTrue(result.matches());
+        assertEquals(6, result.value());
+        assertEquals(5, result.input().position());
+
+        Result<Integer> trailing = Numeric.integer
+            .foldSeparatedBy(chr(','), 0, Integer::sum)
+            .parse("1,");
+
+        assertFalse(trailing.matches());
+        assertEquals(ResultType.PARTIAL, trailing.type());
+    }
+
+    @Test
+    void foldZeroOrMoreSeparatedByAllowsEmptyInput() {
+        Result<Integer> result = Numeric.integer
+            .foldZeroOrMoreSeparatedBy(chr(','), 0, Integer::sum)
+            .parse("abc");
+
+        assertTrue(result.matches());
+        assertEquals(0, result.value());
+        assertEquals(0, result.input().position());
+    }
+
+    @Test
+    void skipZeroOrMoreConsumesAndDiscardsValues() {
+        Result<Void> result = chr('a').skipZeroOrMore().parse("aaab");
+
+        assertTrue(result.matches());
+        assertNull(result.value());
+        assertEquals(3, result.input().position());
+    }
+
+    @Test
+    void collectStringConcatenatesOneOrMoreValues() {
+        Result<String> result = chr(Character::isLetter).collectString().parse("abc123");
+
+        assertTrue(result.matches());
+        assertEquals("abc", result.value());
+        assertEquals(3, result.input().position());
+
+        assertFalse(chr(Character::isLetter).collectString().parse("123").matches());
     }
 
     @Test

@@ -216,7 +216,7 @@ public class CombinatorsTest {
 
         Taker<String> keyword = Lexical.string("if").or(Lexical.string("else")).or(Lexical.string("while"));
         Taker<String> identifier = Lexical.regex("[a-zA-Z][a-zA-Z0-9]*");
-        Taker<String> number = Numeric.numeric.oneOrMore().map(Lists::join);
+        Taker<String> number = Numeric.numeric.collectString();
 
        Taker<String> token = oneOf(Arrays.asList(
          keyword,
