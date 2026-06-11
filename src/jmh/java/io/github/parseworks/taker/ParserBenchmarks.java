@@ -1,6 +1,8 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Numeric;
+import io.github.parseworks.taker.impl.result.Match;
+import io.github.parseworks.taker.impl.result.NoMatch;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -24,6 +26,8 @@ import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
+import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
+import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -35,12 +39,17 @@ public class ParserBenchmarks {
     @State(Scope.Thread)
     public static class ParserState {
         Taker<Long> number;
+        Taker<Long> locatedNumber;
+        Taker<Character> trimmedSpaceChar;
+        Taker<Character> trimmedWhitespaceChar;
         String numberInput;
+        String trimInput;
 
         Taker<List<Character>> repeatedLettersAndDigits;
         String repeatedInput;
 
         Taker<List<List<String>>> csvParser;
+        Taker<Integer> csvFieldCounter;
         String csvInput;
 
         Taker<String> expectedIdentifier;
@@ -49,14 +58,20 @@ public class ParserBenchmarks {
         @Setup
         public void setUp() {
             number = Numeric.number;
+            locatedNumber = Numeric.number.located().map(Located::value);
+            trimmedSpaceChar = trimSpaces(chr('a'));
+            trimmedWhitespaceChar = trimWhitespace(chr('a'));
             numberInput = "123456789012345";
+            trimInput = "   a   ";
 
-            Taker<List<Character>> letterParser = chr(Character::isLetter).zeroOrMore();
-            Taker<List<Character>> digitParser = chr(Character::isDigit).zeroOrMore();
-            repeatedLettersAndDigits = letterParser.then(digitParser).map(Lists::appendAll);
+            repeatedLettersAndDigits = chr(Character::isLetter)
+                .then(chr(Character::isDigit))
+                .map((letter, digit) -> digit)
+                .zeroOrMore();
             repeatedInput = repeatedInput(10_000);
 
             csvParser = csvParser();
+            csvFieldCounter = csvFieldCounter();
             csvInput = csvInput(1_000);
 
             expectedIdentifier = oneOf(
@@ -65,6 +80,23 @@ public class ParserBenchmarks {
                 string("record").expecting("record keyword")
             );
             invalidIdentifier = "enum";
+
+            requireMatch("number", number.parseAll(numberInput));
+            requireMatch("locatedNumber", locatedNumber.parseAll(numberInput));
+            requireMatch("trimmedSpaceChar", trimmedSpaceChar.parseAll(trimInput));
+            requireMatch("trimmedWhitespaceChar", trimmedWhitespaceChar.parseAll(trimInput));
+            requireMatch("repeatedLettersAndDigits", repeatedLettersAndDigits.parseAll(repeatedInput));
+            requireMatch("csvParser", csvParser.parseAll(csvInput));
+            requireMatch("csvFieldCounter", csvFieldCounter.parseAll(csvInput));
+            if (countCsvFields(csvInput) != 10_000) {
+                throw new IllegalStateException("csv scanner did not count all fields");
+            }
+        }
+
+        private static void requireMatch(String name, Result<?> result) {
+            if (!result.matches() || !result.input().isEof()) {
+                throw new IllegalStateException(name + " benchmark parser did not consume the intended input");
+            }
         }
 
         private static Taker<List<List<String>>> csvParser() {
@@ -89,6 +121,87 @@ public class ParserBenchmarks {
 
             Taker<List<String>> row = field.oneOrMoreSeparatedBy(comma);
             return row.oneOrMoreSeparatedBy(eol);
+        }
+
+        private static Taker<Integer> csvFieldCounter() {
+            Taker<Character> comma = trim(chr(','));
+            Taker<Character> eol = string("\r\n").as('\n').or(chr('\n'));
+            Taker<Integer> field = csvField().as(1);
+
+            return new Taker<>(in -> {
+                Result<Integer> first = field.apply(in);
+                if (!first.matches()) {
+                    return first.cast();
+                }
+
+                int count = 1;
+                Input current = first.input();
+                while (true) {
+                    Result<Character> commaResult = comma.apply(current);
+                    if (commaResult.matches()) {
+                        Result<Integer> next = field.apply(commaResult.input());
+                        if (!next.matches()) {
+                            return next.cast();
+                        }
+                        count++;
+                        current = next.input();
+                        continue;
+                    }
+
+                    Result<Character> eolResult = eol.apply(current);
+                    if (eolResult.matches()) {
+                        Result<Integer> next = field.apply(eolResult.input());
+                        if (!next.matches()) {
+                            return next.cast();
+                        }
+                        count++;
+                        current = next.input();
+                        continue;
+                    }
+
+                    return new Match<>(count, current);
+                }
+            });
+        }
+
+        private static Taker<Void> csvField() {
+            return new Taker<>(in -> {
+                if (in.isEof()) {
+                    return new NoMatch<>(in, "csv field");
+                }
+
+                CharSequence data = in.data();
+                int position = in.position();
+                char first = data.charAt(position);
+                if (first == '"') {
+                    int current = position + 1;
+                    while (current < data.length()) {
+                        char c = data.charAt(current);
+                        if (c == '\\') {
+                            current += 2;
+                        } else if (c == '"') {
+                            return new Match<>(null, in.skip(current - position + 1));
+                        } else {
+                            current++;
+                        }
+                    }
+                    return new NoMatch<>(in.skip(current - position), "closing quote");
+                }
+
+                int current = position;
+                while (current < data.length()) {
+                    char c = data.charAt(current);
+                    if (c == ',' || c == '\n' || c == '\r') {
+                        break;
+                    }
+                    current++;
+                }
+
+                if (current == position) {
+                    return new NoMatch<>(in, "csv field");
+                }
+                return new Match<>(null, in.skip(current - position));
+            });
         }
 
         private static String repeatedInput(int pairs) {
@@ -116,6 +229,58 @@ public class ParserBenchmarks {
             }
             return input.toString();
         }
+
+        private static int countCsvFields(String input) {
+            int count = 0;
+            int current = 0;
+            while (current < input.length()) {
+                while (current < input.length() && input.charAt(current) == ' ') {
+                    current++;
+                }
+                if (current >= input.length()) {
+                    return count;
+                }
+
+                if (input.charAt(current) == '"') {
+                    current++;
+                    while (current < input.length()) {
+                        char c = input.charAt(current);
+                        if (c == '\\') {
+                            current += 2;
+                        } else if (c == '"') {
+                            current++;
+                            break;
+                        } else {
+                            current++;
+                        }
+                    }
+                } else {
+                    while (current < input.length()) {
+                        char c = input.charAt(current);
+                        if (c == ',' || c == '\n' || c == '\r') {
+                            break;
+                        }
+                        current++;
+                    }
+                }
+                count++;
+
+                while (current < input.length() && input.charAt(current) == ' ') {
+                    current++;
+                }
+                if (current < input.length() && input.charAt(current) == ',') {
+                    current++;
+                } else if (current < input.length() && input.charAt(current) == '\r') {
+                    current++;
+                    if (current < input.length() && input.charAt(current) == '\n') {
+                        current++;
+                    }
+                } else if (current < input.length() && input.charAt(current) == '\n') {
+                    current++;
+                }
+            }
+            return count;
+        }
     }
 
     @Benchmark
@@ -124,13 +289,43 @@ public class ParserBenchmarks {
     }
 
     @Benchmark
+    public void parseNumberAll(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.number.parseAll(state.numberInput));
+    }
+
+    @Benchmark
+    public void parseLocatedNumber(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.locatedNumber.parse(state.numberInput));
+    }
+
+    @Benchmark
+    public void trimSpacesChar(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.trimmedSpaceChar.parse(state.trimInput));
+    }
+
+    @Benchmark
+    public void trimWhitespaceChar(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.trimmedWhitespaceChar.parse(state.trimInput));
+    }
+
+    @Benchmark
     public void parseRepeatedLettersAndDigits(ParserState state, Blackhole blackhole) {
-        blackhole.consume(state.repeatedLettersAndDigits.parse(state.repeatedInput));
+        blackhole.consume(state.repeatedLettersAndDigits.parseAll(state.repeatedInput));
     }
 
     @Benchmark
     public void parseCsv(ParserState state, Blackhole blackhole) {
-        blackhole.consume(state.csvParser.parse(state.csvInput));
+        blackhole.consume(state.csvParser.parseAll(state.csvInput));
+    }
+
+    @Benchmark
+    public void parseCsvCountFields(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.csvFieldCounter.parseAll(state.csvInput));
+    }
+
+    @Benchmark
+    public void scanCsvCountFields(ParserState state, Blackhole blackhole) {
+        blackhole.consume(ParserState.countCsvFields(state.csvInput));
     }
 
     @Benchmark

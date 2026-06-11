@@ -131,6 +131,42 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>jmh-profiler</id>
+            <activation>
+                <property>
+                    <name>jmh.prof</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <arguments combine.self="override">
+                                <argument>-cp</argument>
+                                <classpath/>
+                                <argument>org.openjdk.jmh.Main</argument>
+                                <argument>${jmh.include}</argument>
+                                <argument>-wi</argument>
+                                <argument>${jmh.warmupIterations}</argument>
+                                <argument>-i</argument>
+                                <argument>${jmh.measurementIterations}</argument>
+                                <argument>-f</argument>
+                                <argument>${jmh.forks}</argument>
+                                <argument>-w</argument>
+                                <argument>${jmh.warmupTime}</argument>
+                                <argument>-r</argument>
+                                <argument>${jmh.measurementTime}</argument>
+                                <argument>-prof</argument>
+                                <argument>${jmh.prof}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>

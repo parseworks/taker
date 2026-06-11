@@ -118,6 +118,12 @@ Common JMH options are exposed as Maven properties:
 mvn -Pjmh test-compile exec:exec "-Djmh.include=parseNumber" "-Djmh.warmupIterations=5" "-Djmh.measurementIterations=5" "-Djmh.forks=2"
 ```
 
+Use `jmh.prof` to enable a JMH profiler such as GC allocation reporting:
+
+```bash
+mvn -Pjmh test-compile exec:exec "-Djmh.prof=gc"
+```
+
 ## License
 
 This project does not currently declare a license. Add one before distributing or publishing the library.
