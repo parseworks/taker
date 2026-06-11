@@ -1,4 +1,4 @@
-# parseWorks Advanced User Guide
+# Taker Advanced User Guide
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -20,6 +20,7 @@
 6. [Advanced Examples](#advanced-examples)
    1. [JSON Parser](#json-parser)
    2. [Expression Evaluator with Variables](#expression-evaluator-with-variables)
+   3. [Custom DSL Parser](#custom-dsl-parser)
 7. [Integration Patterns](#integration-patterns)
    1. [Combining with Other Libraries](#combining-with-other-libraries)
    2. [Testing Strategies](#testing-strategies)
@@ -30,7 +31,7 @@
 
 ## Introduction
 
-Build on the concepts from the [user guide](user-guide.md) and explore advanced features and techniques in parseWorks. Use this guide when you already understand the fundamentals of parser combinators and want to apply the full power of the library in complex scenarios.
+Build on the concepts from the [user guide](user-guide.md) and explore advanced features and techniques in Taker. Use this guide when you already understand the fundamentals of parser combinators and want to apply the full power of the library in complex scenarios.
 
 ## Advanced Parser Combinators
 
@@ -43,7 +44,7 @@ Useful for addition, subtraction, etc., where `1+2+3` should be `(1+2)+3`.
 
 ```java
 // Define a number parser
-Taker<Integer> number = Numeric.numeric.oneOrMore().map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining())).map(Integer::parseInt);
+Taker<Integer> number = Numeric.integer;
 
 Taker<Integer> addition = number.chainLeftZeroOrMore(
     chr('+').as((a, b) -> a + b),
@@ -66,7 +67,7 @@ Taker<Integer> power = number.chainRightZeroOrMore(
 For nested structures (JSON, expressions), use `Taker.ref()`. This creates a placeholder that you `set()` later, allowing the parser to refer to itself.
 
 ```java
-Taker<Integer> number = Numeric.numeric.oneOrMore().map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining())).map(Integer::parseInt);
+Taker<Integer> number = Numeric.integer;
 Taker<Expr> expr = Taker.ref();
 
 // Parens: ( expr )
@@ -114,8 +115,8 @@ a larger composition, but they allocate per parser step.
 `zeroOrMoreUntil` is useful for consuming items until a specific terminator is reached:
 
 ```java
-// Parse everything until a semicolon
-Taker<String> content = any(Character.class).zeroOrMoreUntil(chr(';'));
+// Parse everything up to, but not including, a semicolon
+Taker<String> content = Taker.takeUntil(CharPredicate.is(';'));
 ```
 
 ### Negation and Validation {#negation-and-validation}
@@ -126,8 +127,8 @@ The `not` method creates a parser that succeeds if the provided parser fails, an
 
 ```java
 // Parse any character that is not a digit
-// We use not() to check the condition, then any() to actually consume the character
-Taker<Character> notDigit = not(chr(Character::isDigit)).skipThen(any(Character.class));
+// We use not() to check the condition, then any() to actually consume the character.
+Taker<Character> notDigit = not(chr(CharPredicate.asciiDigit)).skipThen(any());
 ```
 
 #### isNot
@@ -158,7 +159,7 @@ Taker<Integer> positiveNumber = number.flatMap(n -> {
 
 ### Custom Error Messages
 
-parseWorks provides several ways to create custom error messages:
+Taker provides several ways to create custom error messages:
 
 #### Using fail
 
@@ -167,16 +168,16 @@ parseWorks provides several ways to create custom error messages:
 Taker<String> customError = fail("Expected a specific pattern");
 ```
 
-#### Using orElse with fail
+#### Using expecting
 
 ```java
-// Try to parse a number, or fail with a custom error message
-Taker<Integer> numberOrError = number.orElse(fail("Expected a number"));
+// Label a parser with a domain-specific expectation.
+Taker<Integer> numberOrError = number.expecting("number");
 ```
 
 ### Error Types
 
-parseWorks provides different ways to fail:
+Taker provides different ways to label or produce failures:
 
 ```java
 // Syntax error (input doesn't match expected pattern)
@@ -296,13 +297,13 @@ Taker<Integer> term = number;
 expr.set(
     term.then(
         chr('+').skipThen(expr).optional()
-    ).map(t -> rest -> rest.isPresent() ? t + rest.get() : t)
+    ).map(t -> rest -> rest.map(value -> t + value).orElse(t))
 );
 ```
 
 ### Handling Ambiguity
 
-Ambiguity in grammars can lead to unexpected parsing results. parseWorks uses ordered choice (via `or` or `oneOf`), which means the first matching parser wins:
+Ambiguity in grammars can lead to unexpected parsing results. Taker uses ordered choice (via `or` or `oneOf`), which means the first matching parser wins:
 
 ```java
 // This parser will always choose the first matching alternative
@@ -324,15 +325,11 @@ Taker<Map<String, Object>> jsonObject = Taker.ref();
 Taker<List<Object>> jsonArray = Taker.ref();
 
 // Taker for JSON strings
-Taker<String> jsonString = chr('"')
-    .skipThen(
-        oneOf(
-            chr('\\').skipThen(any(Character.class)),
-            chr(c -> c != '"' && c != '\\')
-        ).zeroOrMore()
-    )
-    .thenSkip(chr('"'))
-    .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
+Taker<String> jsonString = escapedString(
+    '"',
+    '\\',
+    Map.of('"', '"', '\\', '\\', '/', '/', 'b', '\b', 'f', '\f', 'n', '\n', 'r', '\r', 't', '\t')
+);
 
 // Taker for JSON numbers
 Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
@@ -508,10 +505,7 @@ Taker<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
 Taker<Integer> number = regex("\\d+").map(Integer::parseInt);
 
 // Taker for strings
-Taker<String> stringLiteral = chr('"')
-    .skipThen(chr(c -> c != '"').zeroOrMore())
-    .thenSkip(chr('"'))
-    .map(chars -> chars.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
+Taker<String> stringLiteral = escapedString('"', '\\', Map.of('"', '"', '\\', '\\'));
 
 // Taker for print statements
 Taker<Statement> printStatement = string("print")
@@ -567,14 +561,14 @@ statements.set(
 
 // Parse a simple program
 String program = "x = 5; if (x) { print \"x is true\"; } else { print \"x is false\"; }";
-List<Statement> ast = statements.parse(Input.of(program)).get();
+List<Statement> ast = statements.parse(Input.of(program)).value();
 ```
 
 ## Integration Patterns
 
 ### Combining with Other Libraries
 
-parseWorks can be combined with other libraries to create more powerful parsing solutions:
+Taker can be combined with other libraries to create more powerful parsing solutions:
 
 ```java
 // Combine with Jackson for JSON processing
@@ -601,7 +595,7 @@ public void testNumberParser() {
     Taker<Integer> parser = number;
     
     // Test valid inputs
-    assertEquals(42, parser.parse(Input.of("42")).get());
+    assertEquals(42, parser.parse(Input.of("42")).value());
     assertEquals(0, parser.parse(Input.of("0")).value());
     assertEquals(123456789, parser.parse(Input.of("123456789")).value());
     
@@ -682,7 +676,7 @@ One common pitfall is infinite recursion, which can happen when a parser refers 
 
 ```java
 // This will cause infinite recursion in most parser libraries
-// parseWorks will detect and mitigate this specific example
+// Taker will detect and mitigate this specific example
 Taker<String> badRecursion = Taker.ref();
 badRecursion.set(badRecursion.or(string("x")));
 
@@ -706,7 +700,7 @@ Taker<String> specific = regex("[a-zA-Z]+");
 
 ### Avoiding Regex for Common Patterns
 
-While `regex()` is powerful, it carries overhead and can be less readable for simple patterns. parseWorks provides efficient alternatives:
+While `regex()` is powerful, it carries overhead and can be less readable for simple patterns. Taker provides efficient alternatives:
 
 - **Identifiers**: Use a named parser for identifiers instead of repeating `regex("[a-zA-Z_][a-zA-Z0-9_]*")`.
 - **Hexadecimal**: Use `Numeric.hex` instead of `regex("[0-9a-fA-F]+")`.
@@ -714,15 +708,19 @@ While `regex()` is powerful, it carries overhead and can be less readable for si
 
 ```java
 // Instead of regex:
-Taker<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
+Taker<String> regexId = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 
-// Use the built-in non-regex version:
-Taker<String> id = regex("[a-zA-Z_][a-zA-Z0-9_]*");
+// Use scanner primitives for simple character runs:
+CharPredicate idStart = CharPredicate.asciiLetter.or(CharPredicate.is('_'));
+CharPredicate idPart = CharPredicate.asciiLetterOrDigit.or(CharPredicate.is('_'));
+Taker<String> id = chr(idStart)
+    .then(Taker.collectChars(idPart).orElse(""))
+    .map((first, rest) -> first + rest);
 
 // Or build your own:
-Taker<String> myPattern = satisfy("<start>", Character::isLetter)
-    .then(satisfy("<part>", Character::isLetterOrDigit).zeroOrMore())
-    .map((first, rest) -> first + rest.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining()));
+Taker<String> myPattern = chr(idStart)
+    .then(Taker.collectChars(idPart).orElse(""))
+    .map((first, rest) -> first + rest);
 ```
 
 ### Order of Alternatives
@@ -777,7 +775,7 @@ Custom error messages can help identify where parsing is failing:
 
 ```java
 // Add custom error messages
-Taker<Integer> withErrorMessage = number.orElse(fail("Expected a number here"));
+Taker<Integer> withErrorMessage = number.expecting("number");
 ```
 
 #### Incremental Development
@@ -798,4 +796,4 @@ Taker<Statement> assignStatement = identifier
 assertTrue(assignStatement.parse(Input.of("abc123=42;")).matches());
 ```
 
-By following these advanced techniques and patterns, you can leverage the full power of parseWorks to create sophisticated parsers for a wide range of applications.
+By following these advanced techniques and patterns, you can leverage the full power of Taker to create sophisticated parsers for a wide range of applications.
