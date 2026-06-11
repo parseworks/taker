@@ -6,7 +6,7 @@ Taker is a lean, powerful, and developer-friendly parser combinator library for 
 
 - **Fluent API**: Highly ergonomic DSL for Java using a functional approach.
 - **N-ary Composition**: Use `.then()` and `ApplyBuilder` to cleanly map multiple values without deep nesting.
-- **Performance-Oriented**: Includes greedy primitives like `takeWhile`, `takeUntil`, and `regex` for efficient lexing.
+- **Performance-Oriented**: Includes scanner primitives like `takeWhile`, `collectChars`, `skipWhile`, `countWhile`, `takeUntil`, and `regex` for efficient lexing.
 - **Robust Diagnostics**: Source-mapped error snippets with line/column info and "expected vs found" messaging.
 - **Recursion Support**: Easy definition of recursive grammars using `Taker.ref()` and `.set()`.
 - **Commit/Cut**: Prevent unnecessary backtracking and improve error locality with `commit()`.
@@ -51,12 +51,13 @@ Using combinators to parse a simple "Key: Value" pair:
 ```java
 import static io.github.parseworks.taker.Taker.*;
 import static io.github.parseworks.taker.parsers.Lexical.*;
+import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;
 
-Taker<String> identifier = takeWhile(Character::isLetterOrDigit);
+Taker<String> identifier = collectChars(CharPredicate.asciiLetterOrDigit);
 Taker<String> kvPair = identifier
     .thenSkip(trim(chr(':')))
-    .then(takeWhile(c -> c != '\n'))
+    .then(collectChars(CharPredicate.lineBreak.negate()))
     .map((key, value) -> key + " => " + value);
 
 String output = kvPair.parse("User: Bob").value();
@@ -67,6 +68,18 @@ String output = kvPair.parse("User: Bob").value();
 a token, but not tabs or newlines. Use `trimWhitespace(parser)` when Java
 whitespace, including line breaks, should be ignored, or `lexeme(parser,
 ignored)` when the grammar needs a custom whitespace/comment policy.
+
+For long character runs, prefer scanner primitives over repeated character
+parsers:
+
+```java
+// Preferred: direct scanner, low allocation
+Taker<String> word = collectChars(CharPredicate.asciiLetter);
+Taker<Void> spaces = skipWhile(CharPredicate.horizontalWhitespace);
+
+// More flexible, but much more expensive for long runs
+Taker<String> slower = chr(CharPredicate.asciiLetter).collectString();
+```
 
 ### Recursive Grammars
 

@@ -50,6 +50,9 @@ public class ParserBenchmarks {
         String repeatedInput;
 
         Taker<String> collectedLetters;
+        Taker<String> directlyCollectedLetters;
+        Taker<Integer> countedLetters;
+        Taker<Void> skippedLetters;
         Taker<String> listedLettersJoined;
         String lettersInput;
 
@@ -69,18 +72,21 @@ public class ParserBenchmarks {
             numberInput = "123456789012345";
             trimInput = "   a   ";
 
-            repeatedLettersAndDigits = chr(Character::isLetter)
-                .then(chr(Character::isDigit))
+            repeatedLettersAndDigits = chr(CharPredicate.asciiLetter)
+                .then(chr(CharPredicate.asciiDigit))
                 .map((letter, digit) -> digit)
                 .zeroOrMore();
-            foldedLetterDigitCount = chr(Character::isLetter)
-                .then(chr(Character::isDigit))
+            foldedLetterDigitCount = chr(CharPredicate.asciiLetter)
+                .then(chr(CharPredicate.asciiDigit))
                 .map((letter, digit) -> digit)
                 .foldZeroOrMore(0, (count, digit) -> count + 1);
             repeatedInput = repeatedInput(10_000);
 
-            collectedLetters = chr(Character::isLetter).collectString();
-            listedLettersJoined = chr(Character::isLetter).oneOrMore().map(Lists::join);
+            collectedLetters = chr(CharPredicate.asciiLetter).collectString();
+            directlyCollectedLetters = Taker.collectChars(CharPredicate.asciiLetter);
+            countedLetters = Taker.countWhile(CharPredicate.asciiLetter);
+            skippedLetters = Taker.skipWhile(CharPredicate.asciiLetter);
+            listedLettersJoined = chr(CharPredicate.asciiLetter).oneOrMore().map(Lists::join);
             lettersInput = lettersInput(10_000);
 
             csvParser = csvParser();
@@ -101,6 +107,9 @@ public class ParserBenchmarks {
             requireMatch("repeatedLettersAndDigits", repeatedLettersAndDigits.parseAll(repeatedInput));
             requireMatch("foldedLetterDigitCount", foldedLetterDigitCount.parseAll(repeatedInput));
             requireMatch("collectedLetters", collectedLetters.parseAll(lettersInput));
+            requireMatch("directlyCollectedLetters", directlyCollectedLetters.parseAll(lettersInput));
+            requireMatch("countedLetters", countedLetters.parseAll(lettersInput));
+            requireMatch("skippedLetters", skippedLetters.parseAll(lettersInput));
             requireMatch("listedLettersJoined", listedLettersJoined.parseAll(lettersInput));
             requireMatch("csvParser", csvParser.parseAll(csvInput));
             requireMatch("csvFieldCounter", csvFieldCounter.parseAll(csvInput));
@@ -120,7 +129,7 @@ public class ParserBenchmarks {
             Taker<Character> eol = string("\r\n").as('\n').or(chr('\n'));
 
             Taker<String> quotedField = escapedString('"', '\\', Map.of('"', '"'));
-            Taker<String> unquotedFieldCore = takeWhile(c -> c != ',' && c != '\n' && c != '\r');
+            Taker<String> unquotedFieldCore = takeWhile(CharPredicate.noneOf(",\n\r"));
             Taker<String> unquotedField = unquotedFieldCore.onlyIf(not(chr('"')));
 
             Taker<String> boolToken = oneOf(string("true"), string("false"));
@@ -345,6 +354,21 @@ public class ParserBenchmarks {
     @Benchmark
     public void collectStringLetters(ParserState state, Blackhole blackhole) {
         blackhole.consume(state.collectedLetters.parseAll(state.lettersInput));
+    }
+
+    @Benchmark
+    public void collectCharsLetters(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.directlyCollectedLetters.parseAll(state.lettersInput));
+    }
+
+    @Benchmark
+    public void countWhileLetters(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.countedLetters.parseAll(state.lettersInput));
+    }
+
+    @Benchmark
+    public void skipWhileLetters(ParserState state, Blackhole blackhole) {
+        blackhole.consume(state.skippedLetters.parseAll(state.lettersInput));
     }
 
     @Benchmark

@@ -412,13 +412,15 @@ Here are some tips for optimizing parser performance:
 
 1. **Reuse parsers**: Create parsers once and reuse them instead of creating new ones for each parse operation.
 
-2. **Use `trim` wisely**: The `trim` combinator can be expensive if used excessively. Apply it only where necessary.
+2. **Use scanner primitives for character runs**: Prefer `Taker.collectChars(predicate)` or `Taker.takeWhile(predicate)` when you need matched text from consecutive input characters. Prefer `Taker.skipWhile(predicate)` for ignored text such as whitespace, and `Taker.countWhile(predicate)` when only the span length matters. Avoid `chr(predicate).oneOrMore()` or `chr(predicate).collectString()` for long raw character runs.
 
-3. **Avoid excessive backtracking**: Try to make your parsers more deterministic to reduce backtracking.
+3. **Use `trim` wisely**: The `trim` combinator is convenient, but repeated token-level trimming can add overhead. Apply it where the grammar needs it, and use `skipWhile` for simple ignored character runs.
 
-4. **Use `oneOf` with care**: When using `oneOf`, order the parsers from most specific to least specific to reduce the number of attempts.
+4. **Avoid excessive backtracking**: Try to make your parsers more deterministic to reduce backtracking.
 
-5. **Consider using memoization**: For complex parsers that are called repeatedly, consider implementing memoization to cache results.
+5. **Use `oneOf` with care**: When using `oneOf`, order the parsers from most specific to least specific to reduce the number of attempts.
+
+6. **Consider using memoization**: For complex parsers that are called repeatedly, consider implementing memoization to cache results.
 
 ## API Reference
 
@@ -433,6 +435,9 @@ Here are some tips for optimizing parser performance:
 
 - **string(String s)**: Creates a parser that recognizes the given string
 - **regex(String pattern)**: Creates a parser that recognizes the given regex pattern
+- **collectChars(CharPredicate predicate)**: Greedily collects one or more matching input characters
+- **skipWhile(CharPredicate predicate)**: Greedily skips zero or more matching input characters without materializing text
+- **countWhile(CharPredicate predicate)**: Greedily consumes zero or more matching input characters and returns the count
 - **chr(char c)**: Creates a parser that recognizes the given character
 - **oneOf(Parser... parsers)**: Creates a parser that tries each parser in sequence until one succeeds
 - **oneOrMore()**: Creates a parser that applies the parser one or more times
@@ -480,8 +485,9 @@ If you're experiencing performance issues with complex parsers, try:
 
 1. Simplifying your grammar
 2. Breaking down complex parsers into smaller, reusable components
-3. Using more specific parsers instead of general ones
-4. Avoiding excessive backtracking
+3. Using scanner primitives for raw character spans, especially whitespace, identifiers, comments, and line content
+4. Using more specific parsers instead of general ones
+5. Avoiding excessive backtracking
 
 ### Debugging Tips
 

@@ -70,4 +70,50 @@ public class CharPredicateTest {
         assertFalse(p.test('d'));
     }
 
+    @Test
+    public void testAsciiPredicatesAreExplicitlyAscii() {
+        assertTrue(CharPredicate.digit.test('\u0661'));
+        assertFalse(CharPredicate.asciiDigit.test('\u0661'));
+        assertTrue(CharPredicate.asciiDigit.test('1'));
+
+        assertTrue(CharPredicate.letter.test('\u03bb'));
+        assertFalse(CharPredicate.asciiLetter.test('\u03bb'));
+        assertTrue(CharPredicate.asciiLetter.test('x'));
+        assertTrue(CharPredicate.asciiLetterOrDigit.test('9'));
+    }
+
+    @Test
+    public void testWhitespacePredicatesSeparateHorizontalAndLineBreaks() {
+        assertTrue(CharPredicate.asciiWhitespace.test('\n'));
+        assertTrue(CharPredicate.horizontalWhitespace.test('\t'));
+        assertFalse(CharPredicate.horizontalWhitespace.test('\n'));
+        assertTrue(CharPredicate.lineBreak.test('\n'));
+        assertTrue(CharPredicate.lineBreak.test('\r'));
+        assertFalse(CharPredicate.lineBreak.test(' '));
+    }
+
+    @Test
+    public void testPredicateCombinators() {
+        CharPredicate lowerHex = CharPredicate.anyOf(CharPredicate.asciiDigit, CharPredicate.range('a', 'f'));
+        assertTrue(lowerHex.test('9'));
+        assertTrue(lowerHex.test('c'));
+        assertFalse(lowerHex.test('g'));
+
+        CharPredicate lowerAsciiLetter = CharPredicate.allOf(CharPredicate.asciiLetter, CharPredicate.asciiLowerCase);
+        assertTrue(lowerAsciiLetter.test('a'));
+        assertFalse(lowerAsciiLetter.test('A'));
+        assertFalse(CharPredicate.not(CharPredicate.asciiDigit).test('3'));
+    }
+
+    @Test
+    public void testNamedPredicatesImproveParserErrors() {
+        Result<Character> charResult = Taker.take(CharPredicate.asciiDigit).parse("x");
+        assertFalse(charResult.matches());
+        assertTrue(charResult.error().contains("expected ASCII digit"));
+
+        Result<String> takeWhileResult = Taker.takeWhile(CharPredicate.asciiLetter).parse("1");
+        assertFalse(takeWhileResult.matches());
+        assertTrue(takeWhileResult.error().contains("expected at least one ASCII letter"));
+    }
+
 }

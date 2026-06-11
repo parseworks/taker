@@ -5,6 +5,7 @@ import io.github.parseworks.taker.Taker;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.parseworks.taker.CharPredicate.noneOf;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 
@@ -12,7 +13,7 @@ public class Csv {
 
     private static final Taker<String> quotedField = escapedString('"', '"', Map.of('"', '"'));
 
-    private static final Taker<String> unquotedField = Taker.takeWhile(c -> c != ',' && c != '\n' && c != '\r');
+    private static final Taker<String> unquotedField = Taker.takeWhile(noneOf(",\n\r"));
 
     private static final Taker<String> field = quotedField.or(unquotedField);
 

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 
-import static io.github.parseworks.taker.Taker.*;
+import static io.github.parseworks.taker.Taker.takeWhile;
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Lexical.*;

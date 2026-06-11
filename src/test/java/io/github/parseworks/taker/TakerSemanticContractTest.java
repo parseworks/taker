@@ -400,6 +400,44 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void collectCharsScansOneOrMoreCharactersDirectly() {
+        Result<String> result = Taker.collectChars(CharPredicate.asciiLetter).parse("abc123");
+
+        assertTrue(result.matches());
+        assertEquals("abc", result.value());
+        assertEquals(3, result.input().position());
+
+        assertFalse(Taker.collectChars(CharPredicate.asciiLetter).parse("123").matches());
+    }
+
+    @Test
+    void skipWhileConsumesZeroOrMoreCharactersWithoutMaterializingText() {
+        Result<Void> result = Taker.skipWhile(CharPredicate.asciiLetter).parse("abc123");
+
+        assertTrue(result.matches());
+        assertNull(result.value());
+        assertEquals(3, result.input().position());
+
+        Result<Void> empty = Taker.skipWhile(CharPredicate.asciiLetter).parse("123");
+        assertTrue(empty.matches());
+        assertEquals(0, empty.input().position());
+    }
+
+    @Test
+    void countWhileConsumesAndCountsZeroOrMoreCharacters() {
+        Result<Integer> result = Taker.countWhile(CharPredicate.asciiDigit).parse("123abc");
+
+        assertTrue(result.matches());
+        assertEquals(3, result.value());
+        assertEquals(3, result.input().position());
+
+        Result<Integer> empty = Taker.countWhile(CharPredicate.asciiDigit).parse("abc");
+        assertTrue(empty.matches());
+        assertEquals(0, empty.value());
+        assertEquals(0, empty.input().position());
+    }
+
+    @Test
     void repeatUntilConsumesTerminatorWhenFound() {
         Result<List<Character>> result = chr('a').zeroOrMoreUntil(chr(';')).parse("aa;z");
 

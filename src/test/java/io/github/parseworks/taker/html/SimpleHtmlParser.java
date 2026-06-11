@@ -8,8 +8,9 @@ import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
 
-import static io.github.parseworks.taker.Taker.*;
 import static io.github.parseworks.taker.CharPredicate.noneOf;
+import static io.github.parseworks.taker.Taker.takeUntil;
+import static io.github.parseworks.taker.Taker.takeWhile;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.*;
@@ -113,7 +114,7 @@ public class SimpleHtmlParser {
     }
 
     // Token parsers
-    private static final Taker<Void> WHITESPACE = takeWhile(CharPredicate.whitespace).map(chars -> null);
+    private static final Taker<Void> WHITESPACE = Taker.skipWhile(CharPredicate.asciiWhitespace);
 
     static String ILLEGAL_IDENTIFIER_CHARS = "=/> \t\n\r\f";
 
@@ -149,7 +150,7 @@ public class SimpleHtmlParser {
         Taker<KV> attribute = trim(IDENTIFIER).then(
                     trim(chr('='))
                         .skipThen(oneOf( QUOTED_STRING,
-                            takeWhile(noneOf(">\"' \t\n\r")))).optional()
+                            takeWhile(noneOf(">\"' \t\n\r\f")))).optional()
                 ).map(name -> valOpt -> new KV(name, (String) valOpt.orElse("")));
 
         // Attribute list parser - parse multiple attributes

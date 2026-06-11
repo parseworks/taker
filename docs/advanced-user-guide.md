@@ -93,16 +93,23 @@ While `zeroOrMore` and `oneOrMore` are common, you often need stricter bounds.
 
 ### `takeWhile` and `zeroOrMoreUntil` {#takewhile-and-zeroormoreuntil}
 
-A common "gotcha": `takeWhile` requires a **parser** that returns `Boolean`, not a simple lambda predicate. This is because the condition itself might need to look ahead or consume input.
+`takeWhile` consumes one or more consecutive input characters while a
+`CharPredicate` succeeds. It is a scanner primitive: use it when the grammar is
+matching a raw character span rather than a repeated structured parser.
 
 ```java
-// Correct: passing a parser that returns Boolean
-Taker<Boolean> isAlpha = chr(Character::isLetter).as(true);
-Taker<String> word = any(Character.class).takeWhile(isAlpha);
+Taker<String> word = Taker.takeWhile(CharPredicate.asciiLetter);
 
-// Cleaner alternative if you just want to match characters:
-Taker<String> word2 = chr(Character::isLetter).zeroOrMore();
+// Equivalent name when the intent is text collection:
+Taker<String> word2 = Taker.collectChars(CharPredicate.asciiLetter);
+
+// For ignored text, skip without creating a String:
+Taker<Void> spaces = Taker.skipWhile(CharPredicate.horizontalWhitespace);
 ```
+
+Avoid `chr(predicate).oneOrMore()` or `chr(predicate).collectString()` for long
+raw character runs. Those forms are useful when each character parser is part of
+a larger composition, but they allocate per parser step.
 
 `zeroOrMoreUntil` is useful for consuming items until a specific terminator is reached:
 
@@ -218,9 +225,10 @@ Taker<Integer> signedNumber = chr('-').optional()
 ## Performance Tips {#performance-tips}
 
 1. **Static Reuse**: Define common parsers (keywords, delimiters) as `static final` fields. Creating parsers on-the-fly inside a loop is a major performance killer.
-2. **Deterministic Choices**: In `oneOf`, ensure your alternatives are as distinct as possible. Overlapping of terms can result in early termination, as the parser will assume that the partial parse indicates an error.
-3. **Be careful with `trim()`**: It's convenient but adds lookahead/backtracking. Apply it at the "token" level rather than around every single character parser.
-4. **Regular Expressions**: `Lexical.regex` is backed by standard Java `Pattern`. It's fast for tokenization but avoid complex, nested groups if a simple `chr()` loop would suffice.
+2. **Scanner Primitives for Character Runs**: Use `collectChars`/`takeWhile` for matched text, `skipWhile` for ignored text, and `countWhile` when only the length matters. These avoid the per-character allocation cost of repeated `chr(predicate)` parsers.
+3. **Deterministic Choices**: In `oneOf`, ensure your alternatives are as distinct as possible. Overlapping of terms can result in early termination, as the parser will assume that the partial parse indicates an error.
+4. **Be careful with `trim()`**: It's convenient but adds parser-result allocation. Apply it at the token level rather than around every single character parser.
+5. **Regular Expressions**: `Lexical.regex` is backed by standard Java `Pattern`. It's fast for tokenization but avoid complex, nested groups if a scanner primitive would suffice.
 
 ## Working with Complex Grammars
 

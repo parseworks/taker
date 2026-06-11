@@ -20,19 +20,19 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
  * Common text parsers for characters, strings, and whitespace.
  * <pre>{@code
  * Taker<String> greeting =
- *     Lexical.string("Hello").thenSkip(Taker.takeWhile(CharPredicate.whitespace)).then(Lexical.word);
+ *     Lexical.string("Hello").thenSkip(Taker.takeWhile(CharPredicate.horizontalWhitespace)).then(Lexical.word);
  * }</pre>
  */
 public class Lexical {
 
 
     /** Matches a single alphabetical character (a-z, A-Z). */
-    public static final Taker<Character> alpha = satisfy("<alphabet>", Character::isLetter);
+    public static final Taker<Character> alpha = satisfy(CharPredicate.asciiLetter.expected(), CharPredicate.asciiLetter);
 
     /**
      * Matches a single alphanumeric character.
      */
-    public static final Taker<Character> alphaNumeric = satisfy( "<alphanumeric>", Character::isLetterOrDigit);
+    public static final Taker<Character> alphaNumeric = satisfy(CharPredicate.asciiLetterOrDigit.expected(), CharPredicate.asciiLetterOrDigit);
 
     /**
      * Matches one or more ASCII space characters ({@code ' '}).
@@ -323,6 +323,6 @@ public class Lexical {
 
     /** Matches a single character matching the given predicate. */
     public static Taker<Character> chr(CharPredicate predicate) {
-        return satisfy("<character>", predicate);
+        return satisfy(predicate.expected(), predicate);
     }
 }

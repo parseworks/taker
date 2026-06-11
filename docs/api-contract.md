@@ -139,6 +139,32 @@ It fails if no characters match.
 
 Use `.orElse("")` when a zero-length match is desired.
 
+### `collectChars`
+
+`Taker.collectChars(predicate)` is an explicit alias for `takeWhile(predicate)`.
+It greedily consumes one or more matching input characters and returns the
+matched text.
+
+Prefer `collectChars(predicate)` or `takeWhile(predicate)` over
+`chr(predicate).collectString()` when the grammar is simply accumulating
+consecutive raw input characters. The scanner form avoids per-character parser
+result allocation.
+
+### `skipWhile`
+
+`Taker.skipWhile(predicate)` greedily consumes zero or more matching characters
+and returns `null`.
+
+It always succeeds and does not allocate a matched string. Use it for ignored
+input such as whitespace or comments when the skipped text is not needed.
+
+### `countWhile`
+
+`Taker.countWhile(predicate)` greedily consumes zero or more matching characters
+and returns the number of consumed characters.
+
+It always succeeds and does not allocate a matched string.
+
 ### `takeUntil`
 
 `Taker.takeUntil(predicate)` and `Taker.takeUntil(String)` consume characters
@@ -273,6 +299,11 @@ values.
 `collectString()` applies this parser one or more times and concatenates parsed
 values with `String.valueOf(value)`. It is the allocation-conscious equivalent
 of `oneOrMore().map(Lists::join)`.
+
+For raw input characters, prefer the scanner-level
+`Taker.collectChars(predicate)` / `Taker.takeWhile(predicate)` APIs. Use
+`collectString()` when the repeated parser produces values that are not simply
+consecutive characters from the input.
 
 ### `zeroOrMoreUntil` and `oneOrMoreUntil`
 

@@ -44,6 +44,18 @@ public class NumericParsersTest {
     }
 
     @Test
+    public void testNumericParsersAreAsciiDigitBased() {
+        String arabicIndicOne = "\u0661";
+
+        assertFalse(numeric.parse(arabicIndicOne).matches());
+        assertFalse(nonZeroDigit.parse(arabicIndicOne).matches());
+        assertFalse(integer.parse(arabicIndicOne).matches());
+        assertFalse(longValue.parse(arabicIndicOne).matches());
+        assertFalse(doubleValue.parse(arabicIndicOne).matches());
+        assertFalse(number.parse(arabicIndicOne).matches());
+    }
+
+    @Test
     public void testSign() {
         // Test positive sign
         Result<Boolean> plusResult = sign.parse("+");

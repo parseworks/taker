@@ -8,17 +8,16 @@ import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 
 import static io.github.parseworks.taker.Taker.pure;
-import static io.github.parseworks.taker.parsers.Combinators.satisfy;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 
 public class Numeric {
 
     /** Matches a non-zero digit (1-9). */
-    public static final Taker<Character> nonZeroDigit = satisfy("<nonZeroDigit>", c -> c != '0' && Character.isDigit(c));
+    public static final Taker<Character> nonZeroDigit = chr(CharPredicate.range('1', '9')).expecting("non-zero digit");
 
 
     /** Matches a single digit (0-9). */
-    public static final Taker<Character> numeric = satisfy("<number>", Character::isDigit);
+    public static final Taker<Character> numeric = chr(CharPredicate.asciiDigit);
 
 
     /** Matches an optional sign (+ or -), defaulting to positive. */
@@ -79,7 +78,7 @@ public class Numeric {
             }
 
             int current = start + 1;
-            while (current < data.length() && Character.isDigit(data.charAt(current))) {
+            while (current < data.length() && isAsciiDigit(data.charAt(current))) {
                 current++;
             }
 
@@ -136,7 +135,7 @@ public class Numeric {
             }
 
             int current = start + 1;
-            while (current < data.length() && Character.isDigit(data.charAt(current))) {
+            while (current < data.length() && isAsciiDigit(data.charAt(current))) {
                 current++;
             }
 
@@ -162,14 +161,14 @@ public class Numeric {
         if (current < length && (data.charAt(current) == '+' || data.charAt(current) == '-')) current++;
 
         boolean hasDigits = false;
-        while (current < length && Character.isDigit(data.charAt(current))) {
+        while (current < length && isAsciiDigit(data.charAt(current))) {
             current++;
             hasDigits = true;
         }
 
         if (current < length && data.charAt(current) == '.') {
             current++;
-            while (current < length && Character.isDigit(data.charAt(current))) {
+            while (current < length && isAsciiDigit(data.charAt(current))) {
                 current++;
                 hasDigits = true;
             }
@@ -181,7 +180,7 @@ public class Numeric {
             int exponentStart = current++;
             if (current < length && (data.charAt(current) == '+' || data.charAt(current) == '-')) current++;
             boolean hasExpDigits = false;
-            while (current < length && Character.isDigit(data.charAt(current))) {
+            while (current < length && isAsciiDigit(data.charAt(current))) {
                 current++;
                 hasExpDigits = true;
             }
@@ -200,7 +199,7 @@ public class Numeric {
         int start = in.position();
         int current = start;
 
-        while (current < data.length() && Character.isDigit(data.charAt(current))) {
+        while (current < data.length() && isAsciiDigit(data.charAt(current))) {
             current++;
         }
 
@@ -216,7 +215,7 @@ public class Numeric {
     });
 
     private static final Taker<String> hexDigits = Taker.takeWhile(
-            c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+            CharPredicate.anyOf(CharPredicate.asciiDigit, CharPredicate.range('a', 'f'), CharPredicate.range('A', 'F')))
         .expecting("hex value");
 
     /** Matches a hexadecimal integer with "0x" or "0X" prefix. */
@@ -232,6 +231,10 @@ public class Numeric {
                 return new NoMatch<>(in, "hex value within range");
             }
         });
+    }
+
+    private static boolean isAsciiDigit(char c) {
+        return c >= '0' && c <= '9';
     }
 
 }

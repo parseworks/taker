@@ -50,15 +50,16 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /** Matches a character matching the predicate. */
     public static Taker<Character> take(CharPredicate condition) {
+        Objects.requireNonNull(condition, "condition");
         return new Taker<>(input -> {
             if (input.isEof()) {
-                return new NoMatch<>(input, "to find char matching predicate (EOF)");
+                return new NoMatch<>(input, condition.expected());
             }
             var c = input.current();
             if (condition.test(c)) {
                 return new Match<>(c, input.next());
             }
-            return new NoMatch<>(input, "to find char matching predicate");
+            return new NoMatch<>(input, condition.expected());
         });
     }
 
@@ -78,10 +79,70 @@ public class Taker<A> implements Function<Input, Result<A>>{
                 current++;
             }
             if (current == start) {
-                return new NoMatch<>(in, "condition to be true for at least one character");
+                return new NoMatch<>(in, "at least one " + condition.expected());
             }
             return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
         });
+    }
+
+    /**
+     * Collects one or more matching input characters into a string.
+     * <p>
+     * This is the direct scanner path for raw character accumulation. Prefer it
+     * over {@code Lexical.chr(predicate).collectString()} when the grammar only
+     * needs to consume consecutive characters from the input.
+     *
+     * @param condition character predicate
+     * @return matched characters as a string
+     */
+    public static Taker<String> collectChars(CharPredicate condition) {
+        return takeWhile(condition);
+    }
+
+    /**
+     * Skips zero or more matching input characters.
+     * <p>
+     * Unlike {@link #takeWhile(CharPredicate)}, this succeeds when no
+     * characters match and does not allocate a matched string.
+     *
+     * @param condition character predicate
+     * @return a parser that consumes matching characters and returns {@code null}
+     */
+    public static Taker<Void> skipWhile(CharPredicate condition) {
+        Objects.requireNonNull(condition, "condition");
+        return new Taker<>(in -> {
+            int count = countMatchingChars(in, condition);
+            return new Match<>(null, in.skip(count));
+        });
+    }
+
+    /**
+     * Counts zero or more matching input characters.
+     * <p>
+     * This is useful when only the span length matters and the matched text does
+     * not need to be materialized.
+     *
+     * @param condition character predicate
+     * @return a parser returning the number of matching characters consumed
+     */
+    public static Taker<Integer> countWhile(CharPredicate condition) {
+        Objects.requireNonNull(condition, "condition");
+        return new Taker<>(in -> {
+            int count = countMatchingChars(in, condition);
+            return new Match<>(count, in.skip(count));
+        });
+    }
+
+    private static int countMatchingChars(Input in, CharPredicate condition) {
+        CharSequence data = in.data();
+        int start = in.position();
+        int current = start;
+        int length = data.length();
+
+        while (current < length && condition.test(data.charAt(current))) {
+            current++;
+        }
+        return current - start;
     }
 
     /** Matches characters until the predicate is true. */
@@ -709,7 +770,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse exactly 3 digits
-     * Taker<Character> digit = Lexical.chr(Character::isDigit);
+     * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
      * Taker<String> threeDigits = digit.repeat(3);
      *
      * // Succeeds with [1,2,3] for input "123"
@@ -760,7 +821,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse between 2 and 4 digits
-     * Taker<Character> digit = Lexical.chr(Character::isDigit);
+     * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
      * Taker<String> digits = digit.repeat(2, 4);
      *
      * // Succeeds with [1,2,3,4] for input "1234"
