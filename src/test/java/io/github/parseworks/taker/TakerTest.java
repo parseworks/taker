@@ -611,7 +611,7 @@ public class TakerTest {
         var result = betweenParser.parse(Input.of(input));
 
         // Verify the result
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
 
     @Test
@@ -627,7 +627,7 @@ public class TakerTest {
         var result = betweenParser.parse(Input.of(input));
 
         // Verify the result
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
 
 
@@ -643,7 +643,7 @@ public class TakerTest {
 
 
         // Verify the result (avoid detailed error text checks outside error-focused suites)
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
 
     @Test
@@ -671,7 +671,7 @@ public class TakerTest {
         Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
 
         // Verify the result
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
 
     @Test
@@ -699,6 +699,6 @@ public class TakerTest {
         Result<List<Integer>> result = separatedByManyParser.parse(Input.of(input));
 
         // Verify the result
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
 }

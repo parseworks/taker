@@ -70,7 +70,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
                 current++;
             }
             if (current == start) {
-                return new NoMatch<String>(in, "condition to be true for at least one character");
+                return new NoMatch<>(in, "condition to be true for at least one character");
             }
             return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
         });
@@ -268,7 +268,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         });
     }
 
-    public <B> Taker<A> onlyIf(CharPredicate validation) {
+    public Taker<A> onlyIf(CharPredicate validation) {
         return new Taker<>(input -> {
             if (input.isEof()) {
                 return new NoMatch<>(input, "Expected Character at " + input.position());
@@ -349,8 +349,8 @@ public class Taker<A> implements Function<Input, Result<A>>{
             String name = label != null ? label : "Taker";
             String snippet = getSnippet(input);
 
-            System.out.println(String.format("%s%s starting at pos %d: [%s]",
-                    indent, name, input.position(), snippet));
+            System.out.printf("%s%s starting at pos %d: [%s]%n",
+                    indent, name, input.position(), snippet);
 
             depth.set(currentDepth + 1);
             long start = System.nanoTime();
@@ -360,11 +360,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
                 double ms = elapsed / 1_000_000.0;
 
                 if (result.matches()) {
-                    System.out.println(String.format("%s%s succeeded in %.3fms with value: %s",
-                            indent, name, ms, result.value()));
+                    System.out.printf("%s%s succeeded in %.3fms with value: %s%n",
+                            indent, name, ms, result.value());
                 } else {
-                    System.out.println(String.format("%s%s failed in %.3fms: %s",
-                            indent, name, ms, result.error()));
+                    System.out.printf("%s%s failed in %.3fms: %s%n",
+                            indent, name, ms, result.error());
                 }
                 return result;
             } finally {
@@ -616,7 +616,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param input the input string to parse
      * @return the result of parsing the input string
      */
-    @SuppressWarnings("unchecked")
     public Result<A> parse(CharSequence input) {
         return parse(Input.of(input), false);
     }
@@ -665,7 +664,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param input the input string to parse
      * @return the result of parsing the input string
      */
-    @SuppressWarnings("unchecked")
     public Result<A> parseAll(CharSequence input) {
         return parse( Input.of(input), true);
     }
@@ -977,7 +975,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     /** Creates a parser reference for recursive grammar definitions. */
-    public static <I, A> Taker<A> ref() {
+    public static <A> Taker<A> ref() {
         return new CheckParser<>();
     }
 
@@ -1080,7 +1078,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param label descriptive label
      * @return a labeled parser
      */
-    public <B> Taker<A> expecting(String label) {
+    public  Taker<A> expecting(String label) {
         return new Taker<>(input -> {
             Result<A> result = this.apply(input);
             if (result.matches()) return result;

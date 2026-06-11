@@ -31,7 +31,7 @@ public class TakerSemanticContractTest {
         Result<Integer> result = chr('a').map(c -> (int) c).parse("abc");
 
         assertTrue(result.matches());
-        assertEquals((int) 'a', result.value());
+        assertEquals('a', result.value());
         assertEquals(1, result.input().position());
     }
 
@@ -352,7 +352,7 @@ public class TakerSemanticContractTest {
     @Test
     void recoverWithReceivesFailureAndCanReturnReplacementResult() {
         Result<String> result = chr('a').recoverWith(failure ->
-            new Taker<String>(in -> Taker.pure("fallback").apply(in)).apply(failure.input())
+            new Taker<>(in -> Taker.pure("fallback").apply(in)).apply(failure.input())
         ).parse("b");
 
         assertTrue(result.matches());

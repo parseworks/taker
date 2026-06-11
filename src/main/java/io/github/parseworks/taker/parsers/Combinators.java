@@ -70,14 +70,14 @@ public class Combinators {
      * Unconditionally fails, consuming no input.
      */
     public static <A> Taker<A> fail() {
-        return new Taker<>(in -> new NoMatch<A>(in, "parser explicitly set to fail"));
+        return new Taker<>(in -> new NoMatch<>(in, "parser explicitly set to fail"));
     }
 
     /**
      * Fails with a specific error message.
      */
     public static <A> Taker<A> fail(String expected) {
-        return new Taker<>(in -> new NoMatch<A>(in, expected));
+        return new Taker<>(in -> new NoMatch<>(in, expected));
     }
 
     /** Succeeds if the provided parser fails. */
@@ -87,7 +87,7 @@ public class Combinators {
             if (result.matches() || !result.input().hasMore()) {
                 // Provide more context about what was found that shouldn't have matched
                 String found = result.input().hasMore() ? "expected parser to fail" : "end of input";
-                return new NoMatch<Character>(in, found);
+                return new NoMatch<>(in, found);
             }
             return new Match<>(in.current(), in.next());
 
@@ -98,11 +98,11 @@ public class Combinators {
     public static Taker<Character> isNot(char value) {
         return new Taker<>(in -> {
             if (in.isEof()) {
-                return new NoMatch<Character>(in, "any value except " + value);
+                return new NoMatch<>(in, "any value except " + value);
             }
             char item = in.current();
             if (item == value) {
-                return new NoMatch<Character>(in, "any value except " + value);
+                return new NoMatch<>(in, "any value except " + value);
             } else {
                 return new Match<>(item, in.next());
             }
@@ -225,13 +225,13 @@ public class Combinators {
     public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
         return new Taker<>(in -> {
             if (in.isEof()) {
-                return new NoMatch<Character>(in, expectedType);
+                return new NoMatch<>(in, expectedType);
             }
             var item = in.current();
             if (predicate.test(item)) {
                 return new Match<>(item, in.next());
             } else {
-                return new NoMatch<Character>(in, expectedType);
+                return new NoMatch<>(in, expectedType);
             }
         });
     }

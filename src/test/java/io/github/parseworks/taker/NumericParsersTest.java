@@ -22,11 +22,11 @@ public class NumericParsersTest {
 
         // Test failure for zero
         Result<Character> zeroResult = nonZeroDigit.parse("0");
-        assertTrue(!zeroResult.matches());
+        assertFalse(zeroResult.matches());
 
         // Test failure for non-digit
         Result<Character> nonDigitResult = nonZeroDigit.parse("a");
-        assertTrue(!nonDigitResult.matches());
+        assertFalse(nonDigitResult.matches());
     }
 
     @Test
@@ -40,7 +40,7 @@ public class NumericParsersTest {
 
         // Test failure for non-digit
         Result<Character> nonDigitResult = numeric.parse("a");
-        assertTrue(!nonDigitResult.matches());
+        assertFalse(nonDigitResult.matches());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class NumericParsersTest {
 
         // Test failure for non-digit
         Result<Integer> nonDigitResult = unsignedInteger.parse("a");
-        assertTrue(!nonDigitResult.matches());
+        assertFalse(nonDigitResult.matches());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class NumericParsersTest {
 
         // Test failure for non-digit
         Result<Integer> nonDigitResult = integer.parse("a");
-        assertTrue(!nonDigitResult.matches());
+        assertFalse(nonDigitResult.matches());
     }
 
     @Test
@@ -227,7 +227,7 @@ public class NumericParsersTest {
 
         // Test failure for non-digit
         Result<Long> nonDigitResult = longValue.parse("a");
-        assertTrue(!nonDigitResult.matches());
+        assertFalse(nonDigitResult.matches());
     }
 
     @Test
@@ -279,7 +279,7 @@ public class NumericParsersTest {
 
         // Test failure for non-numeric
         Result<Double> nonNumericResult = doubleValue.parse("abc");
-        assertTrue(!nonNumericResult.matches());
+        assertFalse(nonNumericResult.matches());
     }
 
     @Test
@@ -351,10 +351,10 @@ public class NumericParsersTest {
 
         // Test failure for invalid prefix
         Result<Long> invalidPrefixResult = hex.parse("0y1a");
-        assertTrue(!invalidPrefixResult.matches());
+        assertFalse(invalidPrefixResult.matches());
 
         // Test failure for missing hex digits
         Result<Long> missingDigitsResult = hex.parse("0x");
-        assertTrue(!missingDigitsResult.matches());
+        assertFalse(missingDigitsResult.matches());
     }
 }

@@ -27,12 +27,12 @@ public class Lexical {
 
 
     /** Matches a single alphabetical character (a-z, A-Z). */
-    public static final Taker<Character> alpha = satisfy("<alphabet>", (CharPredicate) Character::isLetter);
+    public static final Taker<Character> alpha = satisfy("<alphabet>", Character::isLetter);
 
     /**
      * Matches a single alphanumeric character.
      */
-    public static final Taker<Character> alphaNumeric = satisfy( "<alphanumeric>", (CharPredicate) Character::isLetterOrDigit);
+    public static final Taker<Character> alphaNumeric = satisfy( "<alphanumeric>", Character::isLetterOrDigit);
 
     /**
      * Matches one or more ASCII space characters ({@code ' '}).
@@ -217,7 +217,7 @@ public class Lexical {
         }
         // For small strings (under 10 chars), this approach is efficient
         if (str.length() < 10) {
-            return satisfy("<oneOf> " + str, (CharPredicate) (c -> str.indexOf(c) != -1));
+            return satisfy("<oneOf> " + str, c -> str.indexOf(c) != -1);
         }
 
         // For larger character sets, use a Set for O(1) lookups
@@ -226,7 +226,7 @@ public class Lexical {
             charSet.add(str.charAt(i));
         }
 
-        return satisfy("character in set [" + str + "]", (CharPredicate) charSet::contains);
+        return satisfy("character in set [" + str + "]", charSet::contains);
     }
 
     /** Matches input against a regular expression pattern. */
@@ -244,7 +244,7 @@ public class Lexical {
                 return new Match<>(match, in.skip(match.length()));
             }
 
-            return new NoMatch<String>(in, regex);
+            return new NoMatch<>(in, regex);
         });
     }
 
@@ -259,7 +259,7 @@ public class Lexical {
 
         return new Taker<>(in -> {
             if (in.isEof() || in.current() != quote) {
-                return new NoMatch<String>(in, String.valueOf(quote));
+                return new NoMatch<>(in, String.valueOf(quote));
             }
 
             CharSequence data = in.data();

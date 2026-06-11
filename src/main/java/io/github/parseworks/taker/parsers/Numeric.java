@@ -14,11 +14,11 @@ import static io.github.parseworks.taker.parsers.Lexical.chr;
 public class Numeric {
 
     /** Matches a non-zero digit (1-9). */
-    public static final Taker<Character> nonZeroDigit = satisfy("<nonZeroDigit>", (CharPredicate) (c -> c != '0' && Character.isDigit(c)));
+    public static final Taker<Character> nonZeroDigit = satisfy("<nonZeroDigit>", c -> c != '0' && Character.isDigit(c));
 
 
     /** Matches a single digit (0-9). */
-    public static final Taker<Character> numeric = satisfy("<number>", (CharPredicate) Character::isDigit);
+    public static final Taker<Character> numeric = satisfy("<number>", Character::isDigit);
 
 
     /** Matches an optional sign (+ or -), defaulting to positive. */
@@ -216,7 +216,7 @@ public class Numeric {
     });
 
     private static final Taker<String> hexDigits = Taker.takeWhile(
-            (CharPredicate) (c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+            c -> (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
         .expecting("hex value");
 
     /** Matches a hexadecimal integer with "0x" or "0X" prefix. */
