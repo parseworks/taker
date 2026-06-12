@@ -4,11 +4,11 @@ import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.impl.IntObjectMap;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -358,7 +358,7 @@ public class Lexical {
 
 
     /** Parses a string enclosed in quotes with support for escape sequences. */
-    private static Taker<String> escapedString(char quote, char escape, IntObjectMap<Character> escapes) {
+    private static Taker<String> escapedStringImpl(char quote, char escape, Map<Character, Character> escapes) {
 
         return new Taker<>(in -> {
             if (in.isEof() || in.current() != quote) {
@@ -412,9 +412,7 @@ public class Lexical {
 
     /** Parses a string enclosed in quotes with support for escape sequences. */
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
-        IntObjectMap<Character> map = new IntObjectMap<>();
-        escapes.forEach(map::put);
-        return escapedString(quote, escape, map);
+        return escapedStringImpl(quote, escape, new HashMap<>(escapes));
     }
 
 

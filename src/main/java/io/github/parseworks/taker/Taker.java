@@ -1,6 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.IntObjectMap;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import io.github.parseworks.taker.impl.result.PartialMatch;
@@ -217,34 +216,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
         });
     }
 
-
-    /**
-     * Creates a parser that logs its progress and results to standard output while behaving exactly like this parser.
-     * <p>
-     * The {@code systemOut} method wraps this parser with logging functionality that prints information about:
-     * <ul>
-     *   <li>The input position where parsing starts</li>
-     *   <li>Whether parsing succeeded or failed</li>
-     *   <li>The parsed value (on success) or error message (on failure)</li>
-     *   <li>Nesting level for composite parsers</li>
-     *   <li>Input snippet at the current position</li>
-     *   <li>Time taken to parse</li>
-     * </ul>
-     * <p>
-     * This method is particularly useful for:
-     * <ul>
-     *   <li>Debugging parser behavior</li>
-     *   <li>Understanding why certain inputs fail to parse</li>
-     *   <li>Tracing the execution of complex parser combinations</li>
-     * </ul>
-     *
-     * @return a new parser that logs its progress while behaving like this parser
-     * @see #systemOut(String)
-     */
-    public Taker<A> systemOut() {
-        return systemOut(null);
-    }
-
     /**
      * Creates a parser that logs its progress and results to standard output with a custom label.
      *
@@ -254,8 +225,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
     public Taker<A> systemOut(String label) {
         return TakerDebug.systemOut(this, label);
     }
-
-
 
     /**
      * Creates a parser that always succeeds, optionally containing this parser's result.
@@ -869,7 +838,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * {@link String#valueOf(Object)}.
      * <p>
      * This is an allocation-conscious replacement for
-     * {@code oneOrMore().map(Lists::join)}.
+     * collecting a list with {@code oneOrMore()} and joining it afterward.
      *
      * @return a parser returning the concatenated parsed values
      */
@@ -978,6 +947,60 @@ public class Taker<A> implements Function<Input, Result<A>>{
                     ctx.remove(pos);
                 }
             }
+        }
+    }
+
+    private static final class IntObjectMap<V> {
+        private static final int DEFAULT_CAPACITY = 16;
+        private int[] keys = new int[DEFAULT_CAPACITY];
+        private Object[] values = new Object[DEFAULT_CAPACITY];
+        private int size;
+
+        void put(int key, V value) {
+            for (int i = 0; i < size; i++) {
+                if (keys[i] == key) {
+                    values[i] = value;
+                    return;
+                }
+            }
+
+            if (size == keys.length) {
+                grow();
+            }
+
+            keys[size] = key;
+            values[size] = value;
+            size++;
+        }
+
+        @SuppressWarnings("unchecked")
+        V get(int key) {
+            for (int i = 0; i < size; i++) {
+                if (keys[i] == key) {
+                    return (V) values[i];
+                }
+            }
+            return null;
+        }
+
+        void remove(int key) {
+            for (int i = 0; i < size; i++) {
+                if (keys[i] == key) {
+                    if (i < size - 1) {
+                        System.arraycopy(keys, i + 1, keys, i, size - i - 1);
+                        System.arraycopy(values, i + 1, values, i, size - i - 1);
+                    }
+                    values[size - 1] = null;
+                    size--;
+                    return;
+                }
+            }
+        }
+
+        private void grow() {
+            int newCapacity = keys.length * 2;
+            keys = Arrays.copyOf(keys, newCapacity);
+            values = Arrays.copyOf(values, newCapacity);
         }
     }
 

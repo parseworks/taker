@@ -88,7 +88,7 @@ public class TakerTest {
     @Test
     public void testFlatMapDependentCount() {
         Taker<String> parser = Numeric.unsignedInteger.flatMap(n ->
-            chr(',').skipThen(chr('a').repeat(n)).map(Lists::join)
+            chr(',').skipThen(chr('a').repeat(n)).map(chars -> "a".repeat(chars.size()))
         );
 
         Result<String> result = parser.parse("3,aaa");
@@ -113,11 +113,13 @@ public class TakerTest {
 
     @Test
     public void testZeroOrMore() {
-        Taker<List<Character>> parser = Lexical.chr(Character::isLetter).zeroOrMore().then(Lexical.chr(Character::isDigit).zeroOrMore()).map(Lists::appendAll);
+        Taker<String> parser = Lexical.chr(Character::isLetter).collectString()
+                .then(Lexical.chr(Character::isDigit).collectString())
+                .map((letters, digits) -> letters + digits);
         Input input = Input.of("abc123");
-        Result<List<Character>> result = parser.parse(input);
+        Result<String> result = parser.parse(input);
         assertTrue(result.matches());
-        assertEquals(6, result.value().size());
+        assertEquals(6, result.value().length());
     }
 
     @Test

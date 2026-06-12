@@ -88,7 +88,7 @@ public class ParserBenchmarks {
             directlyCollectedLetters = collectChars(CharPredicate.asciiLetter);
             countedLetters = Lexical.countWhile(CharPredicate.asciiLetter);
             skippedLetters = Lexical.skipWhile(CharPredicate.asciiLetter);
-            listedLettersJoined = chr(CharPredicate.asciiLetter).oneOrMore().map(Lists::join);
+            listedLettersJoined = chr(CharPredicate.asciiLetter).oneOrMore().map(ParserBenchmarks::join);
             lettersInput = lettersInput(10_000);
 
             csvParser = csvParser();
@@ -316,6 +316,14 @@ public class ParserBenchmarks {
             }
             return count;
         }
+    }
+
+    private static String join(List<?> values) {
+        StringBuilder builder = new StringBuilder();
+        for (Object value : values) {
+            builder.append(value);
+        }
+        return builder.toString();
     }
 
     @Benchmark

@@ -39,16 +39,14 @@ The following types are intended to be stable public API:
   interfaces used by `ApplyBuilder` map overloads.
 - `io.github.parseworks.taker.parsers.*`: built-in parser libraries.
 
-The following types are public in source form but should be treated as provisional
-until the API is tightened:
+The following types are visible in source form but should be treated as
+provisional until the API is tightened:
 
-- `ResultError`: overlaps with `Failure` and is not currently central to the
-  implementation.
 - Concrete result implementations such as `Match`, `NoMatch`, and `PartialMatch`
-  under `impl.result`.
+  under `impl.result`. These are useful for low-level parser authors, but the
+  package placement should be finalized before release.
 - Concrete input implementations under `impl.inputs`.
-- `IntObjectMap` and `Pair` under `impl`.
-- `Lists`: package-private list utilities used internally.
+- `Pair` under `impl`.
 
 ## Input Contract
 
@@ -298,7 +296,7 @@ values.
 
 `collectString()` applies this parser one or more times and concatenates parsed
 values with `String.valueOf(value)`. It is the allocation-conscious equivalent
-of `oneOrMore().map(Lists::join)`.
+of collecting a list with `oneOrMore()` and joining it afterward.
 
 For raw input characters, prefer the scanner-level
 `Lexical.collectChars(predicate)` / `Lexical.takeWhile(predicate)` APIs. Use
@@ -443,6 +441,6 @@ truth for parser semantics that should be preserved by compatible releases.
 
 These should be resolved before a 1.0 release:
 
-- Should `ResultError` be removed, renamed, or merged with `Failure`?
 - Should concrete result and input implementations become package-private, or
-  remain public but explicitly unsupported?
+  should the result implementations be promoted to a stable low-level extension
+  package?
