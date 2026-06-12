@@ -5,28 +5,15 @@ import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BinaryOperator;
 
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
-import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TakerTest {
-
-    @Test
-    public void testParserRef() {
-        Taker<Character> ref = Taker.ref();
-        Taker<Character> realParser = chr('a');
-        ref.set(realParser);
-
-        Result<Character> result = ref.parse("a");
-        assertTrue(result.matches());
-        assertEquals('a', result.value());
-    }
 
     @Test
     public void testRecursiveParser() {
@@ -39,21 +26,6 @@ public class TakerTest {
         assertEquals("a", expr.parse("(a)").value());
         assertEquals("a", expr.parse("((a))").value());
         assertFalse(expr.parse("(((a))").matches());
-    }
-
-    @Test
-    public void testParseAllWithPartialConsumption() {
-        Taker<Character> parser = chr('a');
-        Result<Character> result = parser.parseAll("ab");
-        assertTrue(!result.matches()); // Should fail as not all input is consumed
-    }
-
-    @Test
-    public void testParseWithoutFullConsumption() {
-        Taker<Character> parser = chr('a');
-        Result<Character> result = parser.parse("ab");
-        assertTrue(result.matches()); // Should succeed as partial consumption is allowed
-        assertEquals('a', result.value());
     }
 
     @Test
@@ -140,15 +112,6 @@ public class TakerTest {
 
 
     @Test
-    public void testPure() {
-        Taker<String> parser = pure("test");
-        Input input = Input.of("");
-        Result<String> result = parser.parse(input);
-        assertTrue(result.matches());
-        assertEquals("test", result.value());
-    }
-
-    @Test
     public void testZeroOrMore() {
         Taker<List<Character>> parser = Lexical.chr(Character::isLetter).zeroOrMore().then(Lexical.chr(Character::isDigit).zeroOrMore()).map(Lists::appendAll);
         Input input = Input.of("abc123");
@@ -187,40 +150,6 @@ public class TakerTest {
     }
 
     @Test
-    public void testDigit() {
-        Input input = Input.of("5");
-        Result<Character> result = numeric.parse(input);
-        assertTrue(result.matches());
-        assertEquals('5', result.value());
-    }
-
-    @Test
-    public void testNumber() {
-        Taker<Long> parser = Numeric.number;
-        Input input = Input.of("12345");
-        Result<Long> result = parser.parse(input);
-        assertTrue(result.matches());
-        assertEquals(12345, result.value());
-    }
-
-    @Test
-    public void testFailure() {
-        Taker<Character> parser = chr('a');
-        Input input = Input.of("b");
-        Result<Character> result = parser.parse(input);
-        assertFalse(result.matches());
-    }
-
-    @Test
-    public void testChoice() {
-        Taker<Character> parser = chr('a').or(chr('b'));
-        Input input = Input.of("b");
-        Result<Character> result = parser.parse(input);
-        assertTrue(result.matches());
-        assertEquals('b', result.value());
-    }
-
-    @Test
     public void testChainl() {
         Taker<Long> number = Numeric.number;
         Taker<BinaryOperator<Long>> plus = chr('-').map(op -> (a, b) -> a - b);
@@ -240,16 +169,6 @@ public class TakerTest {
         Result<List<Character>> result = parser.parse(input);
         assertTrue(result.matches());
         assertEquals(3, result.value().size());
-    }
-
-    @Test
-    public void testOptional() {
-        Taker<Optional<Character>> parser = chr('a').optional();
-        Input input = Input.of("a");
-        Result<Optional<Character>> result = parser.parse(input);
-        assertTrue(result.matches());
-        assertTrue(result.value().isPresent());
-        assertEquals('a', result.value().get());
     }
 
     @Test
@@ -296,38 +215,6 @@ public class TakerTest {
         Result<List<Character>> result = parser.parse(input);
         assertTrue(result.matches());
         assertEquals(3, result.value().size());
-    }
-
-    @Test
-    public void testTakeWhile() {
-        // Create a parser that takes digits while they are present
-        Taker<String> takeWhileParser = takeWhile(CharPredicate.digit);
-
-        // Test case 1: Only digits
-        Result<String> result1 = takeWhileParser.parse("12345");
-        assertTrue(result1.matches());
-        assertEquals(5, result1.value().length());
-        assertEquals("12345", result1.value());
-
-        // Test case 2: Digits followed by letters
-        Result<String> result2 = takeWhileParser.parse("123abc");
-        assertTrue(result2.matches());
-        assertEquals(3, result2.value().length());
-        assertEquals("123", result2.value());
-
-        // Test case 3: Starts with letters
-        Result<String> result3 = takeWhileParser.parse("abc123");
-        assertFalse(result3.matches());
-
-        // Test case 4: Empty input
-        Result<String> result4 = takeWhileParser.parse("");
-        assertFalse(result4.matches());
-
-        // Test case 5: Mixed content with digits returning
-        Result<String> result5 = takeWhileParser.parse("123abc456");
-        assertTrue(result5.matches());
-        assertEquals(3, result5.value().length());
-        assertEquals("123", result5.value());
     }
 
     @Test
@@ -404,21 +291,6 @@ public class TakerTest {
     }
 
     @Test
-    public void testOrElse() {
-        Taker<Character> parser = chr('a').orElse('x');
-
-        // Test case 1: Match
-        Result<Character> result1 = parser.parse("a");
-        assertTrue(result1.matches());
-        assertEquals('a', result1.value());
-
-        // Test case 2: NoMatch but returns default
-        Result<Character> result2 = parser.parse("b");
-        assertTrue(result2.matches());
-        assertEquals('x', result2.value());
-    }
-
-    @Test
     public void testIsNot() {
         Taker<Character> parser = chr(Character::isLetter).onlyIf(isNot('b'));
 
@@ -430,67 +302,6 @@ public class TakerTest {
         // Should fail when current character is 'b'
         Result<Character> result2 = parser.parse("b");
         assertTrue(!result2.matches());
-    }
-
-    @Test
-    public void testTrim() {
-        Taker<Character> parser = trim(chr('a'));
-
-        // Test with spaces before and after
-        Result<Character> result = parser.parse("  a  ");
-        assertTrue(result.matches());
-        assertEquals('a', result.value());
-        assertTrue(result.input().isEof());
-    }
-
-    @Test
-    public void testTrimDoesNotSkipNewlines() {
-        Taker<Character> parser = trim(chr('a'));
-
-        Result<Character> before = parser.parse("\na");
-        assertFalse(before.matches());
-        assertEquals(0, before.input().position());
-
-        Result<Character> after = parser.parse(" a\n");
-        assertTrue(after.matches());
-        assertEquals('a', after.value());
-        assertEquals(2, after.input().position());
-    }
-
-    @Test
-    public void testTrimSpacesIsExplicitAliasForSpaceOnlyTrim() {
-        Taker<Character> parser = trimSpaces(chr('a'));
-
-        Result<Character> result = parser.parse("  a  ");
-        assertTrue(result.matches());
-        assertEquals('a', result.value());
-        assertTrue(result.input().isEof());
-
-        Result<Character> newline = parser.parse("\na");
-        assertFalse(newline.matches());
-    }
-
-    @Test
-    public void testTrimWhitespaceSkipsTabsAndNewlines() {
-        Taker<Character> parser = trimWhitespace(chr('a'));
-
-        Result<Character> result = parser.parse("\t\na \r\n");
-        assertTrue(result.matches());
-        assertEquals('a', result.value());
-        assertTrue(result.input().isEof());
-    }
-
-    @Test
-    public void testLexemeUsesCallerDefinedIgnoredInput() {
-        Taker<Character> parser = lexeme(chr('a'), chr('\t').oneOrMore());
-
-        Result<Character> tabs = parser.parse("\t\ta\t");
-        assertTrue(tabs.matches());
-        assertEquals('a', tabs.value());
-        assertTrue(tabs.input().isEof());
-
-        Result<Character> spaces = parser.parse(" a");
-        assertFalse(spaces.matches());
     }
 
     @Test

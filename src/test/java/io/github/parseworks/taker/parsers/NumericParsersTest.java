@@ -1,5 +1,6 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.parsers;
 
+import io.github.parseworks.taker.Result;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Numeric.*;

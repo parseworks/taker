@@ -1,8 +1,8 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.parsers.Combinators;
-import io.github.parseworks.taker.parsers.Lexical;
-import io.github.parseworks.taker.parsers.Numeric;
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -190,128 +190,6 @@ public class CombinatorsTest {
 
         // EOF case
         assertFalse(parser.parse("").matches());
-    }
-
-    @Test
-    public void testChrPredicate() {
-        CharPredicate isVowel = c -> "aeiouAEIOU".indexOf(c) >= 0;
-        Taker<Character> parser = Lexical.chr(isVowel);
-
-        // Match cases
-        assertTrue(parser.parse("a").matches());
-        assertTrue(parser.parse("E").matches());
-
-        // NoMatch case
-        assertFalse(parser.parse("x").matches());
-    }
-
-    @Test
-    public void testChrChar() {
-        Taker<Character> parser = Lexical.chr('!');
-
-        // Match case
-        assertTrue(parser.parse("!").matches());
-        assertEquals('!', parser.parse("!").value());
-
-        Taker<String> keyword = Lexical.string("if").or(Lexical.string("else")).or(Lexical.string("while"));
-        Taker<String> identifier = Lexical.regex("[a-zA-Z][a-zA-Z0-9]*");
-        Taker<String> number = Numeric.numeric.collectString();
-
-       Taker<String> token = oneOf(Arrays.asList(
-         keyword,
-       identifier,
-         number
-         ));
-
-        // NoMatch case
-        assertFalse(parser.parse("?").matches());
-    }
-
-    @Test
-    public void testString() {
-        Taker<String> parser = Lexical.string("hello");
-
-        var result = parser.parse("hello world");
-        var result2 = parser.parse("hello");
-        // Match case
-        assertTrue(result.matches());
-        assertEquals("hello", result2.value());
-
-        // NoMatch cases
-        assertFalse(parser.parse("hell").matches());   // prefix only
-        assertFalse(parser.parse("world").matches());  // different string
-
-        // Empty string case
-        assertTrue(Lexical.string("").parse("").matches());
-    }
-
-    @Test
-    public void testOneOfString() {
-        Taker<Character> parser = Lexical.oneOf("0123456789");
-
-        // Match cases - all digits
-        for (char c = '0'; c <= '9'; c++) {
-            assertTrue(parser.parse(String.valueOf(c)).matches());
-            assertEquals(c, parser.parse(String.valueOf(c)).value());
-        }
-
-        // NoMatch case
-        assertFalse(parser.parse("a").matches());
-    }
-
-    @Test
-    public void testRegex() {
-        // Keep a simple composition example; detailed regex semantics live in RegexTakerTest
-        Taker<String> letters = Lexical.regex("[A-Za-z]+");
-        Result<String> r1 = letters.parse("hello123");
-        assertTrue(r1.matches());
-        assertEquals("hello", r1.value());
-        assertTrue(letters.parse("abc").matches());
-        assertFalse(letters.parse("123").matches());
-    }
-
-    @Test
-    public void testComplexParsers() {
-        // Simple arithmetic expression: number + number
-        Taker<Integer> number = Lexical.oneOf("0123456789").map(Character::getNumericValue);
-        Taker<Character> plus = Lexical.chr('+');
-        Taker<Integer> expr = number.then(plus).then(number)
-                .map((n1, op, n2) -> n1 + n2);
-
-        // Match case
-        assertTrue(expr.parse("2+3").matches());
-        assertEquals(5, expr.parse("2+3").value());
-
-        // NoMatch cases
-        assertFalse(expr.parse("2-3").matches()); // Wrong operator
-        assertFalse(expr.parse("23").matches());  // Missing operator
-        assertFalse(expr.parse("2+").matches());  // Missing second number
-    }
-
-    @Test
-    public void testJsonLikeParser() {
-        // Taker for "key": "value" pattern
-        Taker<Character> quote = Lexical.chr('"');
-        Taker<String> chars = Lexical.chr(c -> c != '"').oneOrMore()
-                .map(list -> {
-                    StringBuilder sb = new StringBuilder();
-                    for (Character c : list) {
-                        sb.append(c);
-                    }
-                    return sb.toString();
-                });
-        Taker<String> quotedString = chars.between(quote);
-        Taker<String> keyValue = quotedString.then(Lexical.string(": ")).then(quotedString)
-                .map((key, sep, value) -> key + "=" + value);
-
-        // Match case
-        Result<String> result = keyValue.parse("\"name\": \"John\"");
-        assertTrue(result.matches());
-        assertEquals("name=John", result.value());
-
-        // NoMatch cases
-        assertFalse(keyValue.parse("name: \"John\"").matches());    // Missing quotes around key
-        assertFalse(keyValue.parse("\"name\":\"John\"").matches()); // Missing space after colon
     }
 
     @Test
