@@ -8,11 +8,7 @@ import java.util.List;
 
 import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CommitAndPartialMatchTest {
 
@@ -69,7 +65,7 @@ public class CommitAndPartialMatchTest {
         Result<String> result = commit(Lexical.string("abcd")).parse(Input.of("abc"));
 
         assertEquals(ResultType.PARTIAL, result.type());
-        assertTrue(result instanceof PartialMatch<String>);
+        assertInstanceOf(PartialMatch.class, result);
     }
 
     @Test

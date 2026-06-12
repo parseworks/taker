@@ -74,12 +74,12 @@ public class CharPredicateTest {
 
     @Test
     public void testAsciiPredicatesAreExplicitlyAscii() {
-        assertTrue(CharPredicate.digit.test('\u0661'));
-        assertFalse(CharPredicate.asciiDigit.test('\u0661'));
+        assertTrue(CharPredicate.digit.test('١'));
+        assertFalse(CharPredicate.asciiDigit.test('١'));
         assertTrue(CharPredicate.asciiDigit.test('1'));
 
-        assertTrue(CharPredicate.letter.test('\u03bb'));
-        assertFalse(CharPredicate.asciiLetter.test('\u03bb'));
+        assertTrue(CharPredicate.letter.test('λ'));
+        assertFalse(CharPredicate.asciiLetter.test('λ'));
         assertTrue(CharPredicate.asciiLetter.test('x'));
         assertTrue(CharPredicate.asciiLetterOrDigit.test('9'));
     }

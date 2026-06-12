@@ -88,7 +88,7 @@ When behavior changes, update or add tests in the relevant area:
 - focused regression tests for bugs or edge cases.
 
 Avoid relying on exact full error-message strings unless the test is specifically
-about diagnostics. Prefer checking structured result type, failure position, and
+about diagnostics. Prefer checking the structured result type, failure position, and
 important expected labels.
 
 ## Release Checklist

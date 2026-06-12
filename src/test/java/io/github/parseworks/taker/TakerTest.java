@@ -45,13 +45,13 @@ public class TakerTest {
 
         // Test with mismatched or missing quotes
         Result<String> resultMissingClosing = quotedParser.parse("\"" + test);
-        assertTrue(!resultMissingClosing.matches());
+        assertFalse(resultMissingClosing.matches());
 
         Result<String> resultMissingOpening = quotedParser.parse(test + "\"");
-        assertTrue(!resultMissingOpening.matches());
+        assertFalse(resultMissingOpening.matches());
 
         Result<String> resultNoQuotes = quotedParser.parse(test);
-        assertTrue(!resultNoQuotes.matches());
+        assertFalse(resultNoQuotes.matches());
     }
 
     @Test
@@ -258,7 +258,7 @@ public class TakerTest {
 
         // Test case 3: No terminator (should fail)
         Result<List<Character>> result3 = parser.parse("aaa");
-        assertTrue(!result3.matches());
+        assertFalse(result3.matches());
     }
 
     @Test
@@ -272,7 +272,7 @@ public class TakerTest {
 
         // Test case 2: Zero matches with terminator (should fail)
         Result<List<Character>> result2 = parser.parse(";");
-        assertTrue(!result2.matches());
+        assertFalse(result2.matches());
     }
 
     @Test
