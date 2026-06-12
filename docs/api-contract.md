@@ -430,31 +430,14 @@ right-associative expression parsing.
 
 ### `Csv` and `IsoDates`
 
-`Csv` and `IsoDates` are convenience parser collections. Their exact grammar
-coverage should be documented and tested before a 1.0 release.
+`Csv` and `IsoDates` are convenience parser collections. Their documented edge
+cases are covered by focused tests under `src/test/java/.../parsers`.
 
 ## Compatibility Rules
 
-Patch releases should not:
-
-- remove or rename stable public types or methods;
-- change result types for documented parser behavior;
-- change backtracking behavior of `commit`, `oneOf`, or `parseAll`;
-- change error positions for documented cases;
-- add stdout logging outside explicit debugging helpers.
-
-Minor releases may:
-
-- add new parser helpers;
-- add overloads;
-- improve error messages while preserving structured failure semantics;
-- add provisional APIs.
-
-Major releases may:
-
-- remove provisional APIs;
-- rename packages or classes;
-- change parser semantics.
+Compatibility rules and the release checklist live in
+[release-policy.md](release-policy.md). This document remains the source of
+truth for parser semantics that should be preserved by compatible releases.
 
 ## Open Contract Questions
 
@@ -463,4 +446,3 @@ These should be resolved before a 1.0 release:
 - Should `ResultError` be removed, renamed, or merged with `Failure`?
 - Should concrete result and input implementations become package-private, or
   remain public but explicitly unsupported?
-- Should performance tests move to JMH so unit tests stay deterministic?

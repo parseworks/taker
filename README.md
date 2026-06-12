@@ -113,7 +113,9 @@ Reasons at this location:
 ## API Contract
 
 The intended public API and parser semantics are documented in
-[docs/api-contract.md](docs/api-contract.md).
+[docs/api-contract.md](docs/api-contract.md). Compatibility expectations and
+the release checklist are documented in
+[docs/release-policy.md](docs/release-policy.md).
 
 ## Realistic Examples
 

@@ -5,8 +5,7 @@ import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.regex;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RegexTakerTest {
 
@@ -28,11 +27,11 @@ public class RegexTakerTest {
     public void testNoMatch() {
         Taker<String> parser = regex("\\d+");
         Result<String> result = parser.parse("abc");
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
         
         parser = regex("\\d+");
         result = parser.parse("abc");
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
     
     @Test
@@ -80,9 +79,9 @@ public class RegexTakerTest {
         // End anchor not matching
         parser = regex("abc$");
         result = parser.parse("abcdef");
-        // Should fail as "abc" is not at the end
-        // however it won't as regex does not enforce end of string
-        assertTrue(!result.matches());
+        // Should fail as "abc" is not at the end,
+        // however, it won't as regex does not enforce end of string
+        assertFalse(result.matches());
     }
     
     @Test

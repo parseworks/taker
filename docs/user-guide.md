@@ -17,8 +17,9 @@
    3. [Performance Optimization](#performance-optimization)
 6. [API Reference](#api-reference)
 7. [Realistic Examples](#realistic-examples)
-8. [Troubleshooting](#troubleshooting)
-9. [Best Practices](#best-practices)
+8. [Project Policy](#project-policy)
+9. [Troubleshooting](#troubleshooting)
+10. [Best Practices](#best-practices)
 
 ## Introduction
 
@@ -295,6 +296,13 @@ show larger parsers that are still small enough to study:
 
 These examples are run by the normal Maven test suite, so they double as
 documentation and compatibility checks.
+
+## Project Policy
+
+The parser semantics and intended public surface are documented in
+[api-contract.md](api-contract.md). Compatibility rules, pre-1.0 expectations,
+and the release checklist are documented in
+[release-policy.md](release-policy.md).
 
 ## Troubleshooting
 

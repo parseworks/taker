@@ -132,7 +132,7 @@ public class SimpleHtmlParser {
 
     private static final Taker<Character> TAG_START = chr('<').peek(not(oneOf('!','#','/')));
 
-    record KV(String k, String v){};
+    record KV(String k, String v){}
 
 
     // Element parsers
