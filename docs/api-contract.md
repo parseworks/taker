@@ -55,8 +55,10 @@ The following types are intended to be stable public API:
 - `next()` advances by one character and is only valid when `isEof()` is false.
 - `skip(offset)` advances by `offset` characters.
 - `hasMore()` is equivalent to `!isEof()`.
-- `Input.lowercase(input)` and `Input.uppercase(input)` return wrapper inputs
-  that transform character access without changing positions.
+- Case-insensitive matching belongs at the parser or predicate layer. Use
+  `Lexical.chrIgnoreCase`, `Lexical.stringIgnoreCase`,
+  `Lexical.oneOfIgnoreCase`, or the `CharPredicate.*IgnoreCase` helpers instead
+  of transforming the input cursor.
 
 `TextInput` additionally exposes line/column and snippet formatting. Error
 messages may use this information when available. Line and column reporting is
@@ -367,12 +369,17 @@ code paths that require quiet output.
 `Lexical` contains character, string, regex, and quoted-string parsers.
 
 - `chr(char)` matches exactly one character.
+- `chrIgnoreCase(char)` matches exactly one character ignoring case.
 - `chr(CharPredicate)` matches one character satisfying the predicate.
 - `string(str)` matches `str` exactly. The empty string succeeds without
   consuming input.
+- `stringIgnoreCase(str)` matches `str` ignoring case. On success it returns the
+  parser's expected string, not the source slice.
 - `regex(pattern, flags)` matches with `Matcher.lookingAt()` from the current
   input position.
 - `oneOf(chars)` matches one character from the supplied character set.
+- `oneOfIgnoreCase(chars)` matches one character from the supplied character set
+  ignoring case.
 - `spaces` matches one or more ASCII spaces (`' '`) and does not match tabs,
   newlines, or other whitespace.
 - `whitespace` matches one or more characters accepted by

@@ -265,11 +265,17 @@ complete semantics.
 ### Common Parsers and Combinators
 
 - **`Lexical.string(String)`**: matches an exact string.
+- **`Lexical.stringIgnoreCase(String)`**: matches a string without requiring
+  the same letter case.
 - **`Lexical.regex(String)`**: matches a Java regular expression at the current
   input position.
 - **`Lexical.chr(char)`**: matches one exact character.
+- **`Lexical.chrIgnoreCase(char)`**: matches one character without requiring
+  the same letter case.
 - **`Lexical.chr(CharPredicate)`**: matches one character satisfying a
   predicate.
+- **`Lexical.oneOfIgnoreCase(String)`**: matches one character from a set
+  without requiring the same letter case.
 - **`Lexical.collectChars(CharPredicate)`**: collects one or more matching input
   characters.
 - **`Lexical.skipWhile(CharPredicate)`**: skips zero or more matching input

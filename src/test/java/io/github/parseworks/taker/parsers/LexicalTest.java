@@ -9,9 +9,12 @@ import org.junit.jupiter.api.Test;
 import static io.github.parseworks.taker.CharPredicate.noneOf;
 import static io.github.parseworks.taker.parsers.Lexical.alphaNumeric;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.chrIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.oneOfIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.regex;
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Lexical.stringIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
 import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
 import static io.github.parseworks.taker.parsers.Lexical.lexeme;
@@ -49,6 +52,15 @@ public class LexicalTest {
     }
 
     @Test
+    void chrIgnoreCaseMatchesEitherCaseAndReturnsSourceCharacter() {
+        Taker<Character> parser = chrIgnoreCase('x');
+
+        assertEquals('x', parser.parse("x").value());
+        assertEquals('X', parser.parse("X").value());
+        assertFalse(parser.parse("y").matches());
+    }
+
+    @Test
     void chrMatchesPredicate() {
         CharPredicate isVowel = c -> "aeiouAEIOU".indexOf(c) >= 0;
         Taker<Character> parser = chr(isVowel);
@@ -70,6 +82,18 @@ public class LexicalTest {
     }
 
     @Test
+    void stringIgnoreCaseMatchesPrefixAndReturnsExpectedString() {
+        Taker<String> parser = stringIgnoreCase("hello");
+
+        Result<String> result = parser.parse("HeLLo world");
+        assertTrue(result.matches());
+        assertEquals("hello", result.value());
+        assertEquals(5, result.input().position());
+        assertFalse(parser.parse("help").matches());
+        assertTrue(stringIgnoreCase("").parse("").matches());
+    }
+
+    @Test
     void oneOfStringMatchesAnyCharacterInSet() {
         Taker<Character> parser = oneOf("0123456789");
 
@@ -78,6 +102,16 @@ public class LexicalTest {
             assertEquals(c, parser.parse(String.valueOf(c)).value());
         }
         assertFalse(parser.parse("a").matches());
+    }
+
+    @Test
+    void oneOfIgnoreCaseMatchesAnyCharacterInSetIgnoringCase() {
+        Taker<Character> parser = oneOfIgnoreCase("abc");
+
+        assertEquals('a', parser.parse("a").value());
+        assertEquals('B', parser.parse("B").value());
+        assertEquals('c', parser.parse("c").value());
+        assertFalse(parser.parse("d").matches());
     }
 
     @Test

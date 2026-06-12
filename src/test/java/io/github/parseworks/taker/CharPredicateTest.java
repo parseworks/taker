@@ -17,6 +17,14 @@ public class CharPredicateTest {
     }
 
     @Test
+    public void testIsIgnoreCase() {
+        CharPredicate p = CharPredicate.isIgnoreCase('a');
+        assertTrue(p.test('a'));
+        assertTrue(p.test('A'));
+        assertFalse(p.test('b'));
+    }
+
+    @Test
     public void testIsNot() {
         CharPredicate p = CharPredicate.isNot('a');
         assertFalse(p.test('a'));
@@ -43,10 +51,28 @@ public class CharPredicateTest {
     }
 
     @Test
+    public void testAnyOfIgnoreCase() {
+        CharPredicate p = CharPredicate.anyOfIgnoreCase("abc");
+        assertTrue(p.test('a'));
+        assertTrue(p.test('B'));
+        assertTrue(p.test('c'));
+        assertFalse(p.test('d'));
+    }
+
+    @Test
     public void testNoneOf() {
         CharPredicate p = CharPredicate.noneOf("abc");
         assertFalse(p.test('a'));
         assertFalse(p.test('b'));
+        assertFalse(p.test('c'));
+        assertTrue(p.test('d'));
+    }
+
+    @Test
+    public void testNoneOfIgnoreCase() {
+        CharPredicate p = CharPredicate.noneOfIgnoreCase("abc");
+        assertFalse(p.test('a'));
+        assertFalse(p.test('B'));
         assertFalse(p.test('c'));
         assertTrue(p.test('d'));
     }

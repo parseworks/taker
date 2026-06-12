@@ -13,16 +13,6 @@ public interface Input {
         return Inputs.of(s);
     }
 
-    /** Returns an {@code Input} that will always return characters as lowercase. */
-    static Input lowercase(Input input) {
-        return Inputs.lowercase(input);
-    }
-
-    /** Returns an {@code Input} that will always return characters as uppercase. */
-    static Input uppercase(Input input) {
-        return Inputs.uppercase(input);
-    }
-
     /** Returns the complete backing character data. */
     CharSequence data();
 

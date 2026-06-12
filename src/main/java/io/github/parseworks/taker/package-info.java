@@ -5,7 +5,9 @@
  * value with fluent instance combinators such as {@code then}, {@code or},
  * {@code map}, {@code oneOrMore}, {@code located}, and {@code expecting}.
  * Supporting types model immutable input cursors, parser results, failures, and
- * source spans.
+ * source spans. Inputs represent the original source text; case-insensitive
+ * matching is handled by parser and predicate helpers rather than transformed
+ * input cursors.
  * <p>
  * Static parser factories are intentionally kept out of this package-level API
  * surface where possible. Use {@link io.github.parseworks.taker.parsers.Lexical}

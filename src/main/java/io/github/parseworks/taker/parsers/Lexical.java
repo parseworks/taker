@@ -323,6 +323,36 @@ public class Lexical {
         });
     }
 
+    /** Matches {@code str} at the current input position, ignoring case. */
+    public static Taker<String> stringIgnoreCase(String str) {
+        return new Taker<>(in -> {
+            if (str.isEmpty()) {
+                return new Match<>("", in);
+            }
+
+            CharSequence data = in.data();
+            int start = in.position();
+            int strLen = str.length();
+
+            if (start + strLen > data.length()) {
+                int matched = 0;
+                while (matched < data.length() - start
+                        && charsEqualIgnoreCase(str.charAt(matched), data.charAt(start + matched))) {
+                    matched++;
+                }
+                return new NoMatch<>(in.skip(matched), str.substring(0, 1));
+            }
+
+            for (int i = 0; i < strLen; i++) {
+                if (!charsEqualIgnoreCase(str.charAt(i), data.charAt(start + i))) {
+                    return new NoMatch<>(in.skip(i), str.substring(i, i + 1));
+                }
+            }
+
+            return new Match<>(str, in.skip(strLen));
+        });
+    }
+
     /** Matches any single character from {@code str}. */
     public static Taker<Character> oneOf(String str) {
         if (str == null || str.isEmpty()) {
@@ -340,6 +370,14 @@ public class Lexical {
         }
 
         return satisfy("character in set [" + str + "]", charSet::contains);
+    }
+
+    /** Matches any single character from {@code str}, ignoring case. */
+    public static Taker<Character> oneOfIgnoreCase(String str) {
+        if (str == null || str.isEmpty()) {
+            return Combinators.fail("any character in empty string ignoring case");
+        }
+        return satisfy("character in set [" + str + "] ignoring case", CharPredicate.anyOfIgnoreCase(str));
     }
 
     /** Matches a regular expression at the current input position. */
@@ -432,8 +470,19 @@ public class Lexical {
         return Combinators.is(c);
     }
 
+    /** Matches a specific character, ignoring case. */
+    public static Taker<Character> chrIgnoreCase(char c) {
+        return chr(CharPredicate.isIgnoreCase(c));
+    }
+
     /** Matches a single character matching the given predicate. */
     public static Taker<Character> chr(CharPredicate predicate) {
         return satisfy(predicate.expected(), predicate);
+    }
+
+    private static boolean charsEqualIgnoreCase(char expected, char actual) {
+        return expected == actual
+                || Character.toLowerCase(expected) == Character.toLowerCase(actual)
+                || Character.toUpperCase(expected) == Character.toUpperCase(actual);
     }
 }

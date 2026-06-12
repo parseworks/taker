@@ -19,6 +19,8 @@
  * Prefer scanner primitives such as {@code collectChars}, {@code skipWhile},
  * {@code countWhile}, and {@code takeUntil} when parsing long raw character
  * spans. Prefer repeated {@code Taker} combinators when each item is a
- * structured parser with its own grammar.
+ * structured parser with its own grammar. For case-insensitive text, prefer
+ * explicit helpers such as {@code chrIgnoreCase}, {@code stringIgnoreCase}, and
+ * {@code oneOfIgnoreCase}.
  */
 package io.github.parseworks.taker.parsers;

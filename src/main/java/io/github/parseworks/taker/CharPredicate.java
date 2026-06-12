@@ -94,6 +94,20 @@ public interface CharPredicate {
     }
 
     /**
+     * Returns a predicate that tests if a character equals the target character,
+     * ignoring case with {@link Character#toLowerCase(char)}.
+     *
+     * @param target the character to compare against
+     * @return a predicate that is {@code true} when the character matches the target ignoring case
+     */
+    static CharPredicate isIgnoreCase(char target) {
+        char lower = Character.toLowerCase(target);
+        char upper = Character.toUpperCase(target);
+        return named("'" + display(target) + "' ignoring case",
+                c -> c == target || Character.toLowerCase(c) == lower || Character.toUpperCase(c) == upper);
+    }
+
+    /**
      * Returns a predicate that tests if a character is not equal to the target character.
      *
      * @param target the character to compare against
@@ -144,6 +158,18 @@ public interface CharPredicate {
     }
 
     /**
+     * Returns a predicate that tests if a character is present in the given
+     * string, ignoring case.
+     *
+     * @param chars a string containing the characters to match
+     * @return a predicate that is {@code true} if the character matches any supplied character ignoring case
+     */
+    static CharPredicate anyOfIgnoreCase(String chars) {
+        Objects.requireNonNull(chars, "chars");
+        return named("one of \"" + display(chars) + "\" ignoring case", ignoreCaseCharSet(chars));
+    }
+
+    /**
      * Returns a predicate that tests if any of the predicates accepts a character.
      *
      * @param predicates predicates to combine
@@ -175,6 +201,19 @@ public interface CharPredicate {
         Objects.requireNonNull(chars, "chars");
         CharPredicate included = charSet(chars);
         return named("none of \"" + display(chars) + "\"", c -> !included.test(c));
+    }
+
+    /**
+     * Returns a predicate that tests if a character is not present in the given
+     * string, ignoring case.
+     *
+     * @param chars a string containing the characters to avoid
+     * @return a predicate that is {@code true} if the character does not match any supplied character ignoring case
+     */
+    static CharPredicate noneOfIgnoreCase(String chars) {
+        Objects.requireNonNull(chars, "chars");
+        CharPredicate included = ignoreCaseCharSet(chars);
+        return named("none of \"" + display(chars) + "\" ignoring case", c -> !included.test(c));
     }
 
     /**
@@ -312,6 +351,38 @@ public interface CharPredicate {
             set.set(chars.charAt(i));
         }
         return set::get;
+    }
+
+    private static CharPredicate ignoreCaseCharSet(String chars) {
+        int length = chars.length();
+        if (length == 0) {
+            return c -> false;
+        }
+        if (length == 1) {
+            return isIgnoreCase(chars.charAt(0));
+        }
+        if (length < 10) {
+            return c -> {
+                char lower = Character.toLowerCase(c);
+                char upper = Character.toUpperCase(c);
+                for (int i = 0; i < length; i++) {
+                    char item = chars.charAt(i);
+                    if (c == item || lower == Character.toLowerCase(item) || upper == Character.toUpperCase(item)) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+        }
+
+        BitSet set = new BitSet(Character.MAX_VALUE + 1);
+        for (int i = 0; i < length; i++) {
+            char item = chars.charAt(i);
+            set.set(item);
+            set.set(Character.toLowerCase(item));
+            set.set(Character.toUpperCase(item));
+        }
+        return c -> set.get(c) || set.get(Character.toLowerCase(c)) || set.get(Character.toUpperCase(c));
     }
 
     private static String display(String chars) {
