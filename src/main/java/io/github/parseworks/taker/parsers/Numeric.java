@@ -7,7 +7,7 @@ import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 
-import static io.github.parseworks.taker.Taker.pure;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 
 public class Numeric {
@@ -214,7 +214,7 @@ public class Numeric {
         }
     });
 
-    private static final Taker<String> hexDigits = Taker.takeWhile(
+    private static final Taker<String> hexDigits = Lexical.takeWhile(
             CharPredicate.anyOf(CharPredicate.asciiDigit, CharPredicate.range('a', 'f'), CharPredicate.range('A', 'F')))
         .expecting("hex value");
 

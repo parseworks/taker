@@ -49,7 +49,6 @@ public class Main {
 Using combinators to parse a simple "Key: Value" pair:
 
 ```java
-import static io.github.parseworks.taker.Taker.*;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;

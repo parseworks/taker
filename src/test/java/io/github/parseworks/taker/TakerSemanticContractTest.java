@@ -11,16 +11,23 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.parseworks.taker.parsers.Combinators.eof;
+import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.collectChars;
+import static io.github.parseworks.taker.parsers.Lexical.countWhile;
+import static io.github.parseworks.taker.parsers.Lexical.skipWhile;
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
+import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TakerSemanticContractTest {
 
     @Test
     void pureAlwaysSucceedsWithoutConsumingInput() {
-        Result<String> result = Taker.pure("value").parse("abc");
+        Result<String> result = pure("value").parse("abc");
 
         assertTrue(result.matches());
         assertEquals("value", result.value());
@@ -92,7 +99,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void locatedCanBeAppliedToSubParsersForAstStyleMapping() {
-        Taker<String> spaces = Taker.takeWhile(c -> c == ' ').orElse("");
+        Taker<String> spaces = takeWhile(c -> c == ' ').orElse("");
         Taker<Located<String>> identifier = Lexical.word.located();
         Taker<List<Located<String>>> assignment = identifier
             .thenSkip(spaces)
@@ -119,7 +126,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void locatedSupportsZeroWidthSuccessfulParsers() {
-        Result<Located<String>> result = Taker.pure("empty").located().parse("abc");
+        Result<Located<String>> result = pure("empty").located().parse("abc");
 
         assertTrue(result.matches());
         assertEquals("empty", result.value().value());
@@ -236,7 +243,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void committedFailureStopsLaterAlternatives() {
-        Taker<String> parser = Taker.commit(string("ab")).or(string("ac"));
+        Taker<String> parser = commit(string("ab")).or(string("ac"));
 
         Result<String> result = parser.parse("ac");
 
@@ -246,7 +253,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void commitOnlyConvertsFailuresThatAdvanceInput() {
-        Result<Character> result = Taker.commit(chr('a')).parse("b");
+        Result<Character> result = commit(chr('a')).parse("b");
 
         assertFalse(result.matches());
         assertEquals(ResultType.NO_MATCH, result.type());
@@ -291,7 +298,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void repeatRejectsZeroWidthSuccessToPreventInfiniteLoops() {
-        Result<List<Character>> result = Taker.pure('x').zeroOrMore().parse("abc");
+        Result<List<Character>> result = pure('x').zeroOrMore().parse("abc");
 
         assertFalse(result.matches());
         assertEquals(0, result.input().position());
@@ -401,37 +408,37 @@ public class TakerSemanticContractTest {
 
     @Test
     void collectCharsScansOneOrMoreCharactersDirectly() {
-        Result<String> result = Taker.collectChars(CharPredicate.asciiLetter).parse("abc123");
+        Result<String> result = collectChars(CharPredicate.asciiLetter).parse("abc123");
 
         assertTrue(result.matches());
         assertEquals("abc", result.value());
         assertEquals(3, result.input().position());
 
-        assertFalse(Taker.collectChars(CharPredicate.asciiLetter).parse("123").matches());
+        assertFalse(collectChars(CharPredicate.asciiLetter).parse("123").matches());
     }
 
     @Test
     void skipWhileConsumesZeroOrMoreCharactersWithoutMaterializingText() {
-        Result<Void> result = Taker.skipWhile(CharPredicate.asciiLetter).parse("abc123");
+        Result<Void> result = skipWhile(CharPredicate.asciiLetter).parse("abc123");
 
         assertTrue(result.matches());
         assertNull(result.value());
         assertEquals(3, result.input().position());
 
-        Result<Void> empty = Taker.skipWhile(CharPredicate.asciiLetter).parse("123");
+        Result<Void> empty = skipWhile(CharPredicate.asciiLetter).parse("123");
         assertTrue(empty.matches());
         assertEquals(0, empty.input().position());
     }
 
     @Test
     void countWhileConsumesAndCountsZeroOrMoreCharacters() {
-        Result<Integer> result = Taker.countWhile(CharPredicate.asciiDigit).parse("123abc");
+        Result<Integer> result = countWhile(CharPredicate.asciiDigit).parse("123abc");
 
         assertTrue(result.matches());
         assertEquals(3, result.value());
         assertEquals(3, result.input().position());
 
-        Result<Integer> empty = Taker.countWhile(CharPredicate.asciiDigit).parse("abc");
+        Result<Integer> empty = countWhile(CharPredicate.asciiDigit).parse("abc");
         assertTrue(empty.matches());
         assertEquals(0, empty.value());
         assertEquals(0, empty.input().position());
@@ -484,7 +491,7 @@ public class TakerSemanticContractTest {
     @Test
     void recoverWithReceivesFailureAndCanReturnReplacementResult() {
         Result<String> result = chr('a').recoverWith(failure ->
-            new Taker<>(in -> Taker.pure("fallback").apply(in)).apply(failure.input())
+            new Taker<>(in -> pure("fallback").apply(in)).apply(failure.input())
         ).parse("b");
 
         assertTrue(result.matches());
@@ -494,9 +501,9 @@ public class TakerSemanticContractTest {
 
     @Test
     void recoverWithReceivesCommittedFailure() {
-        Result<String> result = Taker.commit(string("ab")).recoverWith(failure -> {
+        Result<String> result = commit(string("ab")).recoverWith(failure -> {
             assertEquals(ResultType.PARTIAL, failure.type());
-            return Taker.pure("recovered").apply(failure.input());
+            return pure("recovered").apply(failure.input());
         }).parse("ax");
 
         assertTrue(result.matches());
@@ -516,7 +523,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void takeWhileRequiresAtLeastOneCharacter() {
-        Result<String> result = Taker.takeWhile(CharPredicate.digit).parse("abc");
+        Result<String> result = takeWhile(CharPredicate.digit).parse("abc");
 
         assertFalse(result.matches());
         assertEquals(0, result.input().position());
@@ -524,7 +531,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void takeUntilSucceedsToEofWhenTerminatorIsMissing() {
-        Result<String> result = Taker.takeUntil(CharPredicate.is(';')).parse("abc");
+        Result<String> result = takeUntil(CharPredicate.is(';')).parse("abc");
 
         assertTrue(result.matches());
         assertEquals("abc", result.value());
@@ -562,7 +569,7 @@ public class TakerSemanticContractTest {
     @Test
     void directRecursiveRefFailsInsteadOfRecursingForever() {
         Taker<String> ref = Taker.ref();
-        ref.set(Taker.pure("").skipThen(ref));
+        ref.set(pure("").skipThen(ref));
 
         Result<String> result = ref.parse("a");
 

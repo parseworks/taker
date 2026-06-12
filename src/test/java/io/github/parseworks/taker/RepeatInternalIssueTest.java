@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,7 +14,7 @@ public class RepeatInternalIssueTest {
     @Test
     public void testRepeatInternalFailsWhenRepetitionFailsCritically() {
         // Case 1: Complex item fails partially
-        Taker<String> ab = Taker.commit(string("A").then(string("B")).map(a -> b -> a + b));
+        Taker<String> ab = commit(string("A").then(string("B")).map(a -> b -> a + b));
         Taker<List<String>> manyAB = ab.oneOrMore();
         
         // Input "ABA" -> "AB" matches, then "A" matches, then "B" fails.

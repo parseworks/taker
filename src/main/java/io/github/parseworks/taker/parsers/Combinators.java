@@ -3,6 +3,7 @@ package io.github.parseworks.taker.parsers;
 import io.github.parseworks.taker.*;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
+import io.github.parseworks.taker.impl.result.PartialMatch;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,26 @@ import java.util.function.Supplier;
 public class Combinators {
 
     private Combinators() {
+    }
+
+    /** Always succeeds without consuming input. */
+    public static <A> Taker<A> pure(A value) {
+        return new Taker<>(input -> new Match<>(value, input));
+    }
+
+    /**
+     * Commits the parser. If the parser fails and has consumed input, it returns
+     * a PartialMatch.
+     */
+    public static <A> Taker<A> commit(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
+        return new Taker<>(in -> {
+            Result<A> result = parser.apply(in);
+            if (!result.matches() && result.input().position() > in.position()) {
+                return new PartialMatch<>(result.input(), (Failure<A>) result);
+            }
+            return result;
+        });
     }
 
     /** Matches any single character. */

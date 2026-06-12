@@ -125,23 +125,23 @@ input on success, or callers risk non-terminating iteration.
 
 ### `pure`
 
-`Taker.pure(value)` always succeeds without consuming input.
+`Combinators.pure(value)` always succeeds without consuming input.
 
 ### `take`
 
-`Taker.take(predicate)` matches exactly one character when the predicate succeeds.
+`Lexical.take(predicate)` matches exactly one character when the predicate succeeds.
 It fails at EOF or when the predicate is false.
 
 ### `takeWhile`
 
-`Taker.takeWhile(predicate)` greedily consumes one or more matching characters.
+`Lexical.takeWhile(predicate)` greedily consumes one or more matching characters.
 It fails if no characters match.
 
 Use `.orElse("")` when a zero-length match is desired.
 
 ### `collectChars`
 
-`Taker.collectChars(predicate)` is an explicit alias for `takeWhile(predicate)`.
+`Lexical.collectChars(predicate)` is an explicit alias for `takeWhile(predicate)`.
 It greedily consumes one or more matching input characters and returns the
 matched text.
 
@@ -152,7 +152,7 @@ result allocation.
 
 ### `skipWhile`
 
-`Taker.skipWhile(predicate)` greedily consumes zero or more matching characters
+`Lexical.skipWhile(predicate)` greedily consumes zero or more matching characters
 and returns `null`.
 
 It always succeeds and does not allocate a matched string. Use it for ignored
@@ -160,14 +160,14 @@ input such as whitespace or comments when the skipped text is not needed.
 
 ### `countWhile`
 
-`Taker.countWhile(predicate)` greedily consumes zero or more matching characters
+`Lexical.countWhile(predicate)` greedily consumes zero or more matching characters
 and returns the number of consumed characters.
 
 It always succeeds and does not allocate a matched string.
 
 ### `takeUntil`
 
-`Taker.takeUntil(predicate)` and `Taker.takeUntil(String)` consume characters
+`Lexical.takeUntil(predicate)` and `Lexical.takeUntil(String)` consume characters
 until a terminator is found. The terminator is not consumed. If no terminator is
 found, these parsers consume to EOF and succeed.
 
@@ -232,7 +232,7 @@ main parser, then the closing parser or character, returning the main value.
 
 ### `commit`
 
-`Taker.commit(parser)` applies `parser`. If `parser` fails and reports an input
+`Combinators.commit(parser)` applies `parser`. If `parser` fails and reports an input
 position greater than the starting position, the failure is converted to
 `PARTIAL`. Choice combinators do not try later alternatives after a `PARTIAL`
 failure.
@@ -301,7 +301,7 @@ values with `String.valueOf(value)`. It is the allocation-conscious equivalent
 of `oneOrMore().map(Lists::join)`.
 
 For raw input characters, prefer the scanner-level
-`Taker.collectChars(predicate)` / `Taker.takeWhile(predicate)` APIs. Use
+`Lexical.collectChars(predicate)` / `Lexical.takeWhile(predicate)` APIs. Use
 `collectString()` when the repeated parser produces values that are not simply
 consecutive characters from the input.
 

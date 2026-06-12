@@ -4,6 +4,7 @@ import io.github.parseworks.taker.impl.result.PartialMatch;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
+import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PartialMatchTest {
@@ -57,7 +58,7 @@ public class PartialMatchTest {
 
     @Test
     public void testPartialMatch() {
-        Taker<String> abcd = Taker.commit(Lexical.string("abcd"));
+        Taker<String> abcd = commit(Lexical.string("abcd"));
         Input input = Input.of("abc");
         
         Result<String> result = abcd.parse(input);

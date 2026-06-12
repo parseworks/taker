@@ -125,7 +125,7 @@ For anything more complex than strings, use `map` to build domain objects.
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;
 
-import static io.github.parseworks.taker.Taker.collectChars;
+import static io.github.parseworks.taker.parsers.Lexical.collectChars;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 
 record KV(String key, String value) {}
@@ -157,12 +157,12 @@ if (!result.matches()) {
 }
 ```
 
-Use `flatMap` with `Taker.pure(...)` and `Combinators.fail(...)` for semantic
+Use `flatMap` with `Combinators.pure(...)` and `Combinators.fail(...)` for semantic
 validation after syntax has parsed.
 
 ```java
-import static io.github.parseworks.taker.Taker.pure;
 import static io.github.parseworks.taker.parsers.Combinators.fail;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Numeric.integer;
 
 Taker<Integer> positive = integer.flatMap(n ->
@@ -225,9 +225,9 @@ nested.set(collectChars(CharPredicate.asciiLetter).or(parens));
 Use scanner primitives for consecutive raw input characters:
 
 ```java
-Taker<String> word = Taker.collectChars(CharPredicate.asciiLetter);
-Taker<Void> spaces = Taker.skipWhile(CharPredicate.horizontalWhitespace);
-Taker<Integer> indentWidth = Taker.countWhile(CharPredicate.is(' '));
+Taker<String> word = Lexical.collectChars(CharPredicate.asciiLetter);
+Taker<Void> spaces = Lexical.skipWhile(CharPredicate.horizontalWhitespace);
+Taker<Integer> indentWidth = Lexical.countWhile(CharPredicate.is(' '));
 ```
 
 Prefer these over `chr(predicate).oneOrMore()` or
@@ -268,11 +268,11 @@ complete semantics.
 - **`Lexical.chr(char)`**: matches one exact character.
 - **`Lexical.chr(CharPredicate)`**: matches one character satisfying a
   predicate.
-- **`Taker.collectChars(CharPredicate)`**: collects one or more matching input
+- **`Lexical.collectChars(CharPredicate)`**: collects one or more matching input
   characters.
-- **`Taker.skipWhile(CharPredicate)`**: skips zero or more matching input
+- **`Lexical.skipWhile(CharPredicate)`**: skips zero or more matching input
   characters without materializing text.
-- **`Taker.countWhile(CharPredicate)`**: consumes zero or more matching input
+- **`Lexical.countWhile(CharPredicate)`**: consumes zero or more matching input
   characters and returns the count.
 - **`Combinators.oneOf(...)`**: tries alternatives in order.
 - **`optional()`**: returns `Optional<A>`.

@@ -3,6 +3,8 @@ package io.github.parseworks.taker;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static io.github.parseworks.taker.parsers.Combinators.pure;
+
 /**
  * Fluent builder for combining multiple parsers sequentially.
  * <p>
@@ -81,11 +83,11 @@ public class ApplyBuilder<A, B> {
     }
 
     public static <A, B> Taker<B> apply(Function<A, B> f, Taker<A> pa) {
-        return apply(Taker.pure(f), pa);
+        return apply(pure(f), pa);
     }
 
     public static <A, B> Taker<B> apply(Taker<Function<A, B>> pf, A a) {
-        return apply(pf, Taker.pure(a));
+        return apply(pf, pure(a));
     }
 
     public <R> Taker<R> map(Function<A, Function<B, R>> f) {

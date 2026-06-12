@@ -9,8 +9,6 @@ import io.github.parseworks.taker.parsers.Lexical;
 import java.util.*;
 
 import static io.github.parseworks.taker.CharPredicate.noneOf;
-import static io.github.parseworks.taker.Taker.takeUntil;
-import static io.github.parseworks.taker.Taker.takeWhile;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.*;
@@ -114,7 +112,7 @@ public class SimpleHtmlParser {
     }
 
     // Token parsers
-    private static final Taker<Void> WHITESPACE = Taker.skipWhile(CharPredicate.asciiWhitespace);
+    private static final Taker<Void> WHITESPACE = skipWhile(CharPredicate.asciiWhitespace);
 
     static String ILLEGAL_IDENTIFIER_CHARS = "=/> \t\n\r\f";
 

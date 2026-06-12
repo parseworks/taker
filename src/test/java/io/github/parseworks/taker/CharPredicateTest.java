@@ -2,6 +2,8 @@ package io.github.parseworks.taker;
 
 import org.junit.jupiter.api.Test;
 
+import static io.github.parseworks.taker.parsers.Lexical.take;
+import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -107,11 +109,11 @@ public class CharPredicateTest {
 
     @Test
     public void testNamedPredicatesImproveParserErrors() {
-        Result<Character> charResult = Taker.take(CharPredicate.asciiDigit).parse("x");
+        Result<Character> charResult = take(CharPredicate.asciiDigit).parse("x");
         assertFalse(charResult.matches());
         assertTrue(charResult.error().contains("expected ASCII digit"));
 
-        Result<String> takeWhileResult = Taker.takeWhile(CharPredicate.asciiLetter).parse("1");
+        Result<String> takeWhileResult = takeWhile(CharPredicate.asciiLetter).parse("1");
         assertFalse(takeWhileResult.matches());
         assertTrue(takeWhileResult.error().contains("expected at least one ASCII letter"));
     }

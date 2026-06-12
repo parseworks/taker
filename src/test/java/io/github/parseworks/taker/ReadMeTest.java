@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
+import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Numeric.integer;
 import static io.github.parseworks.taker.parsers.Numeric.number;
@@ -32,7 +33,7 @@ public class ReadMeTest {
         assertTrue(response.contains("line 1"), "Message was " + response);
 
         Taker<Long> sum =
-                Taker.commit(number.thenSkip(chr('+')).then(number).map(Long::sum));
+                commit(number.thenSkip(chr('+')).then(number).map(Long::sum));
 
         long sumResult = sum.parse(Input.of("1+2")).value();
         assertEquals(3, sumResult); // 3

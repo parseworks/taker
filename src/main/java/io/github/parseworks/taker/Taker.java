@@ -5,7 +5,6 @@ import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import io.github.parseworks.taker.impl.result.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
-import io.github.parseworks.taker.parsers.Lexical;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -46,163 +45,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
             }
             return new Match<>(value, result.input());
         });
-    }
-
-    /** Matches a character matching the predicate. */
-    public static Taker<Character> take(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(input -> {
-            if (input.isEof()) {
-                return new NoMatch<>(input, condition.expected());
-            }
-            var c = input.current();
-            if (condition.test(c)) {
-                return new Match<>(c, input.next());
-            }
-            return new NoMatch<>(input, condition.expected());
-        });
-    }
-
-    /** Matches characters while the predicate is true. */
-    public static Taker<String> takeWhile(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
-
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int current = start;
-            int length = data.length();
-
-            while (current < length && condition.test(data.charAt(current))) {
-                current++;
-            }
-            if (current == start) {
-                return new NoMatch<>(in, "at least one " + condition.expected());
-            }
-            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
-        });
-    }
-
-    /**
-     * Collects one or more matching input characters into a string.
-     * <p>
-     * This is the direct scanner path for raw character accumulation. Prefer it
-     * over {@code Lexical.chr(predicate).collectString()} when the grammar only
-     * needs to consume consecutive characters from the input.
-     *
-     * @param condition character predicate
-     * @return matched characters as a string
-     */
-    public static Taker<String> collectChars(CharPredicate condition) {
-        return takeWhile(condition);
-    }
-
-    /**
-     * Skips zero or more matching input characters.
-     * <p>
-     * Unlike {@link #takeWhile(CharPredicate)}, this succeeds when no
-     * characters match and does not allocate a matched string.
-     *
-     * @param condition character predicate
-     * @return a parser that consumes matching characters and returns {@code null}
-     */
-    public static Taker<Void> skipWhile(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            int count = countMatchingChars(in, condition);
-            return new Match<>(null, in.skip(count));
-        });
-    }
-
-    /**
-     * Counts zero or more matching input characters.
-     * <p>
-     * This is useful when only the span length matters and the matched text does
-     * not need to be materialized.
-     *
-     * @param condition character predicate
-     * @return a parser returning the number of matching characters consumed
-     */
-    public static Taker<Integer> countWhile(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            int count = countMatchingChars(in, condition);
-            return new Match<>(count, in.skip(count));
-        });
-    }
-
-    private static int countMatchingChars(Input in, CharPredicate condition) {
-        CharSequence data = in.data();
-        int start = in.position();
-        int current = start;
-        int length = data.length();
-
-        while (current < length && condition.test(data.charAt(current))) {
-            current++;
-        }
-        return current - start;
-    }
-
-    /** Matches characters until the predicate is true. */
-    public static Taker<String> takeUntil(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int len = data.length();
-            for (int i = start; i < len; i++) {
-                if (condition.test(data.charAt(i))) {
-                    String out = data.subSequence(start, i).toString();
-                    return new Match<>(out, in.skip(i - start));
-                }
-            }
-            String out = data.subSequence(start, len).toString();
-            return new Match<>(out, in.skip(len - start));
-        });
-    }
-
-    /**
-     * Collects characters until the first occurrence of the given needle.
-     * <pre>{@code
-     * takeUntil("-->").parse("comment-->").value(); // "comment"
-     * }</pre>
-     *
-     * @param needle delimiter string
-     * @return characters before the needle
-     */
-    public static Taker<String> takeUntil(String needle) {
-        Objects.requireNonNull(needle, "needle");
-        if (needle.isEmpty()) {
-            // Edge-case: empty delimiter – always succeed with empty string
-            return new Taker<>(in -> new Match<>("", in));
-        }
-
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int idx = Lexical.indexOf(data, needle, start);
-            if (idx < 0) {
-                // Not found: consume to EOF
-                String out = data.subSequence(start, data.length()).toString();
-                return new Match<>(out, in.skip(data.length() - start));
-            }
-            // Found: return substring before needle
-            String out = data.subSequence(start, idx).toString();
-            return new Match<>(out, in.skip(idx - start));
-        });
-    }
-
-    /**
-     * Matches a single character.
-     */
-    public static Taker<Character> is(char c) {
-        return Lexical.chr(c);
-    }
-
-    public static <A> Taker<A> pure(A value) {
-        return new Taker<>(input -> new Match<>(value, input));
     }
 
     /** Matches an expression enclosed by brackets. */
@@ -258,7 +100,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Tries this parser first, and if it fails, tries the alternative parser.
      * <pre>{@code
-     * Taker<Integer> p = Numeric.integer.or(Taker.pure(0));
+     * Taker<Integer> p = Numeric.integer.or(Combinators.pure(0));
      * p.parse("42").value(); // 42
      * p.parse("abc").value(); // 0
      * }</pre>
@@ -1337,23 +1179,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
         this.applyHandler = defaultApplyHandler = in -> {
             throw new IllegalStateException("Taker not initialized");
         };
-    }
-
-    /**
-     * Commits the parser. If the parser fails and has consumed input, it returns a PartialMatch.
-     *
-     * @param <A> the result type
-     * @param parser the parser to commit
-     * @return a committed parser
-     */
-    public static <A> Taker<A> commit(Taker<A> parser) {
-        return new Taker<>(in -> {
-            Result<A> result = parser.apply(in);
-            if (!result.matches() && result.input().position() > in.position()) {
-                return new PartialMatch<>(result.input(), (Failure<A>) result);
-            }
-            return result;
-        });
     }
 
     /** Creates a parser with the specified apply handler. */

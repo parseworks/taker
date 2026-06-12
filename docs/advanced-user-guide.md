@@ -99,13 +99,13 @@ While `zeroOrMore` and `oneOrMore` are common, you often need stricter bounds.
 matching a raw character span rather than a repeated structured parser.
 
 ```java
-Taker<String> word = Taker.takeWhile(CharPredicate.asciiLetter);
+Taker<String> word = takeWhile(CharPredicate.asciiLetter);
 
 // Equivalent name when the intent is text collection:
-Taker<String> word2 = Taker.collectChars(CharPredicate.asciiLetter);
+Taker<String> word2 = collectChars(CharPredicate.asciiLetter);
 
 // For ignored text, skip without creating a String:
-Taker<Void> spaces = Taker.skipWhile(CharPredicate.horizontalWhitespace);
+Taker<Void> spaces = skipWhile(CharPredicate.horizontalWhitespace);
 ```
 
 Avoid `chr(predicate).oneOrMore()` or `chr(predicate).collectString()` for long
@@ -116,7 +116,7 @@ a larger composition, but they allocate per parser step.
 
 ```java
 // Parse everything up to, but not including, a semicolon
-Taker<String> content = Taker.takeUntil(CharPredicate.is(';'));
+Taker<String> content = takeUntil(CharPredicate.is(';'));
 ```
 
 ### Negation and Validation
@@ -148,7 +148,7 @@ For custom validation:
 // Parse a positive number
 Taker<Integer> positiveNumber = number.flatMap(n -> {
     if (n > 0) {
-        return Taker.pure(n);
+        return pure(n);
     } else {
         return fail("positive number");
     }
@@ -714,12 +714,12 @@ Taker<String> regexId = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 CharPredicate idStart = CharPredicate.asciiLetter.or(CharPredicate.is('_'));
 CharPredicate idPart = CharPredicate.asciiLetterOrDigit.or(CharPredicate.is('_'));
 Taker<String> id = chr(idStart)
-    .then(Taker.collectChars(idPart).orElse(""))
+    .then(collectChars(idPart).orElse(""))
     .map((first, rest) -> first + rest);
 
 // Or build your own:
 Taker<String> myPattern = chr(idStart)
-    .then(Taker.collectChars(idPart).orElse(""))
+    .then(collectChars(idPart).orElse(""))
     .map((first, rest) -> first + rest);
 ```
 

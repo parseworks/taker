@@ -1,6 +1,7 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Numeric;
+import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.impl.result.Match;
 import io.github.parseworks.taker.impl.result.NoMatch;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -19,12 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.github.parseworks.taker.Taker.takeWhile;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.collectChars;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
 import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
@@ -83,9 +85,9 @@ public class ParserBenchmarks {
             repeatedInput = repeatedInput(10_000);
 
             collectedLetters = chr(CharPredicate.asciiLetter).collectString();
-            directlyCollectedLetters = Taker.collectChars(CharPredicate.asciiLetter);
-            countedLetters = Taker.countWhile(CharPredicate.asciiLetter);
-            skippedLetters = Taker.skipWhile(CharPredicate.asciiLetter);
+            directlyCollectedLetters = collectChars(CharPredicate.asciiLetter);
+            countedLetters = Lexical.countWhile(CharPredicate.asciiLetter);
+            skippedLetters = Lexical.skipWhile(CharPredicate.asciiLetter);
             listedLettersJoined = chr(CharPredicate.asciiLetter).oneOrMore().map(Lists::join);
             lettersInput = lettersInput(10_000);
 

@@ -13,7 +13,7 @@ public class Csv {
 
     private static final Taker<String> quotedField = escapedString('"', '"', Map.of('"', '"'));
 
-    private static final Taker<String> unquotedField = Taker.takeWhile(noneOf(",\n\r"));
+    private static final Taker<String> unquotedField = takeWhile(noneOf(",\n\r"));
 
     private static final Taker<String> field = quotedField.or(unquotedField);
 

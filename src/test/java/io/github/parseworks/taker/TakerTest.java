@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BinaryOperator;
 
-import static io.github.parseworks.taker.Taker.takeWhile;
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,7 +141,7 @@ public class TakerTest {
 
     @Test
     public void testPure() {
-        Taker<String> parser = Taker.pure("test");
+        Taker<String> parser = pure("test");
         Input input = Input.of("");
         Result<String> result = parser.parse(input);
         assertTrue(result.matches());

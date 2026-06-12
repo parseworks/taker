@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CoreTakerTest {
@@ -29,7 +30,7 @@ public class CoreTakerTest {
 
     @Test
     public void testPure() {
-        Taker<String> p = Taker.pure("pure value");
+        Taker<String> p = pure("pure value");
         Result<String> result = p.parse("anything");
         assertTrue(result.matches());
         assertEquals("pure value", result.value());

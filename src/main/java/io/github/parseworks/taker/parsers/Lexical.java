@@ -20,7 +20,7 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
  * Common text parsers for characters, strings, and whitespace.
  * <pre>{@code
  * Taker<String> greeting =
- *     Lexical.string("Hello").thenSkip(Taker.takeWhile(CharPredicate.horizontalWhitespace)).then(Lexical.word);
+ *     Lexical.string("Hello").thenSkip(Lexical.takeWhile(CharPredicate.horizontalWhitespace)).then(Lexical.word);
  * }</pre>
  */
 public class Lexical {
@@ -34,12 +34,78 @@ public class Lexical {
      */
     public static final Taker<Character> alphaNumeric = satisfy(CharPredicate.asciiLetterOrDigit.expected(), CharPredicate.asciiLetterOrDigit);
 
+    /** Matches a character satisfying the given predicate. */
+    public static Taker<Character> take(CharPredicate condition) {
+        return chr(condition);
+    }
+
+    /** Matches one or more characters while the predicate is true. */
+    public static Taker<String> takeWhile(CharPredicate condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition parser cannot be null");
+        }
+
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int current = start;
+            int length = data.length();
+
+            while (current < length && condition.test(data.charAt(current))) {
+                current++;
+            }
+            if (current == start) {
+                return new NoMatch<>(in, "at least one " + condition.expected());
+            }
+            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
+        });
+    }
+
+    /** Collects one or more matching input characters into a string. */
+    public static Taker<String> collectChars(CharPredicate condition) {
+        return takeWhile(condition);
+    }
+
+    /** Skips zero or more matching input characters without materializing text. */
+    public static Taker<Void> skipWhile(CharPredicate condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition parser cannot be null");
+        }
+        return new Taker<>(in -> {
+            int count = countMatchingChars(in, condition);
+            return new Match<>(null, in.skip(count));
+        });
+    }
+
+    /** Counts zero or more matching input characters. */
+    public static Taker<Integer> countWhile(CharPredicate condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("Condition parser cannot be null");
+        }
+        return new Taker<>(in -> {
+            int count = countMatchingChars(in, condition);
+            return new Match<>(count, in.skip(count));
+        });
+    }
+
+    private static int countMatchingChars(Input in, CharPredicate condition) {
+        CharSequence data = in.data();
+        int start = in.position();
+        int current = start;
+        int length = data.length();
+
+        while (current < length && condition.test(data.charAt(current))) {
+            current++;
+        }
+        return current - start;
+    }
+
     /**
      * Matches one or more ASCII space characters ({@code ' '}).
      * <p>
      * This parser does not match tabs, newlines, or other whitespace characters.
      */
-    public static final Taker<String> spaces = Taker.takeWhile(CharPredicate.is(' '));
+    public static final Taker<String> spaces = takeWhile(CharPredicate.is(' '));
 
     /**
      * Matches one or more Java whitespace characters according to
@@ -48,7 +114,7 @@ public class Lexical {
      * This includes line separators such as {@code '\n'} and {@code '\r'}, so
      * use it only when crossing line boundaries is intended by the grammar.
      */
-    public static final Taker<String> whitespace = Taker.takeWhile(CharPredicate.whitespace);
+    public static final Taker<String> whitespace = takeWhile(CharPredicate.whitespace);
 
     /**
      * Trims ASCII spaces around the given parser.
@@ -146,17 +212,54 @@ public class Lexical {
     }
 
     /** Matches a sequence of letters. */
-    public static final Taker<String> word = Taker.takeWhile(CharPredicate.letter);
+    public static final Taker<String> word = takeWhile(CharPredicate.letter);
 
     /**
      * Matches characters until a newline.
      */
-    public static final Taker<String> line = Taker.takeUntil(CharPredicate.is('\n'));
+    public static final Taker<String> line = takeUntil(CharPredicate.is('\n'));
 
 
     /** Collects characters until the first occurrence of the given needle. */
     public static Taker<String> takeUntil(String needle) {
-        return Taker.takeUntil(needle);
+        if (needle == null) {
+            throw new IllegalArgumentException("needle cannot be null");
+        }
+        if (needle.isEmpty()) {
+            return new Taker<>(in -> new Match<>("", in));
+        }
+
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int idx = indexOf(data, needle, start);
+            if (idx < 0) {
+                String out = data.subSequence(start, data.length()).toString();
+                return new Match<>(out, in.skip(data.length() - start));
+            }
+            String out = data.subSequence(start, idx).toString();
+            return new Match<>(out, in.skip(idx - start));
+        });
+    }
+
+    /** Collects characters until the predicate succeeds. */
+    public static Taker<String> takeUntil(CharPredicate condition) {
+        if (condition == null) {
+            throw new IllegalArgumentException("condition cannot be null");
+        }
+        return new Taker<>(in -> {
+            CharSequence data = in.data();
+            int start = in.position();
+            int len = data.length();
+            for (int i = start; i < len; i++) {
+                if (condition.test(data.charAt(i))) {
+                    String out = data.subSequence(start, i).toString();
+                    return new Match<>(out, in.skip(i - start));
+                }
+            }
+            String out = data.subSequence(start, len).toString();
+            return new Match<>(out, in.skip(len - start));
+        });
     }
 
     public static int indexOf(CharSequence haystack, String needle, int from) {

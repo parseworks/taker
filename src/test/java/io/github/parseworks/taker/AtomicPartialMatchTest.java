@@ -3,6 +3,7 @@ package io.github.parseworks.taker;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -24,7 +25,7 @@ public class AtomicPartialMatchTest {
     @Test
     public void testCommitWithPartialMatch() {
         // commit(string("abc")) will produce a PartialMatch on input "abx"
-        Taker<String> p = Taker.commit(string("abc"));
+        Taker<String> p = commit(string("abc"));
         Input input = Input.of("abx");
 
         Result<String> result = p.apply(input);

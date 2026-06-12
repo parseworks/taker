@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 
 import static io.github.parseworks.taker.CharPredicate.asciiDigit;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 
 public class IsoDates {
@@ -30,7 +31,7 @@ public class IsoDates {
 
     /** Matches .SSS (optional) */
     private static final Taker<String> millisPart = chr('.')
-            .skipThen(Taker.takeWhile(asciiDigit))
+            .skipThen(takeWhile(asciiDigit))
             .map(ms -> "." + ms)
             .orElse("");
 
