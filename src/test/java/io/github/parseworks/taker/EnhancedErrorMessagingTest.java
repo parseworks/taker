@@ -4,8 +4,7 @@ import io.github.parseworks.taker.results.Match;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the enhanced error messaging features in the ParseWorks library.
@@ -66,7 +65,7 @@ public class EnhancedErrorMessagingTest {
         
         // Test failure when neither parser matches
         Result<String> result3 = parser.parse("other");
-        assertTrue(!result3.matches());
+        assertFalse(result3.matches());
     }
     
     @Test

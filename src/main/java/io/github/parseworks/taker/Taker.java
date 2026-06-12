@@ -895,7 +895,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the concatenated parsed values
      */
     public Taker<String> collectString() {
-        return foldOneOrMoreFrom(StringBuilder::new, (builder, value) -> builder.append(value))
+        return foldOneOrMoreFrom(StringBuilder::new, StringBuilder::append)
             .map(StringBuilder::toString);
     }
 

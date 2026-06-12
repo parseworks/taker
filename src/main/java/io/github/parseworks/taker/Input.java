@@ -10,29 +10,17 @@ package io.github.parseworks.taker;
 public interface Input {
     /** Creates an {@code Input} from a {@link CharSequence}. */
     static Input of(CharSequence s) {
-        return new CharSequenceInput(s);
+        return Inputs.of(s);
     }
 
     /** Returns an {@code Input} that will always return characters as lowercase. */
     static Input lowercase(Input input) {
-        if (input instanceof LowercaseInput) {
-            return input;
-        }
-        if (input instanceof TextInput textInput) {
-            return new LowercaseTextInput(textInput);
-        }
-        return new LowercaseInput(input);
+        return Inputs.lowercase(input);
     }
 
     /** Returns an {@code Input} that will always return characters as uppercase. */
     static Input uppercase(Input input) {
-        if (input instanceof UppercaseInput) {
-            return input;
-        }
-        if (input instanceof TextInput textInput) {
-            return new UppercaseTextInput(textInput);
-        }
-        return new UppercaseInput(input);
+        return Inputs.uppercase(input);
     }
 
     /** Returns the complete backing character data. */

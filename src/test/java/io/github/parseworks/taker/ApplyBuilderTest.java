@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.regex;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ApplyBuilderTest {
 
@@ -155,7 +154,7 @@ public class ApplyBuilderTest {
             .map((s1, s2) -> s1 + " " + s2);
         
         Result<String> result = combined.parse("helloplanet");
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
     
     // Test with incomplete input
@@ -168,7 +167,7 @@ public class ApplyBuilderTest {
             .map((s1, s2) -> s1 + " " + s2);
         
         Result<String> result = combined.parse("hello");
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
     }
     
     // Test real-world scenario: parsing a simple assignment statement

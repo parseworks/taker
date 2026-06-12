@@ -303,7 +303,7 @@ public class TakerTest {
 
         // Should fail when current character is 'b'
         Result<Character> result2 = parser.parse("b");
-        assertTrue(!result2.matches());
+        assertFalse(result2.matches());
     }
 
     @Test
@@ -322,7 +322,7 @@ public class TakerTest {
 
         // Test with no elements (should fail)
         Result<List<Character>> result3 = parser.parse("");
-        assertTrue(!result3.matches());
+        assertFalse(result3.matches());
     }
 
     @Test
