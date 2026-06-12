@@ -16,6 +16,7 @@ The public API is the surface exported by the JPMS module:
 
 - `io.github.parseworks.taker`
 - `io.github.parseworks.taker.parsers`
+- `io.github.parseworks.taker.results`
 
 The following are stable API candidates:
 
@@ -29,6 +30,7 @@ The following are stable API candidates:
 - `CharPredicate`
 - `ApplyBuilder`
 - public parser libraries under `io.github.parseworks.taker.parsers`
+- concrete result records under `io.github.parseworks.taker.results`
 
 The `io.github.parseworks.taker.impl` package is internal. Users should not
 depend on it even when classes are visible in source form.
@@ -133,6 +135,7 @@ Before cutting a release:
 
    - `io.github.parseworks.taker`
    - `io.github.parseworks.taker.parsers`
+   - `io.github.parseworks.taker.results`
 
 9. Confirm the MIT license is present and referenced from the README.
 10. Review the public API for accidental exposure of internal types.

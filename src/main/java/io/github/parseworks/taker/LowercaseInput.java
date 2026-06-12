@@ -1,17 +1,10 @@
-package io.github.parseworks.taker.impl.inputs;
+package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.TextInput;
-
-/**
- * An {@link Input} decorator that always returns uppercase characters.
- * If the wrapped input is a {@link TextInput}, this also implements {@link TextInput}.
- */
-public class UppercaseInput implements Input {
+class LowercaseInput implements Input {
 
     private final Input delegate;
 
-    public UppercaseInput(Input delegate) {
+    LowercaseInput(Input delegate) {
         this.delegate = delegate;
     }
 
@@ -29,17 +22,17 @@ public class UppercaseInput implements Input {
 
             @Override
             public char charAt(int index) {
-                return Character.toUpperCase(delegate.data().charAt(index));
+                return Character.toLowerCase(delegate.data().charAt(index));
             }
 
             @Override
             public CharSequence subSequence(int start, int end) {
-                return delegate.data().subSequence(start, end).toString().toUpperCase();
+                return delegate.data().subSequence(start, end).toString().toLowerCase();
             }
 
             @Override
             public String toString() {
-                return delegate.data().toString().toUpperCase();
+                return delegate.data().toString().toLowerCase();
             }
         };
     }
@@ -51,12 +44,12 @@ public class UppercaseInput implements Input {
 
     @Override
     public char current() {
-        return Character.toUpperCase(delegate.current());
+        return Character.toLowerCase(delegate.current());
     }
 
     @Override
     public Input next() {
-        return new UppercaseInput(delegate.next());
+        return new LowercaseInput(delegate.next());
     }
 
     @Override
@@ -66,7 +59,7 @@ public class UppercaseInput implements Input {
 
     @Override
     public Input skip(int offset) {
-        return new UppercaseInput(delegate.skip(offset));
+        return new LowercaseInput(delegate.skip(offset));
     }
 
     @Override
@@ -76,6 +69,6 @@ public class UppercaseInput implements Input {
 
     @Override
     public String toString() {
-        return "UppercaseInput{delegate=" + delegate + "}";
+        return "LowercaseInput{delegate=" + delegate + "}";
     }
 }

@@ -51,7 +51,7 @@ public class Combinators {
     }
 
     /** Unconditionally throws an exception. */
-    public static <I> Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
+    public static Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
         return new Taker<>(in -> {
             throw sneakyThrow(supplier.get());
         });

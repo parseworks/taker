@@ -46,7 +46,6 @@ public record Match<A>(
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <B> B handle(Function<Result<A>, B> success, Function<Result<A>, B> failure) {
         return success.apply(this);
     }

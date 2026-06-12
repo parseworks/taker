@@ -3,7 +3,7 @@
 
 ### Results and Backtracking
 *   **Immutable Input** solves a number of problems having to do with consumption. When we pass an input object to a parser and it fails, we generally don't have to worry about whether partial consumption has occurred, because the Input object we passed in doesn't change.
-    *   *Note*: Some input sources (like `ReaderInput`) wrap mutable streams and are single-pass only. For full backtracking support and high-fidelity error reporting, random-access inputs like `CharSequenceInput` are preferred.
+    *   *Note*: For full backtracking support and high-fidelity error reporting, prefer random-access inputs created with `Input.of(CharSequence)`.
 *   **Backtracking Control**: The library distinguishes between a total failure to match (`NO_MATCH`) and a failure that occurred after some input was already consumed (`PARTIAL`).
     *   Sequential combinators like `then`, `skipThen`, and `thenSkip` propagate failures as-is. They do not automatically generate `PARTIAL` failures unless explicitly wrapped in `commit`.
     *   Parsers that attempt multiple options, such as `oneOf` or `or`, will stop and report a `PARTIAL` failure immediately if a branch returns a `PARTIAL` result.

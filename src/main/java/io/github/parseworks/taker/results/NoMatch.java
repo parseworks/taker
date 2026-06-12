@@ -45,7 +45,7 @@ public record NoMatch<A>(
      * Constructs a recoverable failure from tied alternative failures.
      */
     public NoMatch(List<Failure<A>> failures) {
-        this(failures.isEmpty() ? null : failures.get(0).input(), null, null, failures);
+        this(failures.isEmpty() ? null : failures.getFirst().input(), null, null, failures);
     }
 
     @Override

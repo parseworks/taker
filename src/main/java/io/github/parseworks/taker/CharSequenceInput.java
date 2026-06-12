@@ -1,20 +1,17 @@
-package io.github.parseworks.taker.impl.inputs;
-
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.TextInput;
+package io.github.parseworks.taker;
 
 /**
  * An implementation of the {@link TextInput} interface that uses a {@link CharSequence} as the input source.
  * This class is immutable and now stores only position and data. Line, column, and line content
  * are computed lazily on demand to reduce memory and copying.
  */
-public final class CharSequenceInput implements TextInput {
+final class CharSequenceInput implements TextInput {
 
     private final int position;
     private final CharSequence data;
     private volatile int[] lineOffsets;
 
-    public CharSequenceInput(int position, CharSequence data) {
+    CharSequenceInput(int position, CharSequence data) {
         this.position = position;
         this.data = data;
     }
@@ -30,7 +27,7 @@ public final class CharSequenceInput implements TextInput {
      *
      * @param data the {@code CharSequence} to be used as the input source
      */
-    public CharSequenceInput(CharSequence data) {
+    CharSequenceInput(CharSequence data) {
         this(0, data);
     }
 

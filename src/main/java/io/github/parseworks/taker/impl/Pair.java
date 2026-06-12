@@ -6,5 +6,5 @@ package io.github.parseworks.taker.impl;
  * @param <L> the type of the left element
  * @param <R> the type of the right element
  */
-public record Pair<L, R>(L left, R right) {
+record Pair<L, R>(L left, R right) {
 }

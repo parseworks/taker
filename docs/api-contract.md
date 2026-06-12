@@ -13,7 +13,7 @@ descriptive than traditional names like `many`, `many1`, `left`, or `right`.
 
 ## Public Packages
 
-The JPMS module exports these packages:
+The JPMS module is `io.github.parseworks.taker` and exports these packages:
 
 - `io.github.parseworks.taker`
 - `io.github.parseworks.taker.parsers`
@@ -41,12 +41,6 @@ The following types are intended to be stable public API:
 - `io.github.parseworks.taker.parsers.*`: built-in parser libraries.
 - `io.github.parseworks.taker.results.*`: concrete result records for low-level
   parser authors.
-
-The following types are visible in source form but should be treated as
-provisional until the API is tightened:
-
-- Concrete input implementations under `impl.inputs`.
-- `Pair` under `impl`.
 
 ## Input Contract
 
@@ -436,10 +430,3 @@ cases are covered by focused tests under `src/test/java/.../parsers`.
 Compatibility rules and the release checklist live in
 [release-policy.md](release-policy.md). This document remains the source of
 truth for parser semantics that should be preserved by compatible releases.
-
-## Open Contract Questions
-
-These should be resolved before a 1.0 release:
-
-- Should concrete input implementations become package-private, or remain
-  visible in source form but explicitly unsupported?

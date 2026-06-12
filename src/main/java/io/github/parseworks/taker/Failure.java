@@ -32,7 +32,7 @@ public interface Failure<A> extends Result<A> {
             failures = List.of(this);
         }
 
-        Failure<A> first = failures.get(0);
+        Failure<A> first = failures.getFirst();
         Input errorInput = first.input();
 
         if (errorInput == null) {

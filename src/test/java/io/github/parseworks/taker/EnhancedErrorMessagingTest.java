@@ -1,6 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.inputs.CharSequenceInput;
 import io.github.parseworks.taker.results.Match;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +14,7 @@ public class EnhancedErrorMessagingTest {
 
     @Test
     public void testTextInputLineAndColumn() {
-        TextInput input = new CharSequenceInput("line 1\nline 2\nline 3");
+        TextInput input = (TextInput) Input.of("line 1\nline 2\nline 3");
         
         // Skip to position 8 (line 2, column 2)
         TextInput skipped = (TextInput) input.skip(8);
@@ -27,7 +26,7 @@ public class EnhancedErrorMessagingTest {
     
     @Test
     public void testTextInputSnippets() {
-        TextInput input = new CharSequenceInput("line 1\nline 2\nline 3");
+        TextInput input = (TextInput) Input.of("line 1\nline 2\nline 3");
         
         // Skip to position 8 (line 2, column 2)
         TextInput skipped = (TextInput) input.skip(8);

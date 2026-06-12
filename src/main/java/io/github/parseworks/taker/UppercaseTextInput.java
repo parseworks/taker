@@ -1,24 +1,21 @@
-package io.github.parseworks.taker.impl.inputs;
-
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.TextInput;
+package io.github.parseworks.taker;
 
 /**
- * An {@link Input} decorator that always returns lowercase characters.
+ * An {@link Input} decorator that always returns uppercase characters.
  * If the wrapped input is a {@link TextInput}, this also implements {@link TextInput}.
  */
-public class LowercaseTextInput extends LowercaseInput implements TextInput {
+class UppercaseTextInput extends UppercaseInput implements TextInput {
 
-    TextInput delegate;
+    private final TextInput delegate;
 
-    public LowercaseTextInput(TextInput delegate){
+    UppercaseTextInput(TextInput delegate) {
         super(delegate);
         this.delegate = delegate;
     }
 
     @Override
     public Input next() {
-        return new LowercaseTextInput((TextInput) delegate.next());
+        return new UppercaseTextInput((TextInput) delegate.next());
     }
 
     @Override
@@ -48,6 +45,6 @@ public class LowercaseTextInput extends LowercaseInput implements TextInput {
 
     @Override
     public String toString() {
-        return "LowercaseTextInput{delegate=" + delegate + "}";
+        return "UppercaseTextInput{delegate=" + delegate + "}";
     }
 }

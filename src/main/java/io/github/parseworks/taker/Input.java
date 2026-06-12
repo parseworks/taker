@@ -1,7 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.inputs.*;
-
 /**
  * Immutable cursor over a character input.
  * <p>
