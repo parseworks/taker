@@ -115,6 +115,13 @@ Reasons at this location:
 The intended public API and parser semantics are documented in
 [docs/api-contract.md](docs/api-contract.md).
 
+## Realistic Examples
+
+Executable examples live in `src/test/java/io/github/parseworks/taker/examples`.
+They include a sectioned config parser and a recursive JSON-like value parser
+that demonstrate scanner primitives, whitespace policy, separated values, and
+recursive grammars against realistic input.
+
 ## Benchmarks
 
 JMH benchmarks live under `src/jmh/java` and are opt-in so normal test runs stay

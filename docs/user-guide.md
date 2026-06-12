@@ -16,8 +16,9 @@
    2. [Scanner Primitives](#scanner-primitives)
    3. [Performance Optimization](#performance-optimization)
 6. [API Reference](#api-reference)
-7. [Troubleshooting](#troubleshooting)
-8. [Best Practices](#best-practices)
+7. [Realistic Examples](#realistic-examples)
+8. [Troubleshooting](#troubleshooting)
+9. [Best Practices](#best-practices)
 
 ## Introduction
 
@@ -279,6 +280,21 @@ complete semantics.
 - **`oneOrMoreSeparatedBy(separator)`**: parses one or more separated values.
 - **`foldSeparatedBy(separator, identity, accumulator)`**: folds separated
   values without allocating an intermediate list.
+
+## Realistic Examples
+
+The executable examples in
+`src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java`
+show larger parsers that are still small enough to study:
+
+- **Sectioned config parser**: parses INI-style sections and key/value pairs
+  while preserving line breaks as meaningful grammar.
+- **Recursive JSON-like value parser**: parses objects, arrays, strings,
+  numbers, booleans, and null using `Taker.ref()`, separated values, and
+  whitespace-insensitive tokens.
+
+These examples are run by the normal Maven test suite, so they double as
+documentation and compatibility checks.
 
 ## Troubleshooting
 
