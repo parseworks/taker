@@ -153,7 +153,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a list parser
      */
     public Taker<List<A>> oneOrMoreUntil(Taker<?> until) {
-        return repeatInternal(1, Integer.MAX_VALUE, until);
+        return TakerRepetition.repeat(this, 1, Integer.MAX_VALUE, until);
     }
 
 
@@ -218,8 +218,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
 
-    private static final ThreadLocal<Integer> depth = ThreadLocal.withInitial(() -> 0);
-
     /**
      * Creates a parser that logs its progress and results to standard output while behaving exactly like this parser.
      * <p>
@@ -254,49 +252,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that logs its progress
      */
     public Taker<A> systemOut(String label) {
-        return new Taker<>(input -> {
-            int currentDepth = depth.get();
-            String indent = "  ".repeat(currentDepth);
-            String name = label != null ? label : "Taker";
-            String snippet = getSnippet(input);
-
-            System.out.printf("%s%s starting at pos %d: [%s]%n",
-                    indent, name, input.position(), snippet);
-
-            depth.set(currentDepth + 1);
-            long start = System.nanoTime();
-            try {
-                Result<A> result = this.apply(input);
-                long elapsed = System.nanoTime() - start;
-                double ms = elapsed / 1_000_000.0;
-
-                if (result.matches()) {
-                    System.out.printf("%s%s succeeded in %.3fms with value: %s%n",
-                            indent, name, ms, result.value());
-                } else {
-                    System.out.printf("%s%s failed in %.3fms: %s%n",
-                            indent, name, ms, result.error());
-                }
-                return result;
-            } finally {
-                depth.set(currentDepth);
-            }
-        });
-    }
-
-    private String getSnippet(Input input) {
-        StringBuilder sb = new StringBuilder();
-        Input temp = input;
-        for (int i = 0; i < 20 && !temp.isEof(); i++) {
-            char c = temp.current();
-            if (c == '\n') sb.append("\\n");
-            else if (c == '\r') sb.append("\\r");
-            else if (c == '\t') sb.append("\\t");
-            else sb.append(c);
-            temp = temp.next();
-        }
-        if (!temp.isEof()) sb.append("...");
-        return sb.toString();
+        return TakerDebug.systemOut(this, label);
     }
 
 
@@ -630,7 +586,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for matching zero or more occurrences
      */
     public Taker<List<A>> repeat(int target) {
-        return repeatInternal(target, target, null);
+        return TakerRepetition.repeat(this, target, target, null);
     }
 
     /**
@@ -685,20 +641,20 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for matching zero or more occurrences without an upper limit
      */
     public Taker<List<A>> repeat(int min, int max) {
-        return repeatInternal(min, max, null);
+        return TakerRepetition.repeat(this, min, max, null);
     }
 
     public Taker<List<A>> repeatAtLeast(int target) {
-        return repeatInternal(target, Integer.MAX_VALUE, null);
+        return TakerRepetition.repeat(this, target, Integer.MAX_VALUE, null);
     }
 
     public Taker<List<A>> repeatAtMost(int max) {
-        return repeatInternal(0, max, null);
+        return TakerRepetition.repeat(this, 0, max, null);
     }
 
     /** Parses zero or more elements separated by a delimiter. */
     public <SEP> Taker<List<A>> zeroOrMoreSeparatedBy(Taker<SEP> sep) {
-        return separatedBy(sep, 0);
+        return TakerRepetition.separatedBy(this, sep, 0);
     }
 
     /**
@@ -740,55 +696,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /** Parses one or more elements separated by a delimiter. */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
-        return separatedBy(sep, 1);
-    }
-
-    private <SEP> Taker<List<A>> separatedBy(Taker<SEP> sep, int min) {
-        Objects.requireNonNull(sep, "sep");
-        return new Taker<>(in -> {
-            List<A> values = new ArrayList<>();
-            Result<A> first = this.apply(in);
-            if (!first.matches()) {
-                if (first.type() == ResultType.PARTIAL) {
-                    return first.cast();
-                }
-                if (min == 0) {
-                    return new Match<>(Collections.emptyList(), in);
-                }
-                return first.cast();
-            }
-
-            values.add(first.value());
-            Input current = first.input();
-
-            while (true) {
-                Result<SEP> sepResult = sep.apply(current);
-                if (!sepResult.matches()) {
-                    if (sepResult.type() == ResultType.PARTIAL) {
-                        return sepResult.cast();
-                    }
-                    return new Match<>(Collections.unmodifiableList(values), current);
-                }
-
-                Result<A> next = this.apply(sepResult.input());
-                if (!next.matches()) {
-                    if (next.type() == ResultType.PARTIAL) {
-                        return next.cast();
-                    }
-                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
-                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
-                    }
-                    return new Match<>(Collections.unmodifiableList(values), current);
-                }
-
-                if (current.position() == next.input().position()) {
-                    return new NoMatch<>(current, "separator and parser to consume input during separated repetition");
-                }
-
-                values.add(next.value());
-                current = next.input();
-            }
-        });
+        return TakerRepetition.separatedBy(this, sep, 1);
     }
 
     /**
@@ -821,7 +729,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return foldRepeated(0, identitySupplier, accumulator);
+        return TakerRepetition.foldRepeated(this, 0, identitySupplier, accumulator);
     }
 
     /**
@@ -852,40 +760,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return foldRepeated(1, identitySupplier, accumulator);
-    }
-
-    private <B> Taker<B> foldRepeated(
-        int min,
-        Supplier<? extends B> identitySupplier,
-        BiFunction<? super B, ? super A, ? extends B> accumulator
-    ) {
-        Objects.requireNonNull(identitySupplier, "identitySupplier");
-        Objects.requireNonNull(accumulator, "accumulator");
-        return new Taker<>(in -> {
-            B accumulated = identitySupplier.get();
-            Input current = in;
-            int count = 0;
-
-            while (true) {
-                Result<A> parsed = this.apply(current);
-                if (!parsed.matches()) {
-                    if (parsed.type() == ResultType.PARTIAL) {
-                        return parsed.cast();
-                    }
-                    if (count >= min) {
-                        return new Match<>(accumulated, current);
-                    }
-                    return new NoMatch<>(current, "at least " + min + " repetition(s)", (Failure<?>) parsed);
-                }
-                if (current.position() == parsed.input().position()) {
-                    return new NoMatch<>(current, "parser to consume input during folded repetition");
-                }
-                accumulated = accumulator.apply(accumulated, parsed.value());
-                current = parsed.input();
-                count++;
-            }
-        });
+        return TakerRepetition.foldRepeated(this, 1, identitySupplier, accumulator);
     }
 
     /**
@@ -923,7 +798,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return foldSeparatedBy(sep, 1, identitySupplier, accumulator);
+        return TakerRepetition.foldSeparatedBy(this, sep, 1, identitySupplier, accumulator);
     }
 
     /**
@@ -961,62 +836,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return foldSeparatedBy(sep, 0, identitySupplier, accumulator);
-    }
-
-    private <SEP, B> Taker<B> foldSeparatedBy(
-        Taker<SEP> sep,
-        int min,
-        Supplier<? extends B> identitySupplier,
-        BiFunction<? super B, ? super A, ? extends B> accumulator
-    ) {
-        Objects.requireNonNull(sep, "sep");
-        Objects.requireNonNull(identitySupplier, "identitySupplier");
-        Objects.requireNonNull(accumulator, "accumulator");
-        return new Taker<>(in -> {
-            B accumulated = identitySupplier.get();
-            Result<A> first = this.apply(in);
-            if (!first.matches()) {
-                if (first.type() == ResultType.PARTIAL) {
-                    return first.cast();
-                }
-                if (min == 0) {
-                    return new Match<>(accumulated, in);
-                }
-                return first.cast();
-            }
-
-            accumulated = accumulator.apply(accumulated, first.value());
-            Input current = first.input();
-
-            while (true) {
-                Result<SEP> sepResult = sep.apply(current);
-                if (!sepResult.matches()) {
-                    if (sepResult.type() == ResultType.PARTIAL) {
-                        return sepResult.cast();
-                    }
-                    return new Match<>(accumulated, current);
-                }
-
-                Result<A> next = this.apply(sepResult.input());
-                if (!next.matches()) {
-                    if (next.type() == ResultType.PARTIAL) {
-                        return next.cast();
-                    }
-                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
-                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
-                    }
-                    return new Match<>(accumulated, current);
-                }
-
-                if (current.position() == next.input().position()) {
-                    return new NoMatch<>(current, "separator and parser to consume input during folded separated repetition");
-                }
-
-                accumulated = accumulator.apply(accumulated, next.value());
-                current = next.input();
-            }
-        });
+        return TakerRepetition.foldSeparatedBy(this, sep, 0, identitySupplier, accumulator);
     }
 
     /**
@@ -1041,7 +861,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     private Taker<Void> skipRepeated(int min) {
-        return foldRepeated(min, () -> null, (ignored, value) -> null);
+        return TakerRepetition.foldRepeated(this, min, () -> null, (ignored, value) -> null);
     }
 
     /**
@@ -1083,79 +903,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /** Parses zero or more times until a terminator succeeds. */
     public Taker<List<A>> zeroOrMoreUntil(Taker<?> terminator) {
-        return repeatInternal(0, Integer.MAX_VALUE, terminator);
-    }
-
-    /** Internal utility for repeating parsers. */
-    private Taker<List<A>> repeatInternal(int min, int max, Taker<?> until) {
-        if (min < 0 || max < 0) {
-            throw new IllegalArgumentException("The number of repetitions cannot be negative");
-        }
-        if (min > max) {
-            throw new IllegalArgumentException("The minimum number of repetitions cannot be greater than the maximum");
-        }
-        return new Taker<>(in -> {
-            List<A> buffer = new ArrayList<>();
-            Input current = in;
-            int count = 0;
-
-            while (true) {
-                // Check terminator (for one or moreUntil)
-                if (until != null) {
-                    Result<?> termRes = until.apply(current);
-                    if (termRes.matches()) {
-                        if (count < min) {
-                            // Provide more context about the error
-                            return new NoMatch<>(
-                                current, 
-                                "expected at least " + min + " items (found only " + count + " before terminator)");
-                        }
-                        return new Match<>(Collections.unmodifiableList(buffer), termRes.input());
-                    }
-                }
-                // End-of-input or max reached
-                if (current.isEof() || count >= max) {
-                    if (count >= min && until == null) {
-                        return new Match<>(Collections.unmodifiableList(buffer), current);
-                    }
-                    // Provide more context about the error
-                    String reason = current.isEof() ? "end of input reached" : "maximum repetitions reached";
-                    return new NoMatch<>(current, min + " repetitions (" + reason + ")");
-                }
-                // Parse an item
-                Result<A> res = this.apply(current);
-                if (!res.matches()) {
-                    if (res.type() == ResultType.PARTIAL){
-                        return res.cast();
-                    }
-                    // If we have a terminator, we MUST reach it
-                    if (until != null) {
-                        return res.cast();
-                    }
-
-                    if (count >= min) {
-                        return new Match<>(Collections.unmodifiableList(buffer), current);
-                    }
-
-                    // Pass through the original error with more context
-                    // pass literal failure as part of new failure to create a nested response
-                    return new NoMatch<>(current,
-                        "at least " + min + " repetition(s)",
-                        (NoMatch<?>) res
-                    );
-                }
-                if (current.position() == res.input().position()) {
-                    // Provide more context about the error when parser doesn't consume input
-                    return new NoMatch<>(
-                        current, 
-                        "parser to consume input during repetition"
-                    );
-                }
-                buffer.add(res.value());
-                current = res.input();
-                count++;
-            }
-        });
+        return TakerRepetition.repeat(this, 0, Integer.MAX_VALUE, terminator);
     }
 
     /**
