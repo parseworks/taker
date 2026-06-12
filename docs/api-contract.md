@@ -17,6 +17,7 @@ The JPMS module exports these packages:
 
 - `io.github.parseworks.taker`
 - `io.github.parseworks.taker.parsers`
+- `io.github.parseworks.taker.results`
 
 Classes under `io.github.parseworks.taker.impl` are internal implementation
 details. They must not be exported from the module and should not be referenced
@@ -38,13 +39,12 @@ The following types are intended to be stable public API:
 - `ApplyBuilder.Func3` through `ApplyBuilder.Func8`: arity-specific function
   interfaces used by `ApplyBuilder` map overloads.
 - `io.github.parseworks.taker.parsers.*`: built-in parser libraries.
+- `io.github.parseworks.taker.results.*`: concrete result records for low-level
+  parser authors.
 
 The following types are visible in source form but should be treated as
 provisional until the API is tightened:
 
-- Concrete result implementations such as `Match`, `NoMatch`, and `PartialMatch`
-  under `impl.result`. These are useful for low-level parser authors, but the
-  package placement should be finalized before release.
 - Concrete input implementations under `impl.inputs`.
 - `Pair` under `impl`.
 
@@ -441,6 +441,5 @@ truth for parser semantics that should be preserved by compatible releases.
 
 These should be resolved before a 1.0 release:
 
-- Should concrete result and input implementations become package-private, or
-  should the result implementations be promoted to a stable low-level extension
-  package?
+- Should concrete input implementations become package-private, or remain
+  visible in source form but explicitly unsupported?

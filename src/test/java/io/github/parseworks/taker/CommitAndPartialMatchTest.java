@@ -1,6 +1,6 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.result.PartialMatch;
+import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package io.github.parseworks.taker.impl.result;
+package io.github.parseworks.taker.results;
 
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;

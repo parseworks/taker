@@ -225,7 +225,7 @@ public class TakerSemanticContractTest {
 
     @Test
     void choiceReportsOnlyFailuresAtFarthestPosition() {
-        Taker<String> shallow = new Taker<>(input -> new io.github.parseworks.taker.impl.result.NoMatch<>(input, "shallow"));
+        Taker<String> shallow = new Taker<>(input -> new io.github.parseworks.taker.results.NoMatch<>(input, "shallow"));
         Taker<String> deepA = string("abz").expecting("abz");
         Taker<String> deepB = string("aby").expecting("aby");
 

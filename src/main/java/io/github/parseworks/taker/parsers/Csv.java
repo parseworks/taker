@@ -5,9 +5,9 @@ import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.impl.result.Match;
-import io.github.parseworks.taker.impl.result.NoMatch;
-import io.github.parseworks.taker.impl.result.PartialMatch;
+import io.github.parseworks.taker.results.Match;
+import io.github.parseworks.taker.results.NoMatch;
+import io.github.parseworks.taker.results.PartialMatch;
 
 import java.util.ArrayList;
 import java.util.Collections;

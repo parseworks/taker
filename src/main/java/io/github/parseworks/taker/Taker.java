@@ -1,8 +1,8 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.impl.result.Match;
-import io.github.parseworks.taker.impl.result.NoMatch;
-import io.github.parseworks.taker.impl.result.PartialMatch;
+import io.github.parseworks.taker.results.Match;
+import io.github.parseworks.taker.results.NoMatch;
+import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
 
 import java.util.*;

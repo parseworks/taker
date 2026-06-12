@@ -2,8 +2,8 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Numeric;
 import io.github.parseworks.taker.parsers.Lexical;
-import io.github.parseworks.taker.impl.result.Match;
-import io.github.parseworks.taker.impl.result.NoMatch;
+import io.github.parseworks.taker.results.Match;
+import io.github.parseworks.taker.results.NoMatch;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

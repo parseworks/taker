@@ -4,8 +4,8 @@ import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.impl.result.Match;
-import io.github.parseworks.taker.impl.result.NoMatch;
+import io.github.parseworks.taker.results.Match;
+import io.github.parseworks.taker.results.NoMatch;
 
 import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Lexical.chr;

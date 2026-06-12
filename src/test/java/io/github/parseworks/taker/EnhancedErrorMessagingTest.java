@@ -1,7 +1,7 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.impl.inputs.CharSequenceInput;
-import io.github.parseworks.taker.impl.result.Match;
+import io.github.parseworks.taker.results.Match;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.string;
