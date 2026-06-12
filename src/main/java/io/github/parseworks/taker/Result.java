@@ -5,6 +5,10 @@ import java.util.function.Function;
 
 /**
  * The outcome of applying a parser to an input.
+ * <p>
+ * A result is either a successful match or a failure. Most code should branch
+ * with {@link #matches()}, {@link #handle(Function, Function)}, or the optional
+ * convenience methods rather than depending on a concrete implementation class.
  *
  * @param <A> result type
  */
@@ -17,13 +21,13 @@ public interface Result<A> {
      */
     ResultType type();
 
-    /** Returns true if the parser matched. */
+    /** Returns {@code true} when the parser succeeded. */
     boolean matches();
 
-    /** Returns the parsed value. Throws if this is a NoMatch. */
+    /** Returns the parsed value. Throws when this result is a failure. */
     A value();
 
-    /** Returns the input position after parsing. */
+    /** Returns the input cursor reported by this result. */
     Input input();
 
     /**
@@ -34,36 +38,35 @@ public interface Result<A> {
      */
     <B> Result<B> cast();
 
-    /** Transforms the result value using the given function. */
+    /** Transforms a successful value and propagates failures unchanged. */
     <B> Result<B> map(java.util.function.Function<A, B> mapper);
 
-    /** Returns the error message if this is a NoMatch. */
+    /** Returns a formatted error message for failures, or an empty string for success. */
     String error();
 
     /**
-     * Returns an Optional containing the parsed value if this result is a Match.
-     * If this result is a NoMatch, returns an empty Optional.
+     * Returns the parsed value when this result succeeded.
      *
-     * @return an Optional containing the parsed value, or an empty Optional if this result is a NoMatch
+     * @return the parsed value, or an empty optional for failures
      */
     default Optional<A> toOptional() {
         return matches() ? Optional.of(value()) : Optional.empty();
     }
 
     /**
-     * Returns an Optional containing the error message if this result is a NoMatch.
-     * If this result is a Match, returns an empty Optional.
+     * Returns the formatted error message when this result failed.
      *
-     * @return an Optional containing the error message, or an empty Optional if this result is a Match
+     * @return the formatted error message, or an empty optional for success
      */
     default Optional<String> errorOptional() {
         return !matches() ? Optional.of(error()) : Optional.empty();
     }
 
     /**
-     * Apply one of two functions to this value.
-     * @param success   the function to be applied to a Match result
-     * @param failure   the function to be applied to a NoMatch result
+     * Applies one of two functions based on whether this result succeeded.
+     *
+     * @param success   function applied to successful results
+     * @param failure   function applied to failed results
      * @param <B>       the function return type
      * @return          the result of applying either function
      */

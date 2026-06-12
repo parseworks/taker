@@ -4,7 +4,7 @@
 1. [Introduction](#introduction)
 2. [Understanding Parser Concepts](#understanding-parser-concepts)
 3. [The Parser Design Process](#the-parser-design-process)
-4. [Implementing Parsers with parseWorks](#implementing-parsers-with-parseworks)
+4. [Implementing Parsers with Taker](#implementing-parsers-with-Taker)
 5. [Design Patterns for Parsers](#design-patterns-for-parsers)
 6. [Testing and Debugging Parsers](#testing-and-debugging-parsers)
 7. [Performance Considerations](#performance-considerations)
@@ -12,7 +12,7 @@
 
 ## Introduction
 
-Use this guide to design and implement parsers with parseWorks. Apply the steps and patterns here to build parsers for configuration files, domain-specific languages, and full programming languages in a consistent, repeatable way.
+Use this guide to design and implement parsers with Taker. Apply the steps and patterns here to build parsers for configuration files, domain-specific languages, and full programming languages in a consistent, repeatable way.
 
 ## Understanding Parser Concepts
 
@@ -35,7 +35,7 @@ There are several types of parsers, each with its own strengths and weaknesses:
 - **LR Parsers**: Left-to-right, Rightmost derivation parsers
 - **Parser Combinators**: Composable parsers built from smaller parsers
 
-parseWorks is a parser combinator library, which means it allows you to build complex parsers by combining simpler ones.
+Taker is a parser combinator library, which means it allows you to build complex parsers by combining simpler ones.
 
 ### Grammar Notation
 
@@ -80,15 +80,15 @@ Decide how to structure your parser:
 
 ### 4. Implement the Parser
 
-Implement the parser using your chosen approach (in this case, parser combinators with parseWorks).
+Implement the parser using your chosen approach (in this case, parser combinators with Taker).
 
 ### 5. Test and Refine
 
 Test your parser with various inputs, including edge cases, and refine it as needed.
 
-## Implementing Parsers with parseWorks
+## Implementing Parsers with Taker
 
-parseWorks provides a rich set of tools for implementing parsers:
+Taker provides a rich set of tools for implementing parsers:
 
 ### Basic Parsers
 

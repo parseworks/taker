@@ -8,8 +8,8 @@ import static io.github.parseworks.taker.parsers.Combinators.pure;
 /**
  * Fluent builder for combining multiple parsers sequentially.
  * <p>
- * Created by {@link Taker#then(Taker)}. Chain with {@code .then()}, {@code .thenSkip()},
- * or {@code .skipThen()}, and conclude with {@code .map()}.
+ * Created by {@link Taker#then(Taker)}. Chain with {@code then},
+ * {@code thenSkip}, or {@code skipThen}, and conclude with {@code map}.
  * <pre>{@code
  * Taker<Integer> sum =
  *     Numeric.number.thenSkip(Lexical.chr('+'))
@@ -21,54 +21,135 @@ import static io.github.parseworks.taker.parsers.Combinators.pure;
  * @param <B> second parser result type
  */
 public class ApplyBuilder<A, B> {
-    /** Function of arity 3. */
+    /**
+     * Function of arity 3.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func3<A, B, C, R> {
         R apply(A a, B b, C c);
     }
 
-    /** Function of arity 4. */
+    /**
+     * Function of arity 4.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <D> fourth argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func4<A, B, C, D, R> {
         R apply(A a, B b, C c, D d);
     }
 
-    /** Function of arity 5. */
+    /**
+     * Function of arity 5.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <D> fourth argument type
+     * @param <E> fifth argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func5<A, B, C, D, E, R> {
         R apply(A a, B b, C c, D d, E e);
     }
 
-    /** Function of arity 6. */
+    /**
+     * Function of arity 6.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <D> fourth argument type
+     * @param <E> fifth argument type
+     * @param <G> sixth argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func6<A, B, C, D, E, G, R> {
         R apply(A a, B b, C c, D d, E e, G g);
     }
 
-    /** Function of arity 7. */
+    /**
+     * Function of arity 7.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <D> fourth argument type
+     * @param <E> fifth argument type
+     * @param <G> sixth argument type
+     * @param <H> seventh argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func7<A, B, C, D, E, G, H, R> {
         R apply(A a, B b, C c, D d, E e, G g, H h);
     }
 
-    /** Function of arity 8. */
+    /**
+     * Function of arity 8.
+     *
+     * @param <A> first argument type
+     * @param <B> second argument type
+     * @param <C> third argument type
+     * @param <D> fourth argument type
+     * @param <E> fifth argument type
+     * @param <G> sixth argument type
+     * @param <H> seventh argument type
+     * @param <I> eighth argument type
+     * @param <R> result type
+     */
     @FunctionalInterface
     public interface Func8<A, B, C, D, E, G, H, I, R> {
         R apply(A a, B b, C c, D d, E e, G g, H h, I i);
     }
 
-    protected final Taker<A> pa;
-    protected final Taker<B> pb;
+    private final Taker<A> pa;
+    private final Taker<B> pb;
 
+    /**
+     * Creates a sequence builder.
+     *
+     * @param pa first parser
+     * @param pb second parser
+     */
     public ApplyBuilder(Taker<A> pa, Taker<B> pb) {
         this.pa = pa;
         this.pb = pb;
     }
 
+    /**
+     * Creates a sequence builder.
+     *
+     * @param pa first parser
+     * @param pb second parser
+     * @param <A> first parser result type
+     * @param <B> second parser result type
+     * @return a builder for the two parsers
+     */
     public static <A, B> ApplyBuilder<A, B> of(Taker<A> pa, Taker<B> pb) {
         return new ApplyBuilder<>(pa, pb);
     }
 
+    /**
+     * Applies a parsed function to a parsed value.
+     *
+     * @param functionProvider parser that produces a function
+     * @param valueParser parser that produces a value
+     * @param <A> function input type
+     * @param <B> function output type
+     * @return a parser returning the applied result
+     */
     public static <A, B> Taker<B> apply(Taker<Function<A, B>> functionProvider, Taker<A> valueParser) {
         return new Taker<>(in -> {
             Result<Function<A, B>> functionResult = functionProvider.apply(in);
@@ -82,26 +163,72 @@ public class ApplyBuilder<A, B> {
         });
     }
 
+    /**
+     * Applies a function to a parsed value.
+     *
+     * @param f function to apply
+     * @param pa value parser
+     * @param <A> function input type
+     * @param <B> function output type
+     * @return a parser returning the applied result
+     */
     public static <A, B> Taker<B> apply(Function<A, B> f, Taker<A> pa) {
         return apply(pure(f), pa);
     }
 
+    /**
+     * Applies a parsed function to a constant value.
+     *
+     * @param pf function parser
+     * @param a constant value
+     * @param <A> function input type
+     * @param <B> function output type
+     * @return a parser returning the applied result
+     */
     public static <A, B> Taker<B> apply(Taker<Function<A, B>> pf, A a) {
         return apply(pf, pure(a));
     }
 
+    /**
+     * Maps the two parsed values with a curried function.
+     *
+     * @param f curried mapper
+     * @param <R> mapped result type
+     * @return a mapped parser
+     */
     public <R> Taker<R> map(Function<A, Function<B, R>> f) {
         return apply(pa.map(f), pb);
     }
 
+    /**
+     * Maps the two parsed values.
+     *
+     * @param f mapper function
+     * @param <R> mapped result type
+     * @return a mapped parser
+     */
     public <R> Taker<R> map(BiFunction<A, B, R> f) {
         return ApplyBuilder.<B, R>apply(pa.map(a -> b -> f.apply(a, b)), pb);
     }
 
+    /**
+     * Parses another parser after this sequence and discards its value.
+     *
+     * @param pc parser to skip
+     * @param <C> skipped parser result type
+     * @return this builder with the skipped parser appended
+     */
     public <C> ApplyBuilder<A, B> thenSkip(Taker<C> pc) {
         return new ApplyBuilder<>(pa, pb.thenSkip(pc));
     }
 
+    /**
+     * Parses another parser after this sequence and returns its value.
+     *
+     * @param pc parser to return
+     * @param <C> returned parser result type
+     * @return a parser returning {@code pc}'s value
+     */
     public <C> Taker<C> skipThen(Taker<C> pc) {
         return allSkipped().skipThen(pc);
     }
@@ -110,6 +237,13 @@ public class ApplyBuilder<A, B> {
         return pa.thenSkip(pb).map(any -> null);
     }
 
+    /**
+     * Appends a parser to this sequence.
+     *
+     * @param pc parser to append
+     * @param <C> appended parser result type
+     * @return a builder for three parsed values
+     */
     public <C> ApplyBuilder3<C> then(Taker<C> pc) {
         return new ApplyBuilder3<>(pc);
     }

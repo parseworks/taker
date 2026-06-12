@@ -7,7 +7,10 @@ import io.github.parseworks.taker.ResultType;
 import java.util.function.Function;
 
 /**
- * Represents a successful result in a parser combinator.
+ * Successful parser result.
+ *
+ * @param value parsed value
+ * @param input input cursor after the successful parse
  *
  * @param <A> the type of the parsed value
  */
@@ -43,6 +46,7 @@ public record Match<A>(
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <B> B handle(Function<Result<A>, B> success, Function<Result<A>, B> failure) {
         return success.apply(this);
     }

@@ -1,6 +1,5 @@
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
@@ -15,7 +14,12 @@ import java.util.stream.StreamSupport;
 
 
 /**
- * Core parser class for consuming input and producing results of type {@code A}.
+ * Parser that consumes {@link Input} and produces a {@link Result}.
+ * <p>
+ * A {@code Taker<A>} is immutable after construction, except for parser
+ * references created with {@link #ref()} and initialized with {@link #set(Taker)}
+ * or {@link #set(Function)}. Parser composition is usually expressed with the
+ * fluent instance methods on this type.
  * <pre>{@code
  * Taker<Integer> parser = Numeric.integer;
  * }</pre>
@@ -37,61 +41,117 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the constant value
      */
     public <R> Taker<R> as(R value) {
-        return new Taker<>(in -> {
-            Result<A> result = this.apply(in);
-            if (!result.matches()) {
-                return result.cast();
-            }
-            return new Match<>(value, result.input());
-        });
+        return TakerTransforms.as(this, value);
     }
 
-    /** Matches an expression enclosed by brackets. */
+    /**
+     * Parses this parser between two occurrences of {@code bracket}.
+     *
+     * @param bracket opening and closing delimiter
+     * @return a parser that returns this parser's value
+     */
     public Taker<A> between(char bracket) {
         return Combinators.between(bracket, this);
     }
 
+    /**
+     * Parses this parser between {@code open} and {@code close}.
+     *
+     * @param open opening delimiter
+     * @param close closing delimiter
+     * @return a parser that returns this parser's value
+     */
     public Taker<A> between(char open, char close) {
         return Combinators.between(open, this, close);
     }
 
-    /** Applies sequential parsers and returns the first result. */
+    /**
+     * Parses this parser followed by {@code pb}, returning this parser's value.
+     *
+     * @param pb parser to apply after this parser
+     * @param <B> ignored parser result type
+     * @return a parser returning this parser's value
+     */
     public <B> Taker<A> thenSkip(Taker<B> pb) {
         return Combinators.between(null, this, pb);
     }
 
 
-    /** Applies sequential parsers and returns the second result. */
+    /**
+     * Parses this parser followed by {@code pb}, returning {@code pb}'s value.
+     *
+     * @param pb parser to apply after this parser
+     * @param <B> returned parser result type
+     * @return a parser returning {@code pb}'s value
+     */
     public <B> Taker<B> skipThen(Taker<B> pb) {
         return Combinators.between(this, pb, null);
     }
 
 
-    /** Returns an ApplyBuilder to combine sequential results. */
+    /**
+     * Parses this parser followed by {@code next} and returns a sequence builder.
+     *
+     * @param next parser to apply after this parser
+     * @param <B> next parser result type
+     * @return a builder for mapping both parsed values
+     */
     public <B> ApplyBuilder<A, B> then(Taker<B> next) {
         return ApplyBuilder.of(this, next);
     }
 
-    /** Matches an expression between brackets. */
+    /**
+     * Parses this parser between two occurrences of {@code bracket}.
+     *
+     * @param bracket opening and closing parser
+     * @param <B> delimiter parser result type
+     * @return a parser that returns this parser's value
+     */
     public <B> Taker<A> between(Taker<B> bracket) {
         return Combinators.between(bracket, this);
     }
 
+    /**
+     * Parses this parser between {@code open} and {@code close}.
+     *
+     * @param open opening parser
+     * @param close closing parser
+     * @param <B> opening parser result type
+     * @param <C> closing parser result type
+     * @return a parser that returns this parser's value
+     */
     public <B, C> Taker<A> between(Taker<B> open, Taker<C> close) {
         return Combinators.between(open, this, close);
     }
 
-    /** Matches a left-associative chain of operators, defaulting if none. */
+    /**
+     * Parses a left-associative operator chain, returning {@code a} when this parser does not match.
+     *
+     * @param op operator parser
+     * @param a identity value
+     * @return a chain parser
+     */
     public Taker<A> chainLeftZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
         return Combinators.chainLeft(this, op, a);
     }
 
-    /** Matches a left-associative chain of operators. */
+    /**
+     * Parses a left-associative operator chain requiring at least one value.
+     *
+     * @param op operator parser
+     * @return a chain parser
+     */
     public Taker<A> chainLeftOneOrMore(Taker<BinaryOperator<A>> op) {
         return Combinators.chainLeft(this, op);
     }
 
-    /** Matches a right-associative chain of operators, defaulting if none. */
+    /**
+     * Parses a right-associative operator chain, returning {@code a} when this parser does not match.
+     *
+     * @param op operator parser
+     * @param a identity value
+     * @return a chain parser
+     */
     public Taker<A> chainRightZeroOrMore(Taker<BinaryOperator<A>> op, A a) {
         return Combinators.chainRight(this, op, a);
     }
@@ -111,7 +171,12 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return Combinators.oneOf(this, other);
     }
 
-    /** Matches a right-associative chain of operators. */
+    /**
+     * Parses a right-associative operator chain requiring at least one value.
+     *
+     * @param op operator parser
+     * @return a chain parser
+     */
     public Taker<A> chainRightOneOrMore(Taker<BinaryOperator<A>> op) {
         return Combinators.chainRight(this, op);
     }
@@ -169,26 +234,18 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a conditional parser
      */
     public <B> Taker<A> onlyIf(Taker<B> validation) {
-        return new Taker<>(input -> {
-            Result<B> validationResult = validation.apply(input);
-            if (!validationResult.matches()) {
-                return validationResult.cast();
-            }
-            return this.apply(input);
-        });
+        return TakerLookahead.onlyIf(this, validation);
     }
 
+    /**
+     * Applies this parser only when the current character satisfies
+     * {@code validation}. The validation check does not consume input.
+     *
+     * @param validation character predicate checked at the current input
+     * @return a conditional parser
+     */
     public Taker<A> onlyIf(CharPredicate validation) {
-        return new Taker<>(input -> {
-            if (input.isEof()) {
-                return new NoMatch<>(input, "Expected Character at " + input.position());
-            }
-            var result = validation.test(input.current());
-            if (!result) {
-                return new NoMatch<>(input, "Predicate failed" );
-            }
-            return this.apply(input);
-        });
+        return TakerLookahead.onlyIf(this, validation);
     }
 
     /**
@@ -203,17 +260,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a lookahead parser
      */
     public <B> Taker<A> peek(Taker<B> lookahead) {
-        return new Taker<>(input -> {
-            Result<A> result = this.apply(input);
-            if (!result.matches()) {
-                return result;
-            }
-            Result<B> peek = lookahead.apply(result.input());
-            if (!peek.matches()) {
-                return new NoMatch<>(input, "Expected 'peek' to succeed", (NoMatch<?>) peek);
-            }
-            return result;
-        });
+        return TakerLookahead.peek(this, lookahead);
     }
 
     /**
@@ -230,7 +277,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Creates a parser that always succeeds, optionally containing this parser's result.
      * <p>
      * The {@code optional} method creates a parser that attempts to apply this parser, but always
-     * succeeds regardless of the result. The parsing process works as follows:
+     * succeeds. The parsing process works as follows:
      * <ol>
      *   <li>First attempts to apply this parser to the input</li>
      *   <li>If this parser succeeds, its result is wrapped in a non-empty {@link Optional}</li>
@@ -241,14 +288,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * parameters, modifiers, or any syntax structures that may or may not be present. It provides
      * a convenient way to handle the presence or absence of elements without disrupting the overall
      * parsing flow.
-     * <p>
-     * Implementation details:
-     * <ul>
-     *   <li>Combines {@link #map(Function)} with {@link #orElse(Object)} to achieve the optional behavior</li>
-     *   <li>Always succeeds, never causing parsing failure</li>
-     *   <li>No input is consumed when the parser fails</li>
-     *   <li>The result type is transformed from {@code A} to {@code Optional<A>}</li>
-     * </ul>
      * <p>
      * Example usage:
      * <pre>{@code
@@ -268,13 +307,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for collecting zero or more occurrences of a pattern
      */
     public Taker<Optional<A>> optional() {
-        return new Taker<>(in -> {
-            Result<A> result = this.apply(in);
-            if (!result.matches()) {
-                return new Match<>(Optional.empty(), in);
-            }
-            return new Match<>(Optional.of(result.value()), result.input());
-        });
+        return TakerTransforms.optional(this);
     }
 
     /**
@@ -306,13 +339,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that returns either the successful parse result or the default value
      */
     public Taker<A> orElse(A other) {
-        return new Taker<>(in -> {
-            Result<A> result = this.apply(in);
-            if (!result.matches()) {
-                return new Match<>(other, in);
-            }
-            return result;
-        });
+        return TakerTransforms.orElse(this, other);
     }
 
     /**
@@ -326,7 +353,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     /**
-     * Creates an iterator that incrementally parses the input, allowing for streaming processing of parse results.
+     * Creates an iterator that scans the input for repeated matches of this parser.
      * <p>
      * The {@code iterateParse} method provides a way to parse input incrementally by returning an iterator
      * that processes the input one element at a time. This is particularly useful when:
@@ -370,7 +397,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *
      * @param input the input to parse
      * @return an iterator that yields parse results one at a time
-     * @throws IllegalArgumentException if the input is null
      * @see Input for input handling
      * @see Result for parse result handling
      */
@@ -432,6 +458,13 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
 
+    /**
+     * Parses the input with optional full-input enforcement.
+     *
+     * @param in input to parse
+     * @param consumeAll when true, a successful parse must end at EOF
+     * @return parse result
+     */
     public Result<A> parse(Input in, boolean consumeAll) {
         Result<A> result = this.apply(in);
         if (consumeAll && result.matches()) {
@@ -445,7 +478,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Applies the specified input to the handler and returns the result.
      *
-     * @param in the input to process of type {@code Input<I>}
+     * @param in the input to process
      * @return the result of processing the input, encapsulated in a {@code Result<A>}
      */
     public Result<A> apply(Input in) {
@@ -538,7 +571,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * <pre>{@code
      * // Parse exactly 3 digits
      * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
-     * Taker<String> threeDigits = digit.repeat(3);
+     * Taker<List<Character>> threeDigits = digit.repeat(3);
      *
      * // Succeeds with [1,2,3] for input "123"
      * // Succeeds with [1,2,3] for input "123abc" (consuming only "123")
@@ -589,7 +622,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * <pre>{@code
      * // Parse between 2 and 4 digits
      * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
-     * Taker<String> digits = digit.repeat(2, 4);
+     * Taker<List<Character>> digits = digit.repeat(2, 4);
      *
      * // Succeeds with [1,2,3,4] for input "1234"
      * // Succeeds with [1,2,3,4] for input "12345" (consuming only "1234")
@@ -613,15 +646,35 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return TakerRepetition.repeat(this, min, max, null);
     }
 
+    /**
+     * Applies this parser at least {@code target} times and collects the values
+     * into an unmodifiable list.
+     *
+     * @param target minimum number of matches
+     * @return a parser that requires at least {@code target} matches
+     */
     public Taker<List<A>> repeatAtLeast(int target) {
         return TakerRepetition.repeat(this, target, Integer.MAX_VALUE, null);
     }
 
+    /**
+     * Applies this parser up to {@code max} times and collects the values into
+     * an unmodifiable list.
+     *
+     * @param max maximum number of matches
+     * @return a parser that accepts at most {@code max} matches
+     */
     public Taker<List<A>> repeatAtMost(int max) {
         return TakerRepetition.repeat(this, 0, max, null);
     }
 
-    /** Parses zero or more elements separated by a delimiter. */
+    /**
+     * Parses zero or more elements separated by {@code sep}.
+     *
+     * @param sep separator parser
+     * @param <SEP> separator result type
+     * @return a parser returning parsed values
+     */
     public <SEP> Taker<List<A>> zeroOrMoreSeparatedBy(Taker<SEP> sep) {
         return TakerRepetition.separatedBy(this, sep, 0);
     }
@@ -638,7 +691,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a transformed parser
      */
     public <R> Taker<R> map(Function<A, R> func) {
-        return new Taker<>(in -> apply(in).map(func));
+        return TakerTransforms.map(this, func);
     }
 
     /**
@@ -653,17 +706,16 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the value and zero-based start/end offsets
      */
     public Taker<Located<A>> located() {
-        return new Taker<>(in -> {
-            int start = in.position();
-            Result<A> result = this.apply(in);
-            if (!result.matches()) {
-                return result.cast();
-            }
-            return new Match<>(new Located<>(result.value(), start, result.input().position()), result.input());
-        });
+        return TakerTransforms.located(this);
     }
 
-    /** Parses one or more elements separated by a delimiter. */
+    /**
+     * Parses one or more elements separated by {@code sep}.
+     *
+     * @param sep separator parser
+     * @param <SEP> separator result type
+     * @return a parser returning parsed values
+     */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
         return TakerRepetition.separatedBy(this, sep, 1);
     }
@@ -847,7 +899,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
             .map(StringBuilder::toString);
     }
 
-    /** Initializes a parser reference with another parser's behavior. */
+    /**
+     * Initializes a parser reference with another parser's behavior.
+     *
+     * @param parser parser used by this reference
+     */
     public synchronized void set(Taker<A> parser) {
         if (parser == null) {
             throw new IllegalArgumentException("parser cannot be null");
@@ -858,7 +914,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
         this.applyHandler = parser.applyHandler;
     }
 
-    /** Initializes a parser reference with a custom apply handler. */
+    /**
+     * Initializes a parser reference with a custom apply handler.
+     *
+     * @param applyHandler parser implementation used by this reference
+     */
     public synchronized void set(Function<Input, Result<A>> applyHandler) {
         if (applyHandler == null) {
             throw new IllegalArgumentException("applyHandler cannot be null");
@@ -870,7 +930,12 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
 
-    /** Parses zero or more times until a terminator succeeds. */
+    /**
+     * Parses zero or more values until {@code terminator} succeeds.
+     *
+     * @param terminator parser that stops repetition
+     * @return a parser returning values parsed before the terminator
+     */
     public Taker<List<A>> zeroOrMoreUntil(Taker<?> terminator) {
         return TakerRepetition.repeat(this, 0, Integer.MAX_VALUE, terminator);
     }
@@ -890,7 +955,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
 
     /**
-     * Private constructor to create a parser reference that can be initialized later.
+     * Constructor used by parser references that are initialized later.
      */
     protected Taker() {
         this.applyHandler = defaultApplyHandler = in -> {
@@ -898,7 +963,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
         };
     }
 
-    /** Creates a parser with the specified apply handler. */
+    /**
+     * Creates a parser with the specified apply handler.
+     *
+     * @param applyHandler parser implementation
+     */
     public Taker(Function<Input, Result<A>> applyHandler) {
         if (applyHandler == null) {
             throw new IllegalArgumentException("applyHandler cannot be null");
@@ -906,7 +975,12 @@ public class Taker<A> implements Function<Input, Result<A>>{
         this.applyHandler = applyHandler;
     }
 
-    /** Creates a parser reference for recursive grammar definitions. */
+    /**
+     * Creates an uninitialized parser reference for recursive grammar definitions.
+     *
+     * @param <A> parser result type
+     * @return a parser reference to initialize with {@link #set(Taker)}
+     */
     public static <A> Taker<A> ref() {
         return new CheckParser<>();
     }
@@ -1005,10 +1079,10 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     /**
-     * Creates a parser that attempts to recover from errors by trying an alternative parser.
+     * Creates a parser that attempts to recover by trying an alternative parser.
      * <p>
-     * If this parser succeeds, its result is returned. If it fails, the recovery parser is applied
-     * to the same input position.
+     * If this parser succeeds, its result is returned. If it fails, the
+     * recovery parser is applied to the same starting input.
      * <p>
      * This is useful for error recovery in situations where there are multiple valid alternatives,
      * and you want to try them in sequence.
@@ -1018,18 +1092,11 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that tries the recovery parser if this parser fails
      */
     public <B> Taker<B> recover(Taker<B> recovery) {
-        return new Taker<>(input -> {
-            Result<A> result = this.apply(input);
-            if (result.matches()) {
-                return result.cast();
-            }
-            return recovery.apply(input);
-        });
+        return TakerRecovery.recover(this, recovery);
     }
 
     /**
-     * Creates a parser that attempts to recover from errors by applying a function
-     * to the failure result.
+     * Creates a parser that recovers by applying a function to the failure.
      * <p>
      * If this parser succeeds, its result is returned. If it fails, the recovery function is applied
      * to the failure result to produce a new result.
@@ -1045,13 +1112,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that applies the recovery function if this parser fails
      */
     public <B> Taker<B> recoverWith(Function<Failure<A>, Result<B>> recovery) {
-        return new Taker<>(input -> {
-            Result<A> result = this.apply(input);
-            if (result.matches()) {
-                return result.cast();
-            }
-            return recovery.apply((Failure<A>) result);
-        });
+        return TakerRecovery.recoverWith(this, recovery);
     }
 
     /**
@@ -1064,20 +1125,14 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @param label descriptive label
      * @return a labeled parser
      */
-    public  Taker<A> expecting(String label) {
-        return new Taker<>(input -> {
-            Result<A> result = this.apply(input);
-            if (result.matches()) return result;
-            return new NoMatch<>(result.input(), label, (Failure<?>) result);
-        });
+    public Taker<A> expecting(String label) {
+        return TakerTransforms.expecting(this, label);
     }
 
     /**
-     * This parser applies a function to the result of this parser, returning a new parser.
-     * This is a monadic operation that allows chaining parsers based on the result of the current parser.
-     * The following example shows where we want to parse a number of characters exactly, based on the initial number
-     * provided.
-     * This allows for dynamic parsing based on the result of the current parser.
+     * Uses this parser's successful value to choose the next parser.
+     * <p>
+     * This is useful when later grammar depends on an earlier parsed value.
      * <pre>{@code
      * Taker<String> p = Numeric.unsignedInteger.flatMap(n ->
      *     Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n))
@@ -1093,22 +1148,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a monadic parser
      */
     public <B> Taker<B> flatMap(Function<A, Taker<B>> f) {
-        if (f == null) {
-            throw new IllegalArgumentException("flatMap function cannot be null");
-        }
-        return new Taker<>(in -> {
-            Result<A> r = this.apply(in);
-            if (!r.matches()) {
-                // propagate the original failure
-                return r.cast();
-            }
-            Taker<B> next = f.apply(r.value());
-            if (next == null) {
-                // be defensive to help users diagnose nulls
-                return new NoMatch<B>(r.input(), "parser to function correctly").cast();
-            }
-            return next.apply(r.input());
-        });
+        return TakerTransforms.flatMap(this, f);
     }
 
 }

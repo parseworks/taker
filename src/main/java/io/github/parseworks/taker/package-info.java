@@ -12,5 +12,8 @@
  * for text and character parsers, {@link io.github.parseworks.taker.parsers.Numeric}
  * for numeric parsers, and {@link io.github.parseworks.taker.parsers.Combinators}
  * for general parser constructors and control combinators.
+ * <p>
+ * Custom low-level parsers can return concrete results from
+ * {@link io.github.parseworks.taker.results}.
  */
 package io.github.parseworks.taker;

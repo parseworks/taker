@@ -4,18 +4,21 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Represents a failure result.
+ * A failed parser result with structured diagnostic information.
+ * <p>
+ * Failures may be nested through {@link #cause()} or combined when multiple
+ * alternatives fail at the same farthest input position.
  *
  * @param <A> result type
  */
 public interface Failure<A> extends Result<A> {
-    /** Returns the underlying failure cause, or null. */
+    /** Returns the underlying failure cause, or {@code null}. */
     Failure<?> cause();
 
     /** Returns what was expected by the failed parser. */
     String expected();
 
-    /** Returns combined failures from multiple alternative parsers. */
+    /** Returns failures from tied alternatives, or {@code null}. */
     List<Failure<A>> combinedFailures();
 
     /** Returns a formatted error message. */
@@ -70,7 +73,7 @@ public interface Failure<A> extends Result<A> {
     }
 
     /**
-     * Returns a human-friendly error message for this failure with indentation based on depth.
+     * Returns a human-friendly error message for this failure at the given depth.
      *
      * @param depth the depth of the failure in the chain
      * @return the indented error message

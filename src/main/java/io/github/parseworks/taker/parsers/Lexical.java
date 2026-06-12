@@ -18,6 +18,12 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
 
 /**
  * Common text parsers for characters, strings, and whitespace.
+ * <p>
+ * Scanner-level methods such as {@link #takeWhile(CharPredicate)},
+ * {@link #collectChars(CharPredicate)}, {@link #skipWhile(CharPredicate)}, and
+ * {@link #takeUntil(String)} consume contiguous raw input directly. Prefer them
+ * over repeated single-character parsers when the grammar is simply collecting
+ * or skipping text.
  * <pre>{@code
  * Taker<String> greeting =
  *     Lexical.string("Hello").thenSkip(Lexical.takeWhile(CharPredicate.horizontalWhitespace)).then(Lexical.word);
@@ -26,12 +32,10 @@ import static io.github.parseworks.taker.parsers.Combinators.satisfy;
 public class Lexical {
 
 
-    /** Matches a single alphabetical character (a-z, A-Z). */
+    /** Matches a single ASCII letter ({@code a-z} or {@code A-Z}). */
     public static final Taker<Character> alpha = satisfy(CharPredicate.asciiLetter.expected(), CharPredicate.asciiLetter);
 
-    /**
-     * Matches a single alphanumeric character.
-     */
+    /** Matches a single ASCII letter or digit. */
     public static final Taker<Character> alphaNumeric = satisfy(CharPredicate.asciiLetterOrDigit.expected(), CharPredicate.asciiLetterOrDigit);
 
     /** Matches a character satisfying the given predicate. */
@@ -39,7 +43,7 @@ public class Lexical {
         return chr(condition);
     }
 
-    /** Matches one or more characters while the predicate is true. */
+    /** Matches one or more consecutive characters while {@code condition} is true. */
     public static Taker<String> takeWhile(CharPredicate condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition parser cannot be null");
@@ -61,7 +65,7 @@ public class Lexical {
         });
     }
 
-    /** Collects one or more matching input characters into a string. */
+    /** Alias for {@link #takeWhile(CharPredicate)} with collection-oriented naming. */
     public static Taker<String> collectChars(CharPredicate condition) {
         return takeWhile(condition);
     }
@@ -77,7 +81,7 @@ public class Lexical {
         });
     }
 
-    /** Counts zero or more matching input characters. */
+    /** Counts and consumes zero or more matching input characters. */
     public static Taker<Integer> countWhile(CharPredicate condition) {
         if (condition == null) {
             throw new IllegalArgumentException("Condition parser cannot be null");
@@ -215,12 +219,12 @@ public class Lexical {
     public static final Taker<String> word = takeWhile(CharPredicate.letter);
 
     /**
-     * Matches characters until a newline.
+     * Matches characters until a newline without consuming the newline.
      */
     public static final Taker<String> line = takeUntil(CharPredicate.is('\n'));
 
 
-    /** Collects characters until the first occurrence of the given needle. */
+    /** Collects characters until the first occurrence of {@code needle}. */
     public static Taker<String> takeUntil(String needle) {
         if (needle == null) {
             throw new IllegalArgumentException("needle cannot be null");
@@ -242,7 +246,7 @@ public class Lexical {
         });
     }
 
-    /** Collects characters until the predicate succeeds. */
+    /** Collects characters until {@code condition} succeeds. */
     public static Taker<String> takeUntil(CharPredicate condition) {
         if (condition == null) {
             throw new IllegalArgumentException("condition cannot be null");
@@ -262,12 +266,18 @@ public class Lexical {
         });
     }
 
+    /**
+     * Returns the first index of {@code needle} at or after {@code from}.
+     *
+     * @param haystack text to search
+     * @param needle non-empty text to find
+     * @param from starting index
+     * @return the first matching index, or {@code -1}
+     */
     public static int indexOf(CharSequence haystack, String needle, int from) {
-        // Use the platform’s indexOf for CharSequence (via toString() only if necessary)
         if (haystack instanceof String s) {
             return s.indexOf(needle, from);
         }
-        // Avoid copying when possible: manual scan using first-char filter
         char c0 = needle.charAt(0);
         int max = haystack.length() - needle.length();
         outer: for (int i = Math.max(0, from); i <= max; i++) {
@@ -283,7 +293,7 @@ public class Lexical {
 
 
 
-    /** Matches an exact string of characters. */
+    /** Matches {@code str} exactly at the current input position. */
     public static Taker<String> string(String str) {
         return new Taker<>(in -> {
             if (str.isEmpty()) {
@@ -313,7 +323,7 @@ public class Lexical {
         });
     }
 
-    /** Matches any single character from the provided string. */
+    /** Matches any single character from {@code str}. */
     public static Taker<Character> oneOf(String str) {
         if (str == null || str.isEmpty()) {
             return Combinators.fail("any character in empty string");
@@ -332,7 +342,7 @@ public class Lexical {
         return satisfy("character in set [" + str + "]", charSet::contains);
     }
 
-    /** Matches input against a regular expression pattern. */
+    /** Matches a regular expression at the current input position. */
     public static Taker<String> regex(String regex, int flags) {
         Pattern pattern = Pattern.compile(regex, flags);
 
@@ -351,7 +361,7 @@ public class Lexical {
         });
     }
 
-    /** Matches input against a regular expression pattern using default flags. */
+    /** Matches a regular expression at the current input position using default flags. */
     public static Taker<String> regex(String regex) {
         return regex(regex, 0);
     }
@@ -410,7 +420,7 @@ public class Lexical {
         });
     }
 
-    /** Parses a string enclosed in quotes with support for escape sequences. */
+    /** Parses a quoted string with caller-supplied escape replacements. */
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
         return escapedStringImpl(quote, escape, new HashMap<>(escapes));
     }

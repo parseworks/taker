@@ -6,5 +6,10 @@
  * exposed for code that builds custom {@link io.github.parseworks.taker.Taker}
  * instances and needs to return success, recoverable failure, or committed
  * failure results directly.
+ * <p>
+ * {@link io.github.parseworks.taker.results.Match} represents success,
+ * {@link io.github.parseworks.taker.results.NoMatch} represents recoverable
+ * failure, and {@link io.github.parseworks.taker.results.PartialMatch}
+ * represents committed failure.
  */
 package io.github.parseworks.taker.results;

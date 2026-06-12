@@ -9,10 +9,14 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Represents a partial match result in a parser combinator.
- * This indicates that the parser matched, but not all of the input was consumed
- * or it's a success that should be distinguished from a full match.
+ * Committed parser failure.
+ * <p>
+ * Choice combinators do not try later alternatives after a {@code PartialMatch}.
+ * This is used for committed branches and for successful parses that fail a
+ * full-input requirement such as {@link io.github.parseworks.taker.Taker#parseAll(CharSequence)}.
  *
+ * @param input input cursor where the failure should be reported
+ * @param cause underlying failure cause
  * @param <A> the type of the parsed value
  */
 public record PartialMatch<A>(
@@ -70,9 +74,6 @@ public record PartialMatch<A>(
 
     @Override
     public <B> B handle(Function<Result<A>, B> success, Function<Result<A>, B> failure) {
-        // Since matches() is false, we should probably call failure.
-        // But wait, the previous implementation called success.apply(this).
-        // If it's a failure (matches() == false), standard practice is to call the failure handler.
         return failure.apply(this);
     }
 

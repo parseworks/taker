@@ -9,17 +9,15 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Represents a failure result in a parser combinator.
+ * Recoverable parser failure.
  * <p>
- * This class provides detailed error information including:
- * <ul>
- *   <li>The input position where the error occurred</li>
- *   <li>What was expected vs. what was found</li>
- *   <li>The type of the error</li>
- *   <li>A custom error message (if provided)</li>
- *   <li>The cause of the error (for nested errors)</li>
- * </ul>
+ * Choice combinators may try later alternatives after a {@code NoMatch}. Use
+ * {@link PartialMatch} when a branch should be treated as committed.
  *
+ * @param input input cursor where the failure should be reported
+ * @param expected human-readable expectation
+ * @param cause optional underlying cause
+ * @param combinedFailures tied failures from alternative parsers
  * @param <A> the type of the parsed value
  */
 public record NoMatch<A>(
@@ -30,32 +28,25 @@ public record NoMatch<A>(
 ) implements Failure<A> {
 
     /**
-     * Constructs a new NoMatch with no custom message.
+     * Constructs a recoverable failure at {@code input}.
      */
     public NoMatch(Input input, String expected) {
         this(input, expected, null, null);
     }
 
     /**
-     * Constructs a new NoMatch with a cause, inheriting the cause's error type,
-     * with no custom message.
+     * Constructs a recoverable failure with an underlying cause.
      */
     public NoMatch(Input input, String expected, Failure<?> cause) {
         this(input, expected, cause, null);
     }
 
     /**
-     * Constructs a new NoMatch with a cause, inheriting the cause's error type,
-     * with no custom message.
+     * Constructs a recoverable failure from tied alternative failures.
      */
     public NoMatch(List<Failure<A>> failures) {
         this(failures.isEmpty() ? null : failures.get(0).input(), null, null, failures);
     }
-
-
-
-    // No explicit canonical constructor override is needed; the record-generated
-    // canonical constructor is used.
 
     @Override
     public ResultType type() {
