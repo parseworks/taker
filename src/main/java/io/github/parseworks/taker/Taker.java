@@ -1130,6 +1130,30 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     /**
+     * Adds a grammar label to this parser's failures.
+     * <p>
+     * This is useful for naming larger grammar rules while preserving the
+     * lower-level failure as a cause. Use {@link #expecting(String)} when you
+     * want to relabel a specific expected token; use {@code label(...)} when
+     * you want the error path to include a rule such as {@code expression},
+     * {@code statement}, or {@code object literal}.
+     * <pre>{@code
+     * Taker<String> identifier = Lexical.word.label("identifier");
+     * Taker<String> assignment = identifier
+     *     .thenSkip(Lexical.chr('='))
+     *     .then(identifier)
+     *     .map((left, right) -> left + "=" + right)
+     *     .label("assignment");
+     * }</pre>
+     *
+     * @param label grammar label
+     * @return a parser that adds the label to failed diagnostics
+     */
+    public Taker<A> label(String label) {
+        return TakerTransforms.label(this, label);
+    }
+
+    /**
      * Uses this parser's successful value to choose the next parser.
      * <p>
      * This is useful when later grammar depends on an earlier parsed value.

@@ -100,7 +100,7 @@ public interface Failure<A> extends Result<A> {
         String foundValue = null;
         var input = this.input();
         if (input != null && input.hasMore()) {
-            foundValue = String.valueOf(input.current());
+            foundValue = "'" + display(input.current()) + "'";
         }
 
         if (foundValue != null) {
@@ -117,6 +117,17 @@ public interface Failure<A> extends Result<A> {
         }
 
         return builder.toString();
+    }
+
+    private static String display(char c) {
+        return switch (c) {
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            case '\f' -> "\\f";
+            case '\b' -> "\\b";
+            default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
+        };
     }
 
 }

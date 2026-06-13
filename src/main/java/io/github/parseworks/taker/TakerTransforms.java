@@ -66,6 +66,10 @@ final class TakerTransforms {
         });
     }
 
+    static <A> Taker<A> label(Taker<A> parser, String label) {
+        return expecting(parser, label);
+    }
+
     static <A, B> Taker<B> flatMap(Taker<A> parser, Function<A, Taker<B>> f) {
         if (f == null) {
             throw new IllegalArgumentException("flatMap function cannot be null");

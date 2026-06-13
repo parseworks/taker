@@ -241,6 +241,12 @@ other alternatives would produce a worse error.
 `parser.expecting(label)` relabels a failure while preserving the original
 failure as its cause. It does not change successful results or input consumption.
 
+### `label`
+
+`parser.label(label)` adds a grammar label to a failure while preserving the
+original failure as its cause. It is intended for naming larger grammar rules in
+diagnostics. It does not change successful results or input consumption.
+
 ### `optional`
 
 `parser.optional()` always succeeds. It returns `Optional.of(value)` when the

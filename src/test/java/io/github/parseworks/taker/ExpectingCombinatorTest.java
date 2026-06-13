@@ -53,4 +53,32 @@ public class ExpectingCombinatorTest {
         assertTrue(msg.toLowerCase().contains("expected '=' after key"),
                 () -> "Composite parser error should include labeled expectation, but was:\n" + msg);
     }
+
+    @Test
+    public void labelAddsGrammarContextAndPreservesCause() {
+        Taker<String> identifier = Lexical.string("name").label("identifier");
+        Taker<String> assignment = identifier
+                .thenSkip(Lexical.chr('='))
+                .then(identifier)
+                .map(k -> v -> k + "=" + v)
+                .label("assignment");
+
+        Result<String> result = assignment.parse("name:x");
+
+        assertTrue(!result.matches(), "Taker should fail when assignment syntax is missing '='");
+        Failure<?> failure = (Failure<?>) result;
+        assertEquals("assignment", failure.expected());
+        assertTrue(failure.cause() != null);
+        assertTrue(failure.error().contains("expected assignment"));
+        assertTrue(failure.error().contains("caused by: expected ="));
+    }
+
+    @Test
+    public void labelIsNoOpOnSuccess() {
+        Taker<String> parser = Lexical.string("abc").label("letters");
+        Result<String> result = parser.parse("abc");
+
+        assertTrue(result.matches(), "Taker should succeed");
+        assertEquals("abc", result.value());
+    }
 }

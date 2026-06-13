@@ -522,6 +522,17 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void labelAddsGrammarContextAndPreservesCause() {
+        Result<Character> result = chr('a').label("letter").parse("b");
+
+        assertFalse(result.matches());
+        Failure<?> failure = (Failure<?>) result;
+        assertEquals("letter", failure.expected());
+        assertNotNull(failure.cause());
+        assertEquals("a", failure.cause().expected());
+    }
+
+    @Test
     void takeWhileRequiresAtLeastOneCharacter() {
         Result<String> result = takeWhile(CharPredicate.digit).parse("abc");
 
