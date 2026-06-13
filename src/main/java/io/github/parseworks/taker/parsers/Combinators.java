@@ -52,6 +52,7 @@ public class Combinators {
 
     /** Unconditionally throws an exception. */
     public static Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
+        Objects.requireNonNull(supplier, "supplier");
         return new Taker<>(in -> {
             throw sneakyThrow(supplier.get());
         });
@@ -68,8 +69,9 @@ public class Combinators {
 
     /** Matches any of the given characters. */
     public static Taker<Character> oneOf(char... items) {
-        if (items == null || items.length == 0) {
-            return fail("any character in empty set");
+        Objects.requireNonNull(items, "items");
+        if (items.length == 0) {
+            throw new IllegalArgumentException("There must be at least one character defined");
         }
         return Lexical.oneOf(new String(items));
     }
@@ -98,32 +100,37 @@ public class Combinators {
      * Fails with a specific error message.
      */
     public static <A> Taker<A> fail(String expected) {
+        Objects.requireNonNull(expected, "expected");
         return new Taker<>(in -> new NoMatch<>(in, expected));
     }
 
-    /** Succeeds if the provided parser fails. */
-    public static <A> Taker<Character> not(Taker<A> parser) {
+    /**
+     * Succeeds without consuming input if the provided parser fails.
+     * <p>
+     * Use {@code not(parser).skipThen(any())} when the grammar should consume
+     * the character that was validated by negative lookahead.
+     */
+    public static <A> Taker<Void> not(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
-            if (result.matches() || !result.input().hasMore()) {
-                // Provide more context about what was found that shouldn't have matched
-                String found = result.input().hasMore() ? "expected parser to fail" : "end of input";
-                return new NoMatch<>(in, found);
+            if (result.matches()) {
+                return new NoMatch<>(in, "parser not to match");
             }
-            return new Match<>(in.current(), in.next());
-
+            return new Match<>(null, in);
         });
     }
 
     /** Matches anything except the given character. */
     public static Taker<Character> isNot(char value) {
+        String expected = "any character except " + expectedChar(value);
         return new Taker<>(in -> {
             if (in.isEof()) {
-                return new NoMatch<>(in, "any value except " + value);
+                return new NoMatch<>(in, expected);
             }
             char item = in.current();
             if (item == value) {
-                return new NoMatch<>(in, "any value except " + value);
+                return new NoMatch<>(in, expected);
             } else {
                 return new Match<>(item, in.next());
             }
@@ -133,8 +140,12 @@ public class Combinators {
 
     /** Matches the first succeeding parser in the list. */
     public static <A> Taker<A> oneOf(List<Taker<A>> parsers) {
+        Objects.requireNonNull(parsers, "parsers");
         if (parsers.isEmpty()) {
             throw new IllegalArgumentException("There must be at least one parser defined");
+        }
+        for (Taker<A> parser : parsers) {
+            Objects.requireNonNull(parser, "parser");
         }
         return new Taker<>(in -> {
             List<Failure<A>> failures = null;
@@ -172,11 +183,16 @@ public class Combinators {
     /** Matches the first succeeding parser. */
     @SafeVarargs
     public static <A> Taker<A> oneOf(Taker<A>... parsers) {
+        Objects.requireNonNull(parsers, "parsers");
         return oneOf(Arrays.asList(parsers));
     }
 
     /** Applies multiple parsers in sequence. */
     public static <A> Taker<List<A>> sequence(List<Taker<A>> parsers) {
+        Objects.requireNonNull(parsers, "parsers");
+        for (Taker<A> parser : parsers) {
+            Objects.requireNonNull(parser, "parser");
+        }
         return new Taker<>(in -> {
             List<A> results = new ArrayList<>();
             Input currentInput = in;
@@ -196,6 +212,8 @@ public class Combinators {
      * Applies two parsers in sequence and returns an ApplyBuilder.
      */
     public static <A> ApplyBuilder<A, A> sequence(Taker<A> parserA, Taker<A> parserB) {
+        Objects.requireNonNull(parserA, "parserA");
+        Objects.requireNonNull(parserB, "parserB");
         return parserA.then(parserB);
     }
 
@@ -203,11 +221,15 @@ public class Combinators {
      * Applies three parsers in sequence and returns an ApplyBuilder3.
      */
     public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
+        Objects.requireNonNull(parserA, "parserA");
+        Objects.requireNonNull(parserB, "parserB");
+        Objects.requireNonNull(parserC, "parserC");
         return parserA.then(parserB).then(parserC);
     }
 
     /** Matches a character between open and close parsers. */
     public static <A, B, C> Taker<A> between(Taker<B> open, Taker<A> parser, Taker<C> close) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Input current = in;
             if (open != null) {
@@ -244,6 +266,8 @@ public class Combinators {
 
     /** Matches a character satisfying the predicate. */
     public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
+        Objects.requireNonNull(expectedType, "expectedType");
+        Objects.requireNonNull(predicate, "predicate");
         return new Taker<>(in -> {
             if (in.isEof()) {
                 return new NoMatch<>(in, expectedType);
@@ -259,15 +283,17 @@ public class Combinators {
 
     /** Matches the given value. */
     public static <A> Taker<A> is(A equivalence) {
+        Objects.requireNonNull(equivalence, "equivalence");
+        String expected = expectedValue(equivalence);
         return new Taker<>(in -> {
             if (in.isEof()) {
-                return new NoMatch<>(in, String.valueOf(equivalence));
+                return new NoMatch<>(in, expected);
             }
             char item = in.current();
             if (Objects.equals(item, equivalence)) {
                 return new Match<>(equivalence, in.next());
             } else {
-                return new NoMatch<>(in, String.valueOf(equivalence));
+                return new NoMatch<>(in, expected);
             }
         });
     }
@@ -276,6 +302,8 @@ public class Combinators {
      * Chains a parser left-associatively.
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) return new Match<>(identity, in);
@@ -300,6 +328,8 @@ public class Combinators {
      * Chains a parser left-associatively, requiring at least one match.
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) return result;
@@ -324,6 +354,8 @@ public class Combinators {
      * Chains a parser right-associatively.
      */
     public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) return new Match<>(identity, in);
@@ -340,6 +372,8 @@ public class Combinators {
      * Chains a parser right-associatively, requiring at least one match.
      */
     public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) return result;
@@ -358,6 +392,7 @@ public class Combinators {
      * Chains a parser according to specified associativity.
      */
     public static <A> Taker<A> chain(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, Chains.Associativity associativity) {
+        Objects.requireNonNull(associativity, "associativity");
         if (associativity == Chains.Associativity.LEFT) {
             return chainLeft(parser, op);
         } else {
@@ -366,5 +401,26 @@ public class Combinators {
     }
 
 
+    private static String expectedValue(Object equivalence) {
+        if (equivalence instanceof Character c) {
+            return expectedChar(c);
+        }
+        return String.valueOf(equivalence);
+    }
+
+    private static String expectedChar(char c) {
+        return "'" + display(c) + "'";
+    }
+
+    private static String display(char c) {
+        return switch (c) {
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            case '\f' -> "\\f";
+            case '\b' -> "\\b";
+            default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
+        };
+    }
 
 }

@@ -69,7 +69,7 @@ public class ExpectingCombinatorTest {
         assertEquals("assignment", failure.expected());
         assertNotNull(failure.cause());
         assertTrue(failure.error().contains("expected assignment"));
-        assertTrue(failure.error().contains("caused by: expected ="));
+        assertTrue(failure.error().contains("caused by: expected '='"));
     }
 
     @Test

@@ -529,7 +529,7 @@ public class TakerSemanticContractTest {
         Failure<?> failure = (Failure<?>) result;
         assertEquals("letter", failure.expected());
         assertNotNull(failure.cause());
-        assertEquals("a", failure.cause().expected());
+        assertEquals("'a'", failure.cause().expected());
     }
 
     @Test
@@ -591,6 +591,16 @@ public class TakerSemanticContractTest {
     @Test
     void emptyChoiceIsRejectedAtConstructionTime() {
         assertThrows(IllegalArgumentException.class, () -> Combinators.oneOf(List.<Taker<Character>>of()));
+    }
+
+    @Test
+    void invalidFactoryArgumentsAreRejectedAtConstructionTime() {
+        assertThrows(NullPointerException.class, () -> Combinators.not(null));
+        assertThrows(NullPointerException.class, () -> Combinators.oneOf((List<Taker<Character>>) null));
+        assertThrows(IllegalArgumentException.class, () -> Combinators.oneOf(new char[0]));
+        assertThrows(NullPointerException.class, () -> Lexical.string(null));
+        assertThrows(IllegalArgumentException.class, () -> Lexical.oneOf(""));
+        assertThrows(NullPointerException.class, () -> chr('a').peek(null));
     }
 
     private static String join(List<?> values) {

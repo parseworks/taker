@@ -11,6 +11,7 @@ import static io.github.parseworks.taker.CharPredicate.noneOf;
 import static io.github.parseworks.taker.parsers.Lexical.alphaNumeric;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.chrIgnoreCase;
+import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.oneOfIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.regex;
@@ -107,6 +108,14 @@ public class LexicalTest {
         Failure<String> newlineMismatch = (Failure<String>) stringIgnoreCase("\n").parse("x");
         assertEquals(0, newlineMismatch.input().position());
         assertEquals("'\\n'", newlineMismatch.expected());
+
+        Failure<Character> charMismatch = (Failure<Character>) chr('\n').parse("x");
+        assertEquals(0, charMismatch.input().position());
+        assertEquals("'\\n'", charMismatch.expected());
+
+        Failure<String> quoteMismatch = (Failure<String>) escapedString('"', '\\', java.util.Map.of()).parse("x");
+        assertEquals(0, quoteMismatch.input().position());
+        assertEquals("'\"'", quoteMismatch.expected());
     }
 
     @Test

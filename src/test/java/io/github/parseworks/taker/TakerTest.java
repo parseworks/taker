@@ -354,9 +354,10 @@ public class TakerTest {
         // Create a parser that recognizes 'a' followed by a non-digit
         Taker<Character> aNotDigitParser = aParser.peek(not(digitParser));
 
-        // Test case 1: Input 'a' - should fail because there's no character after 'a' for not(digitParser) to check
+        // Test case 1: Input 'a' - should succeed because not(digitParser) is zero-width and succeeds at EOF
         Result<Character> result1 = aNotDigitParser.parse("a");
-        assertFalse(result1.matches());
+        assertTrue(result1.matches());
+        assertEquals('a', result1.value());
 
         // Test case 2: Input '5' - should fail because it doesn't start with 'a'
         Result<Character> result2 = aNotDigitParser.parse("5");

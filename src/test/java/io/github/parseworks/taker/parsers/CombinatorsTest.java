@@ -1,6 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
@@ -59,14 +60,20 @@ public class CombinatorsTest {
     @Test
     public void testNot() {
         Taker<Character> aParser = Lexical.chr('a');
-        Taker<Character> notAParser = not(aParser);
+        Taker<Void> notAParser = not(aParser);
 
-        // Match case (not 'a')
-        Result<Character> result = notAParser.parse("b");
+        // Match case (not 'a') succeeds without consuming input
+        Result<Void> result = notAParser.parse("b");
         assertTrue(result.matches());
+        assertEquals(0, result.input().position());
+
+        // EOF is valid when the forbidden parser fails at EOF
+        Result<Void> eofResult = notAParser.parse("");
+        assertTrue(eofResult.matches());
+        assertEquals(0, eofResult.input().position());
 
         // NoMatch case ('a' is present)
-        Result<Character> failResult = notAParser.parse("a");
+        Result<Void> failResult = notAParser.parse("a");
         assertFalse(failResult.matches());
     }
 
@@ -81,6 +88,8 @@ public class CombinatorsTest {
 
         // NoMatch case ('a')
         assertFalse(parser.parse("a").matches());
+        Failure<?> failure = (Failure<?>) parser.parse("a");
+        assertEquals("any character except 'a'", failure.expected());
 
         // EOF case
         assertFalse(parser.parse("").matches());
@@ -186,7 +195,9 @@ public class CombinatorsTest {
         assertEquals('x', parser.parse("x").value());
 
         // NoMatch case
-        assertFalse(parser.parse("y").matches());
+        Result<Character> mismatch = parser.parse("y");
+        assertFalse(mismatch.matches());
+        assertEquals("'x'", ((Failure<?>) mismatch).expected());
 
         // EOF case
         assertFalse(parser.parse("").matches());
@@ -195,7 +206,7 @@ public class CombinatorsTest {
     @Test
     public void testCombinedNotIsNot() {
         // Test combining not and isNot
-        Taker<Character> notDigit = not(Lexical.chr(Character::isDigit));
+        Taker<Void> notDigit = not(Lexical.chr(Character::isDigit));
         Taker<Character> letter = Lexical.chr(Character::isLetter);
 
         // Taker that accepts a letter that's followed by a non-digit
@@ -205,7 +216,7 @@ public class CombinatorsTest {
         var secondResult = letterFollowedByNonDigit.parse("a1");
         var thirdResult = letterFollowedByNonDigit.parse("aX");
 
-        assertFalse(firstResult.matches());
+        assertTrue(firstResult.matches());
         assertFalse(secondResult.matches());
         assertTrue(thirdResult.matches());
     }

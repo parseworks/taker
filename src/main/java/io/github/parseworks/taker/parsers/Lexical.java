@@ -10,6 +10,7 @@ import io.github.parseworks.taker.results.NoMatch;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,14 +41,13 @@ public class Lexical {
 
     /** Matches a character satisfying the given predicate. */
     public static Taker<Character> take(CharPredicate condition) {
+        Objects.requireNonNull(condition, "condition");
         return chr(condition);
     }
 
     /** Matches one or more consecutive characters while {@code condition} is true. */
     public static Taker<String> takeWhile(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
+        Objects.requireNonNull(condition, "condition");
 
         return new Taker<>(in -> {
             CharSequence data = in.data();
@@ -72,9 +72,7 @@ public class Lexical {
 
     /** Skips zero or more matching input characters without materializing text. */
     public static Taker<Void> skipWhile(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
+        Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
             int count = countMatchingChars(in, condition);
             return new Match<>(null, in.skip(count));
@@ -83,9 +81,7 @@ public class Lexical {
 
     /** Counts and consumes zero or more matching input characters. */
     public static Taker<Integer> countWhile(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("Condition parser cannot be null");
-        }
+        Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
             int count = countMatchingChars(in, condition);
             return new Match<>(count, in.skip(count));
@@ -129,6 +125,7 @@ public class Lexical {
      * ignored too.
      */
     public static <A> Taker<A> trim(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return trimSpaces(parser);
     }
 
@@ -140,6 +137,7 @@ public class Lexical {
      * parsing.
      */
     public static <A> Taker<A> trimSpaces(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Input trimmedInput = skipSpaces(in);
             Result<A> result = parser.apply(trimmedInput);
@@ -159,6 +157,7 @@ public class Lexical {
      * {@link #trimSpaces(Taker)} when newlines have grammatical meaning.
      */
     public static <A> Taker<A> trimWhitespace(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Input trimmedInput = skipCharacterWhitespace(in);
             Result<A> result = parser.apply(trimmedInput);
@@ -179,6 +178,8 @@ public class Lexical {
      * loop.
      */
     public static <A> Taker<A> lexeme(Taker<A> parser, Taker<?> ignored) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(ignored, "ignored");
         return new Taker<>(in -> {
             Input trimmedInput = skipIgnored(in, ignored);
             Result<A> result = parser.apply(trimmedInput);
@@ -226,9 +227,7 @@ public class Lexical {
 
     /** Collects characters until the first occurrence of {@code needle}. */
     public static Taker<String> takeUntil(String needle) {
-        if (needle == null) {
-            throw new IllegalArgumentException("needle cannot be null");
-        }
+        Objects.requireNonNull(needle, "needle");
         if (needle.isEmpty()) {
             return new Taker<>(in -> new Match<>("", in));
         }
@@ -248,9 +247,7 @@ public class Lexical {
 
     /** Collects characters until {@code condition} succeeds. */
     public static Taker<String> takeUntil(CharPredicate condition) {
-        if (condition == null) {
-            throw new IllegalArgumentException("condition cannot be null");
-        }
+        Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
             CharSequence data = in.data();
             int start = in.position();
@@ -275,6 +272,11 @@ public class Lexical {
      * @return the first matching index, or {@code -1}
      */
     public static int indexOf(CharSequence haystack, String needle, int from) {
+        Objects.requireNonNull(haystack, "haystack");
+        Objects.requireNonNull(needle, "needle");
+        if (needle.isEmpty()) {
+            throw new IllegalArgumentException("needle must not be empty");
+        }
         if (haystack instanceof String s) {
             return s.indexOf(needle, from);
         }
@@ -295,6 +297,7 @@ public class Lexical {
 
     /** Matches {@code str} exactly at the current input position. */
     public static Taker<String> string(String str) {
+        Objects.requireNonNull(str, "str");
         String[] expectedChars = expectedChars(str);
         return new Taker<>(in -> {
             if (str.isEmpty()) {
@@ -326,6 +329,7 @@ public class Lexical {
 
     /** Matches {@code str} at the current input position, ignoring case. */
     public static Taker<String> stringIgnoreCase(String str) {
+        Objects.requireNonNull(str, "str");
         String[] expectedChars = expectedChars(str);
         return new Taker<>(in -> {
             if (str.isEmpty()) {
@@ -357,8 +361,9 @@ public class Lexical {
 
     /** Matches any single character from {@code str}. */
     public static Taker<Character> oneOf(String str) {
-        if (str == null || str.isEmpty()) {
-            return Combinators.fail("any character in empty string");
+        Objects.requireNonNull(str, "str");
+        if (str.isEmpty()) {
+            throw new IllegalArgumentException("str must not be empty");
         }
         // For small strings (under 10 chars), this approach is efficient
         if (str.length() < 10) {
@@ -376,14 +381,16 @@ public class Lexical {
 
     /** Matches any single character from {@code str}, ignoring case. */
     public static Taker<Character> oneOfIgnoreCase(String str) {
-        if (str == null || str.isEmpty()) {
-            return Combinators.fail("any character in empty string ignoring case");
+        Objects.requireNonNull(str, "str");
+        if (str.isEmpty()) {
+            throw new IllegalArgumentException("str must not be empty");
         }
         return satisfy("character in set \"" + display(str) + "\" ignoring case", CharPredicate.anyOfIgnoreCase(str));
     }
 
     /** Matches a regular expression at the current input position. */
     public static Taker<String> regex(String regex, int flags) {
+        Objects.requireNonNull(regex, "regex");
         Pattern pattern = Pattern.compile(regex, flags);
 
         return new Taker<>(in -> {
@@ -412,7 +419,7 @@ public class Lexical {
 
         return new Taker<>(in -> {
             if (in.isEof() || in.current() != quote) {
-                return new NoMatch<>(in, String.valueOf(quote));
+                return new NoMatch<>(in, expectedChar(quote));
             }
 
             CharSequence data = in.data();
@@ -456,12 +463,13 @@ public class Lexical {
                 currentPos++;
             }
 
-            return new NoMatch<>(in.skip(currentPos - startPos), "closing quote '" + quote + "'");
+            return new NoMatch<>(in.skip(currentPos - startPos), "closing quote " + expectedChar(quote));
         });
     }
 
     /** Parses a quoted string with caller-supplied escape replacements. */
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
+        Objects.requireNonNull(escapes, "escapes");
         return escapedStringImpl(quote, escape, new HashMap<>(escapes));
     }
 
@@ -479,6 +487,7 @@ public class Lexical {
 
     /** Matches a single character matching the given predicate. */
     public static Taker<Character> chr(CharPredicate predicate) {
+        Objects.requireNonNull(predicate, "predicate");
         return satisfy(predicate.expected(), predicate);
     }
 
@@ -491,9 +500,13 @@ public class Lexical {
     private static String[] expectedChars(String str) {
         String[] expected = new String[str.length()];
         for (int i = 0; i < str.length(); i++) {
-            expected[i] = "'" + display(str.charAt(i)) + "'";
+            expected[i] = expectedChar(str.charAt(i));
         }
         return expected;
+    }
+
+    private static String expectedChar(char c) {
+        return "'" + display(c) + "'";
     }
 
     private static String display(String chars) {

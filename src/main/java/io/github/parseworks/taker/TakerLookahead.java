@@ -2,12 +2,16 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.results.NoMatch;
 
+import java.util.Objects;
+
 final class TakerLookahead {
 
     private TakerLookahead() {
     }
 
     static <A, B> Taker<A> onlyIf(Taker<A> parser, Taker<B> validation) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(validation, "validation");
         return new Taker<>(input -> {
             Result<B> validationResult = validation.apply(input);
             if (!validationResult.matches()) {
@@ -18,6 +22,8 @@ final class TakerLookahead {
     }
 
     static <A> Taker<A> onlyIf(Taker<A> parser, CharPredicate validation) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(validation, "validation");
         return new Taker<>(input -> {
             if (input.isEof()) {
                 return new NoMatch<>(input, "Expected Character at " + input.position());
@@ -30,6 +36,8 @@ final class TakerLookahead {
     }
 
     static <A, B> Taker<A> peek(Taker<A> parser, Taker<B> lookahead) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(lookahead, "lookahead");
         return new Taker<>(input -> {
             Result<A> result = parser.apply(input);
             if (!result.matches()) {

@@ -211,6 +211,15 @@ not automatically convert failures into `PARTIAL`.
 `parser.between(open, close)` parses the opening parser or character, then the
 main parser, then the closing parser or character, returning the main value.
 
+### `not`
+
+`Combinators.not(parser)` is zero-width negative lookahead. It succeeds without
+consuming input when `parser` fails at the same input position, including at
+EOF. It fails when `parser` succeeds.
+
+Use `not(parser).skipThen(Combinators.any())` when the grammar should consume
+the character that was validated by negative lookahead.
+
 ### `or` and `oneOf`
 
 `a.or(b)` is equivalent to a two-branch `oneOf`.
@@ -224,7 +233,9 @@ main parser, then the closing parser or character, returning the main value.
 - failures tied at that farthest position are combined so the formatted
   diagnostic can report multiple expectations.
 
-`oneOf` requires at least one parser.
+`oneOf` requires at least one parser. Character-set forms such as
+`Combinators.oneOf(char...)`, `Lexical.oneOf(chars)`, and
+`Lexical.oneOfIgnoreCase(chars)` require at least one character.
 
 ### `commit`
 

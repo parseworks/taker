@@ -3,6 +3,7 @@ package io.github.parseworks.taker;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -12,6 +13,7 @@ final class TakerTransforms {
     }
 
     static <A, R> Taker<R> as(Taker<A> parser, R value) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) {
@@ -22,6 +24,7 @@ final class TakerTransforms {
     }
 
     static <A> Taker<Optional<A>> optional(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) {
@@ -32,6 +35,7 @@ final class TakerTransforms {
     }
 
     static <A> Taker<A> orElse(Taker<A> parser, A other) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) {
@@ -42,10 +46,13 @@ final class TakerTransforms {
     }
 
     static <A, R> Taker<R> map(Taker<A> parser, Function<A, R> mapper) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(mapper, "mapper");
         return new Taker<>(in -> parser.apply(in).map(mapper));
     }
 
     static <A> Taker<Located<A>> located(Taker<A> parser) {
+        Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             int start = in.position();
             Result<A> result = parser.apply(in);
@@ -57,6 +64,8 @@ final class TakerTransforms {
     }
 
     static <A> Taker<A> expecting(Taker<A> parser, String label) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(label, "label");
         return new Taker<>(input -> {
             Result<A> result = parser.apply(input);
             if (result.matches()) {
@@ -71,9 +80,8 @@ final class TakerTransforms {
     }
 
     static <A, B> Taker<B> flatMap(Taker<A> parser, Function<A, Taker<B>> f) {
-        if (f == null) {
-            throw new IllegalArgumentException("flatMap function cannot be null");
-        }
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(f, "f");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
             if (!result.matches()) {

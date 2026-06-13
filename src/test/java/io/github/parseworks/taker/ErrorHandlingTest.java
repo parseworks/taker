@@ -42,8 +42,8 @@ public class ErrorHandlingTest {
     @Test
     public void testValidationErrorType() {
         // Test that not() uses VALIDATION error type when input matches the pattern
-        Taker<Character> parser = not(is('x'));
-        Result<Character> result = parser.parse("x");
+        Taker<Void> parser = not(is('x'));
+        Result<Void> result = parser.parse("x");
 
         assertFalse(result.matches());
     }
