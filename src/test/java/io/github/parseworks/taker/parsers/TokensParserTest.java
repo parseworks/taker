@@ -92,10 +92,10 @@ class TokensParserTest {
     @Test
     void customIgnoredParserCanSkipWhitespaceAndLineComments() {
         Taker<?> ignored = oneOf(
-            Lexical.whitespace.as((Object) null),
+            Lexical.whitespace.as(null),
             string("//").skipThen(Lexical.takeUntil(CharPredicate.lineBreak))
                 .thenSkip(chr('\n').optional())
-                .as((Object) null)
+                .as(null)
         );
         TokensParser tokens = TokensParser.skipping(ignored);
 

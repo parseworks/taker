@@ -150,7 +150,7 @@ final class Inputs {
                 return "EOF";
             }
             int start = Math.max(0, position - before - 2);
-            int end = Math.min(data.length(), Math.max(0, position + after - 1));
+            int end = Math.clamp(position + after - 1, 0, data.length());
             if (end < start) {
                 end = start;
             }
@@ -177,7 +177,7 @@ final class Inputs {
                 snippet.append(String.format("%" + lineNumberWidth + "d | %s%n", i, lineText));
                 if (i == line) {
                     int totalSpaces = lineNumberWidth + 3 + Math.max(0, column - 1);
-                    snippet.append(" ".repeat(totalSpaces)).append("^").append(System.lineSeparator());
+                    snippet.repeat(" ", totalSpaces).append("^").append(System.lineSeparator());
                 }
             }
             return snippet.toString();

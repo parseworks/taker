@@ -7,6 +7,7 @@ import java.util.List;
 import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RepeatInternalIssueTest {
@@ -21,8 +22,8 @@ public class RepeatInternalIssueTest {
         // The second "ab" fails at position 3 (the end of input).
         // Since it advanced from position 2 to 3, it's a partial match.
         Result<List<String>> res2 = manyAB.parse(Input.of("ABA"));
-        
-        assertTrue(!res2.matches(), "Should fail because item failed partially");
+
+        assertFalse(res2.matches(), "Should fail because item failed partially");
         assertTrue(res2.error().contains("expected 'B'"), "Error should mention 'B'");
 
         // Case 2: oneOrMoreUntil without reaching terminator
@@ -32,6 +33,6 @@ public class RepeatInternalIssueTest {
         // Input "ABC" -> "AB" matches, then "C" is not "!" and not "AB".
         // It should fail because "!" was not reached.
         Result<List<String>> res4 = manyABUntilExcl.parse(Input.of("ABC"));
-        assertTrue(!res4.matches(), "Should fail because terminator was not reached");
+        assertFalse(res4.matches(), "Should fail because terminator was not reached");
     }
 }

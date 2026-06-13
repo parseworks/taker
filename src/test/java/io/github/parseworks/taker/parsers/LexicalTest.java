@@ -204,7 +204,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateStopsBeforeFirstMatch() {
-        Taker<String> parser = takeUntil((CharPredicate) (c -> c == '>'));
+        Taker<String> parser = takeUntil(c -> c == '>');
         Result<String> result = parser.parse(Input.of("abc>def"));
 
         assertTrue(result.matches());
@@ -214,7 +214,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateConsumesToEofWhenMissing() {
-        Taker<String> parser = takeUntil((CharPredicate) (c -> c == '>'));
+        Taker<String> parser = takeUntil(c -> c == '>');
         Result<String> result = parser.parse(Input.of("abcdef"));
 
         assertTrue(result.matches());
@@ -224,7 +224,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateCanMatchWhitespace() {
-        Taker<String> parser = takeUntil((CharPredicate) Character::isWhitespace);
+        Taker<String> parser = takeUntil(Character::isWhitespace);
         Result<String> result = parser.parse(Input.of("hello world"));
 
         assertTrue(result.matches());
@@ -234,7 +234,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateCanSucceedAtCurrentPosition() {
-        Taker<String> parser = takeUntil((CharPredicate) (c -> c == 'a'));
+        Taker<String> parser = takeUntil(c -> c == 'a');
         Result<String> result = parser.parse(Input.of("abc"));
 
         assertTrue(result.matches());

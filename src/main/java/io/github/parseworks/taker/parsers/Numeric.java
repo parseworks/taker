@@ -58,9 +58,6 @@ public class Numeric {
         return new Match<>(positive ? value : -value, result.input());
     });
 
-    private static final Taker<Integer> exponent = (chr('e').or(chr('E')))
-        .skipThen(integer);
-
     private static Taker<Integer> integerDigits(boolean allowIntegerMinAbs) {
         return new Taker<>(in -> {
             if (in.isEof()) {
