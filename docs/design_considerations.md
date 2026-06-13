@@ -1,3 +1,9 @@
+# Design Considerations
+
+This document captures internal design rationale. For user-facing semantics, use
+[api-contract.md](api-contract.md). For learning material, use
+[user-guide.md](user-guide.md) and [advanced-user-guide.md](advanced-user-guide.md).
+
 ### Phrasing
 *   **Accessible Terminology**: One of the primary goals is to create a terminology that is clear and communicates purpose while being accessible to people who haven't studied parsing. This requires us to be wordier than other parser combinators. This is why we have `zeroOrMore` and `oneOrMore` methods rather than something more abstract like `many` or `many1`. We prefer descriptive names that explain exactly what they do.
 
@@ -8,7 +14,10 @@
     *   Sequential combinators like `then`, `skipThen`, and `thenSkip` propagate failures as-is. They do not automatically generate `PARTIAL` failures unless explicitly wrapped in `commit`.
     *   Parsers that attempt multiple options, such as `oneOf` or `or`, will stop and report a `PARTIAL` failure immediately if a branch returns a `PARTIAL` result.
     *   If all branches in `oneOf` fail with `NO_MATCH`, it keeps the failures reported at the farthest input position. If multiple branches fail at that same position, it combines them into a result that lists out those branch failures.
-*   **The `commit` and `expecting` Methods**:
+*   **The `commit`, `label`, and `expecting` Methods**:
+    *   `label(label)` adds grammar context while preserving the original
+        failure as the cause. It is intended for rule names such as
+        `expression`, `statement`, or `object literal`.
     *   `expecting(label)` provides a wrapper on the parser that replaces the default error message with a domain-specific label. This allows us to provide a cleaner series of error messages while preserving the original failure as the cause.
     *   The `commit` combinator explicitly turns a parser's failure into a `PARTIAL` failure if it has consumed any input. This "commits" the parser to the current branch and prevents subsequent `oneOf` or `or` alternatives from being tried. By default, most combinators are non-committing and will return a `NO_MATCH` that allows backtracking, even if some input was consumed.
 *   **Predictability**: This design ensures that errors are reported at the deepest point of failure in the most promising branch, rather than falling back to less relevant alternatives when a grammar has already partially matched a specific construct.

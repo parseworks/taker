@@ -18,9 +18,6 @@
    2. [Left vs. Right Recursion](#left-vs-right-recursion)
    3. [Handling Ambiguity](#handling-ambiguity)
 6. [Advanced Examples](#advanced-examples)
-   1. [JSON Parser](#json-parser)
-   2. [Expression Evaluator with Variables](#expression-evaluator-with-variables)
-   3. [Custom DSL Parser](#custom-dsl-parser)
 7. [Integration Patterns](#integration-patterns)
    1. [Combining with Other Libraries](#combining-with-other-libraries)
    2. [Testing Strategies](#testing-strategies)
@@ -157,38 +154,42 @@ Taker<Integer> positiveNumber = number.flatMap(n -> {
 
 ## Error Handling Strategies
 
-### Custom Error Messages
+### Diagnostic Labels
 
-Taker provides several ways to create custom error messages:
+Taker provides several ways to make failures more useful without changing
+successful parsing:
 
 #### Using fail
 
 ```java
 // Create a parser that fails with a custom error message
-Taker<String> customError = fail("Expected a specific pattern");
+Taker<String> customError = fail("specific pattern");
 ```
 
 #### Using expecting
 
 ```java
-// Label a parser with a domain-specific expectation.
+// Relabel a specific expected token or value.
 Taker<Integer> numberOrError = number.expecting("number");
+```
+
+#### Using label
+
+```java
+// Add grammar context while preserving the lower-level cause.
+Taker<Statement> statement = oneOf(print, assignment, ifStatement)
+    .label("statement");
 ```
 
 ### Error Types
 
-Taker provides different ways to label or produce failures:
+Taker distinguishes recoverable failures from committed failures:
 
-```java
-// Syntax error (input doesn't match expected pattern)
-Taker<String> syntaxError = fail("Expected a valid syntax");
+- `NO_MATCH` means alternatives may still be tried.
+- `PARTIAL` means a branch has committed and alternatives should not be tried.
 
-// Validation error (input parsed but failed validation)
-Taker<String> validationError = fail("Expected a valid value");
-
-// Generic error
-Taker<String> genericError = fail("Something went wrong");
-```
+Use `fail(...)`, `expecting(...)`, and `label(...)` to describe the failure.
+Use `commit(...)` when the grammar should stop backtracking after progress.
 
 ### Recovery Strategies
 
@@ -227,7 +228,7 @@ Taker<Integer> signedNumber = chr('-').optional()
 
 1. **Static Reuse**: Define common parsers (keywords, delimiters) as `static final` fields. Creating parsers on-the-fly inside a loop is a major performance killer.
 2. **Scanner Primitives for Character Runs**: Use `collectChars`/`takeWhile` for matched text, `skipWhile` for ignored text, and `countWhile` when only the length matters. These avoid the per-character allocation cost of repeated `chr(predicate)` parsers.
-3. **Deterministic Choices**: In `oneOf`, ensure your alternatives are as distinct as possible. Overlapping of terms can result in early termination, as the parser will assume that the partial parse indicates an error.
+3. **Deterministic Choices**: In `oneOf`, make overlapping alternatives deliberate. Order longer or more specific branches first, or use `commit(...)` once a branch is truly selected.
 4. **Be careful with `trim()`**: It's convenient but adds parser-result allocation. Apply it at the token level rather than around every single character parser.
 5. **Regular Expressions**: `Lexical.regex` is backed by standard Java `Pattern`. It's fast for tokenization but avoid complex, nested groups if a scanner primitive would suffice.
 
@@ -314,255 +315,18 @@ Taker<String> ambiguous = oneOf(string("if"), string("ifelse"));
 
 ## Advanced Examples
 
-### JSON Parser
+Keep large examples executable rather than copying them into multiple guides.
+The normal Maven test suite runs the examples under
+`src/test/java/io/github/parseworks/taker/examples`.
 
-Here's a simplified example of a JSON parser:
+Study those examples for:
 
-```java
-// Create references for recursive parsers
-Taker<Object> jsonValue = Taker.ref();
-Taker<Map<String, Object>> jsonObject = Taker.ref();
-Taker<List<Object>> jsonArray = Taker.ref();
+- a sectioned config parser that keeps line breaks meaningful;
+- a recursive JSON-like parser using `Taker.ref()`;
+- separated values, escaped strings, whitespace policy, and scanner primitives.
 
-// Taker for JSON strings
-Taker<String> jsonString = escapedString(
-    '"',
-    '\\',
-    Map.of('"', '"', '\\', '\\', '/', '/', 'b', '\b', 'f', '\f', 'n', '\n', 'r', '\r', 't', '\t')
-);
-
-// Taker for JSON numbers
-Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
-    .map(Double::parseDouble);
-
-// Taker for JSON booleans
-Taker<Boolean> jsonBoolean = string("true").as(true)
-    .or(string("false").as(false));
-
-// Taker for JSON null
-Taker<Object> jsonNull = string("null").as(null);
-
-// Taker for JSON arrays
-jsonArray.set(
-    chr('[')
-        .skipThen(jsonValue.zeroOrMoreSeparatedBy(chr(',')))
-        .thenSkip(chr(']'))
-        .map(values -> (List<Object>) new ArrayList<>(values))
-);
-
-// Taker for JSON objects
-jsonObject.set(
-    chr('{')
-        .skipThen(
-            jsonString
-                .thenSkip(chr(':'))
-                .then(jsonValue)
-                .map(key -> value -> (Map.Entry<String, Object>) new AbstractMap.SimpleEntry<>(key, value))
-                .zeroOrMoreSeparatedBy(chr(','))
-        )
-        .thenSkip(chr('}'))
-        .map(entries -> {
-            Map<String, Object> map = new HashMap<>();
-            for (Map.Entry<String, Object> entry : entries) {
-                map.put(entry.getKey(), entry.getValue());
-            }
-            return map;
-        })
-);
-
-// Set the JSON value parser to handle all JSON value types
-jsonValue.set(
-    oneOf(
-        jsonString.map(s -> (Object) s),
-        jsonNumber.map(n -> (Object) n),
-        jsonBoolean.map(b -> (Object) b),
-        jsonNull,
-        jsonArray.map(a -> (Object) a),
-        jsonObject.map(o -> (Object) o)
-    )
-);
-```
-
-### Expression Evaluator with Variables
-
-Here's an example of an expression evaluator that can handle variables:
-
-```java
-enum BinOp {
-    ADD { BinaryOperator<Integer> op() { return Integer::sum; } },
-    SUB { BinaryOperator<Integer> op() { return (a, b) -> a - b; } },
-    MUL { BinaryOperator<Integer> op() { return (a, b) -> a * b; } },
-    DIV { BinaryOperator<Integer> op() { return (a, b) -> a / b; } };
-    abstract BinaryOperator<Integer> op();
-}
-
-// Create a parser for expressions with variables
-Taker<UnaryOperator<Integer>> expr = Taker.ref();
-
-// Taker for variables (x)
-Taker<UnaryOperator<Integer>> var = chr('x')
-    .map(x -> v -> v);  // Identity function that returns the variable value
-
-// Taker for numbers (constants)
-Taker<UnaryOperator<Integer>> num = regex("\\d+")
-    .map(Integer::parseInt)
-    .map(i -> v -> i);  // Constant function that ignores the variable value
-
-// Taker for binary operators
-Taker<BinOp> binOp = oneOf(
-    chr('+').as(BinOp.ADD),
-    chr('-').as(BinOp.SUB),
-    chr('*').as(BinOp.MUL),
-    chr('/').as(BinOp.DIV)
-);
-
-// Taker for binary expressions
-Taker<UnaryOperator<Integer>> binExpr = chr('(')
-    .skipThen(expr)
-    .then(binOp)
-    .then(expr.thenSkip(chr(')')))
-    .map(left -> op -> right -> (Integer x) -> op.op().apply(left.apply(x), right.apply(x)));
-
-// Set the expression parser to handle variables, numbers, and binary expressions
-expr.set(oneOf(var, num, binExpr));
-
-// Use the parser to evaluate expressions with variables
-UnaryOperator<Integer> evaluator = expr.parse(Input.of("(x*(x+1))")).value();
-int result = evaluator.apply(5);  // Evaluates the expression with x = 5
-System.out.println(result);  // Output: 30
-```
-
-### Custom DSL Parser
-
-Here's an example of a parser for a simple domain-specific language (DSL):
-
-```java
-// Define the AST classes
-interface Statement {}
-
-class PrintStatement implements Statement {
-    private final String message;
-    
-    public PrintStatement(String message) {
-        this.message = message;
-    }
-    
-    public String getMessage() {
-        return message;
-    }
-}
-
-class AssignStatement implements Statement {
-    private final String variable;
-    private final int value;
-    
-    public AssignStatement(String variable, int value) {
-        this.variable = variable;
-        this.value = value;
-    }
-    
-    public String getVariable() {
-        return variable;
-    }
-    
-    public int getValue() {
-        return value;
-    }
-}
-
-class IfStatement implements Statement {
-    private final String condition;
-    private final List<Statement> thenBranch;
-    private final List<Statement> elseBranch;
-    
-    public IfStatement(String condition, List<Statement> thenBranch, List<Statement> elseBranch) {
-        this.condition = condition;
-        this.thenBranch = thenBranch;
-        this.elseBranch = elseBranch;
-    }
-    
-    public String getCondition() {
-        return condition;
-    }
-    
-    public List<Statement> getThenBranch() {
-        return thenBranch;
-    }
-    
-    public List<Statement> getElseBranch() {
-        return elseBranch;
-    }
-}
-
-// Create the parsers
-Taker<Statement> statement = Taker.ref();
-Taker<List<Statement>> statements = Taker.ref();
-
-// Taker for identifiers
-Taker<String> identifier = regex("[a-zA-Z][a-zA-Z0-9]*");
-
-// Taker for numbers
-Taker<Integer> number = regex("\\d+").map(Integer::parseInt);
-
-// Taker for strings
-Taker<String> stringLiteral = escapedString('"', '\\', Map.of('"', '"', '\\', '\\'));
-
-// Taker for print statements
-Taker<Statement> printStatement = string("print")
-    .skipThen(stringLiteral)
-    .thenSkip(chr(';'))
-    .map(PrintStatement::new);
-
-// Taker for assignment statements
-Taker<Statement> assignStatement = identifier
-    .thenSkip(string("="))
-    .then(number)
-    .thenSkip(chr(';'))
-    .map(var -> val -> new AssignStatement(var, val));
-
-// Taker for if statements
-Taker<Statement> ifStatement = string("if")
-    .skipThen(chr('('))
-    .skipThen(identifier)
-    .thenSkip(chr(')'))
-    .thenSkip(chr('{'))
-    .then(statements)
-    .thenSkip(chr('}'))
-    .then(
-        string("else")
-            .skipThen(chr('{'))
-            .skipThen(statements)
-            .thenSkip(chr('}'))
-            .optional()
-    )
-    .map(cond -> thenStmts -> (Optional<List<Statement>> elseStmts) -> 
-        new IfStatement(cond, thenStmts, elseStmts.orElse(Collections.emptyList()))
-    );
-
-// Set the statement parser
-statement.set(
-    oneOf(
-        printStatement,
-        assignStatement,
-        ifStatement
-    )
-);
-
-// Set the statements parser
-statements.set(
-    statement.zeroOrMore().map(stmts -> {
-        List<Statement> result = new ArrayList<>();
-        for (Statement stmt : stmts) {
-            result.add(stmt);
-        }
-        return result;
-    })
-);
-
-// Parse a simple program
-String program = "x = 5; if (x) { print \"x is true\"; } else { print \"x is false\"; }";
-List<Statement> ast = statements.parse(Input.of(program)).value();
-```
+Use [parser-design-guide.md](parser-design-guide.md) for the design process
+behind larger grammars and AST shapes.
 
 ## Integration Patterns
 
@@ -702,7 +466,9 @@ Taker<String> specific = regex("[a-zA-Z]+");
 
 While `regex()` is powerful, it carries overhead and can be less readable for simple patterns. Taker provides efficient alternatives:
 
-- **Identifiers**: Use a named parser for identifiers instead of repeating `regex("[a-zA-Z_][a-zA-Z0-9_]*")`.
+- **Identifiers**: Use `TokensParser.identifier()` for token grammars, or
+  `CharPredicate.identifierStart` / `identifierPart` when writing a custom
+  identifier parser.
 - **Hexadecimal**: Use `Numeric.hex` instead of `regex("[0-9a-fA-F]+")`.
 - **Custom character sets**: Use `satisfy()` with predicates.
 
@@ -711,15 +477,13 @@ While `regex()` is powerful, it carries overhead and can be less readable for si
 Taker<String> regexId = regex("[a-zA-Z_][a-zA-Z0-9_]*");
 
 // Use scanner primitives for simple character runs:
-CharPredicate idStart = CharPredicate.asciiLetter.or(CharPredicate.is('_'));
-CharPredicate idPart = CharPredicate.asciiLetterOrDigit.or(CharPredicate.is('_'));
-Taker<String> id = chr(idStart)
-    .then(collectChars(idPart).orElse(""))
+Taker<String> id = chr(CharPredicate.identifierStart)
+    .then(collectChars(CharPredicate.identifierPart).orElse(""))
     .map((first, rest) -> first + rest);
 
 // Or build your own:
-Taker<String> myPattern = chr(idStart)
-    .then(collectChars(idPart).orElse(""))
+Taker<String> myPattern = chr(CharPredicate.identifierStart)
+    .then(collectChars(CharPredicate.identifierPart).orElse(""))
     .map((first, rest) -> first + rest);
 ```
 
@@ -756,16 +520,17 @@ The `systemOut` method allows you to log the parsing process to the system outpu
 Taker<String> myParser = string("foo").or(string("bar")).systemOut();
 ```
 
-#### Use `expecting` to redefine error messages
+#### Use `label` and `expecting` to improve error messages
 
-The `expecting` method allows you to provide a more user-friendly name for a parser, which will be used in error messages when the parser fails to match.
+Use `label(...)` for grammar rules and `expecting(...)` for the specific token
+or value expected at a point in the grammar.
 
 ```java
 Taker<String> identifier = regex("[a-zA-Z_][a-zA-Z0-9_]*")
     .expecting("an identifier");
 
-// If this fails, the error message will say "Expected an identifier" 
-// instead of a generic message or the underlying pattern.
+Taker<Statement> statement = oneOf(print, assignment, ifStatement)
+    .label("statement");
 ```
 
 
@@ -774,7 +539,7 @@ Taker<String> identifier = regex("[a-zA-Z_][a-zA-Z0-9_]*")
 Custom error messages can help identify where parsing is failing:
 
 ```java
-// Add custom error messages
+// Add a specific expectation
 Taker<Integer> withErrorMessage = number.expecting("number");
 ```
 

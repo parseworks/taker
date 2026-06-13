@@ -15,11 +15,10 @@
    1. [Recursive Parsers](#recursive-parsers)
    2. [Scanner Primitives](#scanner-primitives)
    3. [Performance Optimization](#performance-optimization)
-6. [API Reference](#api-reference)
+6. [Where Next](#where-next)
 7. [Realistic Examples](#realistic-examples)
-8. [Project Policy](#project-policy)
-9. [Troubleshooting](#troubleshooting)
-10. [Best Practices](#best-practices)
+8. [Troubleshooting](#troubleshooting)
+9. [Best Practices](#best-practices)
 
 ## Introduction
 
@@ -147,11 +146,18 @@ Taker<java.util.List<KV>> configParser = kvParser.oneOrMoreSeparatedBy(chr('\n')
 
 ### Error Handling
 
-Use `expecting(...)` at grammar boundaries to make failures more helpful.
+Use `expecting(...)` to relabel a specific expected token and `label(...)` to
+add larger grammar context without losing the underlying cause.
 
 ```java
 Taker<String> identifier = collectChars(CharPredicate.asciiLetterOrDigit)
     .expecting("identifier");
+
+Taker<KV> kvParser = identifier
+    .thenSkip(chr('='))
+    .then(lineValue)
+    .map(KV::new)
+    .label("key-value pair");
 
 Result<String> result = identifier.parse("=value");
 if (!result.matches()) {
@@ -248,47 +254,16 @@ parsers are more flexible, but allocate per parser step.
 5. **Use `commit` intentionally**: once a grammar branch is chosen, committing
    can improve error locality and avoid confusing backtracking.
 
-## API Reference
+## Where Next
 
-### Core Types
-
-- **`Taker<A>`**: core parser type.
-- **`Input`**: immutable input cursor.
-- **`Result<A>`**: parser result.
-- **`Failure<A>`**: structured parser failure.
-- **`Located<A>`**: parsed value plus start/end offsets.
-- **`CharPredicate`**: named character predicate helper.
-
-See [api-contract.md](api-contract.md) for the compatibility contract and
-complete semantics.
-
-### Common Parsers and Combinators
-
-- **`Lexical.string(String)`**: matches an exact string.
-- **`Lexical.stringIgnoreCase(String)`**: matches a string without requiring
-  the same letter case.
-- **`Lexical.regex(String)`**: matches a Java regular expression at the current
-  input position.
-- **`Lexical.chr(char)`**: matches one exact character.
-- **`Lexical.chrIgnoreCase(char)`**: matches one character without requiring
-  the same letter case.
-- **`Lexical.chr(CharPredicate)`**: matches one character satisfying a
-  predicate.
-- **`Lexical.oneOfIgnoreCase(String)`**: matches one character from a set
-  without requiring the same letter case.
-- **`Lexical.collectChars(CharPredicate)`**: collects one or more matching input
-  characters.
-- **`Lexical.skipWhile(CharPredicate)`**: skips zero or more matching input
-  characters without materializing text.
-- **`Lexical.countWhile(CharPredicate)`**: consumes zero or more matching input
-  characters and returns the count.
-- **`TokensParser.skipping(...)`**: creates a token facade that skips ignored
-  input such as whitespace around token parsers.
-- **`Combinators.oneOf(...)`**: tries alternatives in order.
-- **`optional()`**: returns `Optional<A>`.
-- **`oneOrMoreSeparatedBy(separator)`**: parses one or more separated values.
-- **`foldSeparatedBy(separator, identity, accumulator)`**: folds separated
-  values without allocating an intermediate list.
+- Use [api-contract.md](api-contract.md) as the precise reference for public API
+  and parser semantics.
+- Use [advanced-user-guide.md](advanced-user-guide.md) for expression parsing,
+  recursion, ambiguity, diagnostics, and performance-sensitive parser choices.
+- Use [parser-design-guide.md](parser-design-guide.md) when designing a grammar,
+  AST, or parser module structure.
+- Use [benchmarks.md](benchmarks.md) when checking performance or allocation
+  changes.
 
 ## Realistic Examples
 
@@ -304,13 +279,6 @@ show larger parsers that are still small enough to study:
 
 These examples are run by the normal Maven test suite, so they double as
 documentation and compatibility checks.
-
-## Project Policy
-
-The parser semantics and intended public surface are documented in
-[api-contract.md](api-contract.md). Compatibility rules, pre-1.0 expectations,
-and the release checklist are documented in
-[release-policy.md](release-policy.md).
 
 ## Troubleshooting
 
@@ -352,7 +320,8 @@ If a parser allocates heavily or parses slowly:
 ## Best Practices
 
 1. **Keep parsers small and named**: named parsers are easier to test and debug.
-2. **Label grammar boundaries**: use `expecting(...)` for user-facing concepts.
+2. **Label grammar boundaries**: use `label(...)` for grammar rules and
+   `expecting(...)` for specific expected tokens.
 3. **Prefer built-ins**: use `Numeric`, `Lexical`, and `Combinators` before
    writing custom logic.
 4. **Be explicit about whitespace**: choose `trimSpaces`, `trimWhitespace`,

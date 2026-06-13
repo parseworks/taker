@@ -112,6 +112,8 @@ Reasons at this location:
 
 ## API Contract
 
+The documentation set is mapped in [docs/README.md](docs/README.md).
+
 The intended public API and parser semantics are documented in
 [docs/api-contract.md](docs/api-contract.md). Compatibility expectations and
 the release checklist are documented in

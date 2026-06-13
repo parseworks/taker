@@ -3,8 +3,7 @@ package io.github.parseworks.taker;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the Taker.expecting(String) combinator.
@@ -19,7 +18,7 @@ public class ExpectingCombinatorTest {
                 .expecting("identifier");
 
         Result<String> r = identifier.parse("123");
-        assertTrue(!r.matches(), "Taker should fail on input that doesn't start with a letter");
+        assertFalse(r.matches(), "Taker should fail on input that doesn't start with a letter");
         String msg = r.error();
         assertTrue(msg.toLowerCase().contains("expected identifier"),
                 () -> "Error message should contain relabeled expectation, but was:\n" + msg);
@@ -48,7 +47,7 @@ public class ExpectingCombinatorTest {
 
         // Missing '=' should fail and include our labeled expectation
         Result<String> r = pair.parse("nameJohn");
-        assertTrue(!r.matches(), "Taker should fail when '=' is missing");
+        assertFalse(r.matches(), "Taker should fail when '=' is missing");
         String msg = r.error();
         assertTrue(msg.toLowerCase().contains("expected '=' after key"),
                 () -> "Composite parser error should include labeled expectation, but was:\n" + msg);
@@ -65,10 +64,10 @@ public class ExpectingCombinatorTest {
 
         Result<String> result = assignment.parse("name:x");
 
-        assertTrue(!result.matches(), "Taker should fail when assignment syntax is missing '='");
+        assertFalse(result.matches(), "Taker should fail when assignment syntax is missing '='");
         Failure<?> failure = (Failure<?>) result;
         assertEquals("assignment", failure.expected());
-        assertTrue(failure.cause() != null);
+        assertNotNull(failure.cause());
         assertTrue(failure.error().contains("expected assignment"));
         assertTrue(failure.error().contains("caused by: expected ="));
     }

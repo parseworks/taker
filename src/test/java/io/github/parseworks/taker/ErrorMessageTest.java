@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Lexical.chr;
 import static io.github.parseworks.taker.parsers.Lexical.string;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -18,7 +19,7 @@ public class ErrorMessageTest {
         Taker<Character> parser = chr('a').then(chr('b')).map((a, b) -> a);
         Result<Character> result = parser.parse("a");
 
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
         String errorMessage = result.error();
         assertTrue(errorMessage.contains("Unexpected end of input") || 
                    errorMessage.contains("reached end of input"));
@@ -30,7 +31,7 @@ public class ErrorMessageTest {
         Taker<Character> parser = chr('a');
         Result<Character> result = parser.parseAll("ab");
 
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
         String errorMessage = result.error();
         assertTrue(errorMessage.contains("Expected end of input") || 
                    errorMessage.contains("expected end of input"));
@@ -39,11 +40,11 @@ public class ErrorMessageTest {
     @Test
     public void testFoundCharactersAreEscapedInFormattedErrors() {
         Result<String> newline = string("a").parse("\n");
-        assertTrue(!newline.matches());
+        assertFalse(newline.matches());
         assertTrue(newline.error().contains("found '\\n'"));
 
         Result<String> tab = string("a").parse("\t");
-        assertTrue(!tab.matches());
+        assertFalse(tab.matches());
         assertTrue(tab.error().contains("found '\\t'"));
     }
 

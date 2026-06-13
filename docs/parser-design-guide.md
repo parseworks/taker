@@ -8,7 +8,7 @@
 5. [Design Patterns for Parsers](#design-patterns-for-parsers)
 6. [Testing and Debugging Parsers](#testing-and-debugging-parsers)
 7. [Performance Considerations](#performance-considerations)
-8. [Case Studies](#case-studies)
+8. [Additional Design Notes](#additional-design-notes)
 
 ## Introduction
 
@@ -308,139 +308,31 @@ Use these techniques for debugging parsers:
 1. **Add tracing**: Add logging to see what's happening during parsing
 2. **Use custom error messages**: Provide meaningful error messages for failures
 3. **Test incrementally**: Build and test your parser incrementally
-4. **Use expecting**: Use the `expecting` method to provide custom error messages for expected inputs
+4. **Label failures**: Use `label(...)` for grammar rules and
+   `expecting(...)` for specific expected tokens or values.
 5. **Visualize the parse tree**: Create a visualization of the parse tree for complex inputs
 
 ## Performance Considerations
 
+This guide focuses on parser design. For exact parser semantics, use
+[api-contract.md](api-contract.md); for recorded performance numbers, use
+[benchmarks.md](benchmarks.md).
+
+Design choices that usually matter most:
+
+1. Tokenize long raw character spans with scanner primitives such as
+   `collectChars`, `skipWhile`, `countWhile`, and `takeUntil`.
+2. Decide whitespace policy early. Use `TokensParser` or explicit token helpers
+   when most grammar rules should ignore the same whitespace or comments.
+3. Use `label(...)` on grammar rules and `expecting(...)` on specific tokens so
+   errors point to both the rule and the low-level cause.
+4. Order alternatives from most specific to least specific when they overlap.
+5. Use `commit(...)` after a branch becomes unambiguous.
+
 ## Additional Design Notes
 
-## Case Studies
-
-Let's look at some real-world examples of parser design and implementation:
-
-### Case Study 1: Calculator Parser
-
-A simple calculator parser that evaluates arithmetic expressions:
-
-```java
-// Create references for recursive parsers
-Taker<Integer> expr = Taker.ref();
-Taker<Integer> term = Taker.ref();
-Taker<Integer> factor = Taker.ref();
-
-// Define the factor parser (numbers or parenthesized expressions)
-Taker<Integer> number = numeric.map(Character::getNumericValue);
-Taker<Integer> parenExpr = chr('(').skipThen(expr).thenSkip(chr(')'));
-factor.set(oneOf(number, parenExpr));
-
-// Define the term parser (factors with multiplication/division)
-Taker<BinaryOperator<Integer>> mulOp = chr('*').map(op -> (a, b) -> a * b);
-Taker<BinaryOperator<Integer>> divOp = chr('/').map(op -> (a, b) -> a / b);
-term.set(factor.chainLeftZeroOrMore(oneOf(mulOp, divOp), 0));
-
-// Define the expression parser (terms with addition/subtraction)
-Taker<BinaryOperator<Integer>> addOp = chr('+').map(op -> (a, b) -> a + b);
-Taker<BinaryOperator<Integer>> subOp = chr('-').map(op -> (a, b) -> a - b);
-expr.set(term.chainLeftZeroOrMore(oneOf(addOp, subOp), 0));
-
-// Parse and evaluate an expression
-int result = expr.parse(Input.of("3+(2*4)-5")).value();
-System.out.println(result);  // Output: 6
-```
-
-### Case Study 2: JSON Parser
-
-A parser for JSON data:
-
-```java
-// Create references for recursive parsers
-Taker<Object> jsonValue = Taker.ref();
-Taker<Map<String, Object>> jsonObject = Taker.ref();
-Taker<List<Object>> jsonArray = Taker.ref();
-
-// Taker for JSON strings
-Taker<String> jsonString = chr('"')
-    .skipThen(
-        oneOf(
-            chr('\\').skipThen(any(Character.class)),
-            chr(c -> c != '"' && c != '\\')
-        ).zeroOrMore()
-    )
-    .thenSkip(chr('"'))
-    .map(chars -> {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < chars.size(); i++) {
-            Character c = chars.get(i);
-            if (c == '\\' && i + 1 < chars.size()) {
-                Character next = chars.get(++i);
-                switch (next) {
-                    case '"': sb.append('"'); break;
-                    case '\\': sb.append('\\'); break;
-                    case 'n': sb.append('\n'); break;
-                    case 'r': sb.append('\r'); break;
-                    case 't': sb.append('\t'); break;
-                    default: sb.append(next);
-                }
-            } else {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
-    });
-
-// Taker for JSON numbers
-Taker<Double> jsonNumber = regex("-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?")
-    .map(Double::parseDouble);
-
-// Taker for JSON booleans
-Taker<Boolean> jsonBoolean = string("true").as(true)
-    .or(string("false").as(false));
-
-// Taker for JSON null
-Taker<Object> jsonNull = string("null").as(null);
-
-// Taker for JSON arrays
-jsonArray.set(
-    chr('[')
-        .skipThen(jsonValue.zeroOrMoreSeparatedBy(chr(',')))
-        .thenSkip(chr(']'))
-        .map(values -> (List<Object>) new ArrayList<>(values))
-);
-
-// Taker for JSON objects
-jsonObject.set(
-    chr('{')
-        .skipThen(
-            jsonString
-                .thenSkip(chr(':'))
-                .then(jsonValue)
-                .map(key -> value -> (Map.Entry<String, Object>) new AbstractMap.SimpleEntry<>(key, value))
-                .zeroOrMoreSeparatedBy(chr(','))
-        )
-        .thenSkip(chr('}'))
-        .map(entries -> {
-            Map<String, Object> map = new HashMap<>();
-            for (Map.Entry<String, Object> entry : entries) {
-                map.put(entry.getKey(), entry.getValue());
-            }
-            return map;
-        })
-);
-
-// Set the JSON value parser to handle all JSON value types
-jsonValue.set(
-    oneOf(
-        jsonString,
-        jsonNumber,
-        jsonBoolean,
-        jsonNull,
-        jsonArray,
-        jsonObject
-    )
-);
-
-// Parse JSON data
-String json = "{\"name\":\"John\",\"age\":30,\"isStudent\":false,\"grades\":[95,87,92]}";
-Object result = jsonValue.parse(Input.of(json)).value();
-```
+Keep large examples executable where possible. The normal test suite includes
+realistic examples under
+`src/test/java/io/github/parseworks/taker/examples`, including a sectioned
+config parser and a recursive JSON-like value parser. The user guide links to
+those examples; this document explains how to design parsers like them.
