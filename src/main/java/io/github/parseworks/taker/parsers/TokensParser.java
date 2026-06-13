@@ -32,10 +32,12 @@ public final class TokensParser {
     private static final CharPredicate DEFAULT_IDENTIFIER_PART =
         CharPredicate.asciiLetterOrDigit.or(CharPredicate.is('_'));
 
-    private final Taker<?> ignored;
+    private final CharPredicate ignoredChars;
+    private final Taker<?> ignoredParser;
 
-    private TokensParser(Taker<?> ignored) {
-        this.ignored = Objects.requireNonNull(ignored, "ignored");
+    private TokensParser(CharPredicate ignoredChars, Taker<?> ignoredParser) {
+        this.ignoredChars = ignoredChars;
+        this.ignoredParser = ignoredParser;
     }
 
     /**
@@ -46,7 +48,7 @@ public final class TokensParser {
      * @return a token parser facade
      */
     public static TokensParser skipping(CharPredicate ignored) {
-        return skipping(Lexical.skipWhile(ignored));
+        return new TokensParser(Objects.requireNonNull(ignored, "ignored"), null);
     }
 
     /**
@@ -57,7 +59,7 @@ public final class TokensParser {
      * @return a token parser facade
      */
     public static TokensParser skipping(Taker<?> ignored) {
-        return new TokensParser(ignored);
+        return new TokensParser(null, Objects.requireNonNull(ignored, "ignored"));
     }
 
     /**
@@ -68,7 +70,30 @@ public final class TokensParser {
      * @return token parser
      */
     public <A> Taker<A> token(Taker<A> parser) {
-        return Lexical.lexeme(parser, ignored);
+        Objects.requireNonNull(parser, "parser");
+        if (ignoredChars != null) {
+            return new Taker<>(in -> {
+                Input current = skipIgnoredChars(in);
+                Result<A> result = parser.apply(current);
+                if (result.matches()) {
+                    return new Match<>(result.value(), skipIgnoredChars(result.input()));
+                }
+                return result;
+            });
+        }
+        return Lexical.lexeme(parser, ignoredParser);
+    }
+
+    private Input skipIgnoredChars(Input in) {
+        CharSequence data = in.data();
+        int start = in.position();
+        int current = start;
+        int length = data.length();
+
+        while (current < length && ignoredChars.test(data.charAt(current))) {
+            current++;
+        }
+        return current == start ? in : in.skip(current - start);
     }
 
     /** Matches a character token. */
