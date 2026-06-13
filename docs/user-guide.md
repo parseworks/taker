@@ -282,6 +282,8 @@ complete semantics.
   characters without materializing text.
 - **`Lexical.countWhile(CharPredicate)`**: consumes zero or more matching input
   characters and returns the count.
+- **`TokensParser.skipping(...)`**: creates a token facade that skips ignored
+  input such as whitespace around token parsers.
 - **`Combinators.oneOf(...)`**: tries alternatives in order.
 - **`optional()`**: returns `Optional<A>`.
 - **`oneOrMoreSeparatedBy(separator)`**: parses one or more separated values.

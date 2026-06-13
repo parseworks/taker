@@ -11,6 +11,8 @@
  *     parser constructors and control combinators such as {@code pure},
  *     {@code fail}, {@code oneOf}, {@code eof}, {@code commit}, and
  *     {@code not}.</li>
+ *     <li>{@link io.github.parseworks.taker.parsers.TokensParser} provides an
+ *     opt-in token facade with a caller-defined ignored-input policy.</li>
  *     <li>{@link io.github.parseworks.taker.parsers.Csv} and
  *     {@link io.github.parseworks.taker.parsers.IsoDates} provide focused
  *     domain parsers that can be used directly or studied as examples.</li>

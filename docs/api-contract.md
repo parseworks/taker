@@ -427,6 +427,23 @@ code paths that require quiet output.
 `Chains` provides chain helpers and the `Associativity` enum for left- and
 right-associative expression parsing.
 
+### `TokensParser`
+
+`TokensParser` is an opt-in facade for token grammars. It does not change
+`Input` behavior. Instead, each token parser skips caller-defined ignored input
+before and after a raw parser.
+
+- `TokensParser.skipping(predicate)` skips zero or more characters accepted by
+  the predicate around each token.
+- `TokensParser.skipping(parser)` repeatedly applies a caller-defined ignored
+  parser around each token.
+- `token(parser)` wraps any raw parser in the ignored-input policy.
+- `chr`, `string`, `oneOf`, and their ignore-case variants are token-aware
+  forms of the corresponding `Lexical` parsers.
+- `keyword` and `keywordIgnoreCase` match standalone keyword tokens and reject
+  input where the matched keyword is followed by an identifier-part character.
+- `identifier()` matches a Java-like ASCII identifier token.
+
 ### `Csv` and `IsoDates`
 
 `Csv` and `IsoDates` are convenience parser collections. Their documented edge
