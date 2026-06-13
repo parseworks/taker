@@ -1,6 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,20 @@ class TokensParserTest {
         assertFalse(tokens.keyword("if").parse("ifdef").matches());
         assertFalse(tokens.keyword("if").parse("if_").matches());
         assertFalse(tokens.keyword("if").parse("if1").matches());
+    }
+
+    @Test
+    void keywordFailuresReportKeywordExpectationAndBoundary() {
+        TokensParser tokens = TokensParser.skipping(CharPredicate.whitespace);
+
+        Failure<String> mismatch = (Failure<String>) tokens.keyword("if").parse("else");
+        assertEquals("keyword \"if\"", mismatch.expected());
+        assertEquals(0, mismatch.input().position());
+        assertEquals("'i'", mismatch.cause().expected());
+
+        Failure<String> boundary = (Failure<String>) tokens.keyword("if").parse("ifdef");
+        assertEquals("keyword boundary after \"if\"", boundary.expected());
+        assertEquals(2, boundary.input().position());
     }
 
     @Test

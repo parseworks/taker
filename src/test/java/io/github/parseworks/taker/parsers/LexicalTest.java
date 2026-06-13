@@ -1,6 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -91,6 +92,21 @@ public class LexicalTest {
         assertEquals(5, result.input().position());
         assertFalse(parser.parse("help").matches());
         assertTrue(stringIgnoreCase("").parse("").matches());
+    }
+
+    @Test
+    void stringFailuresReportEscapedExpectedCharacterAtFailurePosition() {
+        Failure<String> truncated = (Failure<String>) string("abc").parse("ab");
+        assertEquals(2, truncated.input().position());
+        assertEquals("'c'", truncated.expected());
+
+        Failure<String> tabMismatch = (Failure<String>) string("a\t").parse("ax");
+        assertEquals(1, tabMismatch.input().position());
+        assertEquals("'\\t'", tabMismatch.expected());
+
+        Failure<String> newlineMismatch = (Failure<String>) stringIgnoreCase("\n").parse("x");
+        assertEquals(0, newlineMismatch.input().position());
+        assertEquals("'\\n'", newlineMismatch.expected());
     }
 
     @Test

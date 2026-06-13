@@ -87,6 +87,8 @@ A parser returns a `Result<A>`.
 - `cause()` is an optional nested failure.
 - `combinedFailures()` is an optional list of failures from alternative parsers.
 - `error()` formats a user-facing diagnostic lazily.
+- Literal character expectations should use escaped display forms for control
+  characters, such as `'\n'` or `'\t'`.
 
 ## Failure Types
 
@@ -372,9 +374,11 @@ code paths that require quiet output.
 - `chrIgnoreCase(char)` matches exactly one character ignoring case.
 - `chr(CharPredicate)` matches one character satisfying the predicate.
 - `string(str)` matches `str` exactly. The empty string succeeds without
-  consuming input.
+  consuming input. On failure, it reports the next expected character at the
+  failure position using escaped literal formatting for control characters.
 - `stringIgnoreCase(str)` matches `str` ignoring case. On success it returns the
-  parser's expected string, not the source slice.
+  parser's expected string, not the source slice. Failure labels follow
+  `string(str)` formatting.
 - `regex(pattern, flags)` matches with `Matcher.lookingAt()` from the current
   input position.
 - `oneOf(chars)` matches one character from the supplied character set.
@@ -442,7 +446,10 @@ before and after a raw parser.
   forms of the corresponding `Lexical` parsers.
 - `keyword` and `keywordIgnoreCase` match standalone keyword tokens and reject
   input where the matched keyword is followed by an identifier-part character.
-- `identifier()` matches a Java-like ASCII identifier token.
+  Mismatches report `keyword "..."` while preserving the underlying character
+  failure as the cause.
+- `identifier()` matches a Java-like ASCII identifier token using
+  `CharPredicate.identifierStart` and `CharPredicate.identifierPart`.
 
 ### `Csv` and `IsoDates`
 

@@ -121,6 +121,21 @@ public class CharPredicateTest {
     }
 
     @Test
+    public void testIdentifierPredicatesAreJavaLikeAscii() {
+        assertTrue(CharPredicate.identifierStart.test('a'));
+        assertTrue(CharPredicate.identifierStart.test('Z'));
+        assertTrue(CharPredicate.identifierStart.test('_'));
+        assertFalse(CharPredicate.identifierStart.test('1'));
+        assertFalse(CharPredicate.identifierStart.test('$'));
+
+        assertTrue(CharPredicate.identifierPart.test('a'));
+        assertTrue(CharPredicate.identifierPart.test('9'));
+        assertTrue(CharPredicate.identifierPart.test('_'));
+        assertFalse(CharPredicate.identifierPart.test('-'));
+        assertFalse(CharPredicate.identifierPart.test('$'));
+    }
+
+    @Test
     public void testPredicateCombinators() {
         CharPredicate lowerHex = CharPredicate.anyOf(CharPredicate.asciiDigit, CharPredicate.range('a', 'f'));
         assertTrue(lowerHex.test('9'));

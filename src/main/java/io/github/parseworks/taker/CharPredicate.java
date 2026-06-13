@@ -294,6 +294,24 @@ public interface CharPredicate {
     CharPredicate asciiLetterOrDigit = named("ASCII letter or digit", asciiLetter.or(asciiDigit));
 
     /**
+     * A predicate that tests if a character can start a Java-like ASCII
+     * identifier: an ASCII letter or underscore.
+     */
+    CharPredicate identifierStart = named(
+            "identifier start",
+            c -> c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+    );
+
+    /**
+     * A predicate that tests if a character can continue a Java-like ASCII
+     * identifier: an ASCII letter, ASCII digit, or underscore.
+     */
+    CharPredicate identifierPart = named(
+            "identifier part",
+            c -> c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+    );
+
+    /**
      * A predicate that tests if a character is common ASCII whitespace.
      * <p>
      * This includes space, tab, line feed, carriage return, and form feed.

@@ -1,6 +1,7 @@
 package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -28,9 +29,9 @@ import java.util.Objects;
 public final class TokensParser {
 
     private static final CharPredicate DEFAULT_IDENTIFIER_START =
-        CharPredicate.asciiLetter.or(CharPredicate.is('_'));
+        CharPredicate.identifierStart;
     private static final CharPredicate DEFAULT_IDENTIFIER_PART =
-        CharPredicate.asciiLetterOrDigit.or(CharPredicate.is('_'));
+        CharPredicate.identifierPart;
 
     private final CharPredicate ignoredChars;
     private final Taker<?> ignoredParser;
@@ -215,16 +216,20 @@ public final class TokensParser {
         Objects.requireNonNull(value, "value");
         Objects.requireNonNull(identifierPart, "identifierPart");
         Taker<String> stringParser = ignoreCase ? Lexical.stringIgnoreCase(value) : Lexical.string(value);
+        String expectedKeyword = ignoreCase
+            ? "keyword \"" + value + "\" ignoring case"
+            : "keyword \"" + value + "\"";
+        String expectedBoundary = "keyword boundary after \"" + value + "\"";
 
         return new Taker<>(in -> {
             Result<String> result = stringParser.apply(in);
             if (!result.matches()) {
-                return result;
+                return new NoMatch<>(result.input(), expectedKeyword, (Failure<?>) result);
             }
 
             Input next = result.input();
             if (!next.isEof() && identifierPart.test(next.current())) {
-                return new NoMatch<>(next, "keyword boundary after " + value);
+                return new NoMatch<>(next, expectedBoundary);
             }
             return result;
         });

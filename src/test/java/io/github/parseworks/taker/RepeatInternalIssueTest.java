@@ -23,7 +23,7 @@ public class RepeatInternalIssueTest {
         Result<List<String>> res2 = manyAB.parse(Input.of("ABA"));
         
         assertTrue(!res2.matches(), "Should fail because item failed partially");
-        assertTrue(res2.error().contains("expected B"), "Error should mention 'B'");
+        assertTrue(res2.error().contains("expected 'B'"), "Error should mention 'B'");
 
         // Case 2: oneOrMoreUntil without reaching terminator
         Taker<String> simpleAB = string("AB");

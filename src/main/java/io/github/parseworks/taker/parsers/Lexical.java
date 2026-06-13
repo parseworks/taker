@@ -295,6 +295,7 @@ public class Lexical {
 
     /** Matches {@code str} exactly at the current input position. */
     public static Taker<String> string(String str) {
+        String[] expectedChars = expectedChars(str);
         return new Taker<>(in -> {
             if (str.isEmpty()) {
                 return new Match<>("", in);
@@ -310,12 +311,12 @@ public class Lexical {
                 while (matched < data.length() - start && str.charAt(matched) == data.charAt(start + matched)) {
                     matched++;
                 }
-                return new NoMatch<>(in.skip(matched), str.substring(0, 1));
+                return new NoMatch<>(in.skip(matched), expectedChars[matched]);
             }
 
             for (int i = 0; i < strLen; i++) {
                 if (str.charAt(i) != data.charAt(start + i)) {
-                    return new NoMatch<>(in.skip(i), str.substring(i, i + 1));
+                    return new NoMatch<>(in.skip(i), expectedChars[i]);
                 }
             }
 
@@ -325,6 +326,7 @@ public class Lexical {
 
     /** Matches {@code str} at the current input position, ignoring case. */
     public static Taker<String> stringIgnoreCase(String str) {
+        String[] expectedChars = expectedChars(str);
         return new Taker<>(in -> {
             if (str.isEmpty()) {
                 return new Match<>("", in);
@@ -340,12 +342,12 @@ public class Lexical {
                         && charsEqualIgnoreCase(str.charAt(matched), data.charAt(start + matched))) {
                     matched++;
                 }
-                return new NoMatch<>(in.skip(matched), str.substring(0, 1));
+                return new NoMatch<>(in.skip(matched), expectedChars[matched]);
             }
 
             for (int i = 0; i < strLen; i++) {
                 if (!charsEqualIgnoreCase(str.charAt(i), data.charAt(start + i))) {
-                    return new NoMatch<>(in.skip(i), str.substring(i, i + 1));
+                    return new NoMatch<>(in.skip(i), expectedChars[i]);
                 }
             }
 
@@ -360,7 +362,7 @@ public class Lexical {
         }
         // For small strings (under 10 chars), this approach is efficient
         if (str.length() < 10) {
-            return satisfy("<oneOf> " + str, c -> str.indexOf(c) != -1);
+            return satisfy("one of \"" + display(str) + "\"", c -> str.indexOf(c) != -1);
         }
 
         // For larger character sets, use a Set for O(1) lookups
@@ -369,7 +371,7 @@ public class Lexical {
             charSet.add(str.charAt(i));
         }
 
-        return satisfy("character in set [" + str + "]", charSet::contains);
+        return satisfy("character in set \"" + display(str) + "\"", charSet::contains);
     }
 
     /** Matches any single character from {@code str}, ignoring case. */
@@ -377,7 +379,7 @@ public class Lexical {
         if (str == null || str.isEmpty()) {
             return Combinators.fail("any character in empty string ignoring case");
         }
-        return satisfy("character in set [" + str + "] ignoring case", CharPredicate.anyOfIgnoreCase(str));
+        return satisfy("character in set \"" + display(str) + "\" ignoring case", CharPredicate.anyOfIgnoreCase(str));
     }
 
     /** Matches a regular expression at the current input position. */
@@ -484,5 +486,32 @@ public class Lexical {
         return expected == actual
                 || Character.toLowerCase(expected) == Character.toLowerCase(actual)
                 || Character.toUpperCase(expected) == Character.toUpperCase(actual);
+    }
+
+    private static String[] expectedChars(String str) {
+        String[] expected = new String[str.length()];
+        for (int i = 0; i < str.length(); i++) {
+            expected[i] = "'" + display(str.charAt(i)) + "'";
+        }
+        return expected;
+    }
+
+    private static String display(String chars) {
+        StringBuilder builder = new StringBuilder(chars.length());
+        for (int i = 0; i < chars.length(); i++) {
+            builder.append(display(chars.charAt(i)));
+        }
+        return builder.toString();
+    }
+
+    private static String display(char c) {
+        return switch (c) {
+            case '\n' -> "\\n";
+            case '\r' -> "\\r";
+            case '\t' -> "\\t";
+            case '\f' -> "\\f";
+            case '\b' -> "\\b";
+            default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
+        };
     }
 }
