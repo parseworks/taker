@@ -145,6 +145,9 @@ Use `jmh.prof` to enable a JMH profiler such as GC allocation reporting:
 mvn -Pjmh test-compile exec:exec "-Djmh.prof=gc"
 ```
 
+Representative benchmark records are kept in
+[docs/benchmarks.md](docs/benchmarks.md).
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).

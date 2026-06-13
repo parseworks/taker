@@ -147,6 +147,8 @@ Before cutting a release:
     - behavior changes;
     - performance-sensitive changes;
     - benchmark highlights or notable allocation changes.
+13. Record representative benchmark results in `docs/benchmarks.md` when
+    performance-sensitive code or benchmark coverage changes.
 
 ## Post-Release Sanity
 
