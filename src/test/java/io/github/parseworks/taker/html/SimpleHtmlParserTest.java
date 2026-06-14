@@ -34,7 +34,7 @@ public class SimpleHtmlParserTest {
     public void testParseHtml4AttributeForms() {
         Result<SimpleHtmlParser.Element> result = SimpleHtmlParser.parse("<INPUT DISABLED value=hello data-id='42' />");
 
-        assertTrue(result.matches(), () -> result.error());
+        assertTrue(result.matches(), result::error);
         assertInstanceOf(SimpleHtmlParser.StartTag.class, result.value());
         SimpleHtmlParser.StartTag tag = (SimpleHtmlParser.StartTag) result.value();
 
@@ -149,17 +149,12 @@ public class SimpleHtmlParserTest {
         int commentCount = 0;
 
         for (SimpleHtmlParser.Element element : elements) {
-            if (element instanceof SimpleHtmlParser.StartTag tag) {
-                startTagCount++;
-            } else if (element instanceof SimpleHtmlParser.EndTag tag) {
-                endTagCount++;
-            } else if (element instanceof SimpleHtmlParser.TextData text) {
-                textCount++;
-            } else if (element instanceof SimpleHtmlParser.Declaration declaration) {
-                if (declaration.getName().equals("--")){
-                    commentCount++;
-                }
-
+            switch (element){
+                case SimpleHtmlParser.StartTag ignored -> startTagCount++;
+                case SimpleHtmlParser.EndTag ignored -> endTagCount++;
+                case SimpleHtmlParser.TextData ignored -> textCount++;
+                case SimpleHtmlParser.Declaration declaration when declaration.getName().equals("--") -> commentCount++;
+                default -> {}
             }
         }
 
