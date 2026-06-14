@@ -3,27 +3,57 @@ package io.github.parseworks.taker.html;
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.ResultType;
 import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.results.Match;
+import io.github.parseworks.taker.results.NoMatch;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static io.github.parseworks.taker.CharPredicate.noneOf;
-import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.*;
+import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Lexical.collectChars;
+import static io.github.parseworks.taker.parsers.Lexical.escapedString;
+import static io.github.parseworks.taker.parsers.Lexical.lexeme;
+import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
 
 /**
- * SimpleHtmlParser is a simplified parser for HTML/XML documents using parseworks.
- * This is a conversion of the JavaCC-based TagParser.
+ * Practical HTML4-oriented tokenizer example.
+ * <p>
+ * This is not a browser-grade HTML parser. It intentionally parses the common
+ * token stream shape: start tags, self-closing tags, end tags, comments,
+ * declarations such as {@code <!DOCTYPE html>}, attributes, and text nodes.
+ * It demonstrates scanner primitives, labels, lookahead-free branch ordering,
+ * allocation-conscious folds, and strict document scanning.
  */
 public class SimpleHtmlParser {
 
-    // Element types
     public static class Element {
-        private String data;
-        public String getData() {
-            return data;
+        private final int start;
+        private final int end;
+
+        Element() {
+            this(-1, -1);
+        }
+
+        Element(int start, int end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public int getStart() {
+            return start;
+        }
+
+        public int getEnd() {
+            return end;
         }
     }
 
@@ -31,6 +61,11 @@ public class SimpleHtmlParser {
         private final String text;
 
         public TextData(String text) {
+            this(text, -1, -1);
+        }
+
+        public TextData(String text, int start, int end) {
+            super(start, end);
             this.text = text;
         }
 
@@ -47,10 +82,17 @@ public class SimpleHtmlParser {
     public static class StartTag extends Element {
         private final String name;
         private final Map<String, String> attributes;
+        private final boolean selfClosing;
 
         public StartTag(String name, Map<String, String> attributes) {
-            this.name = name;
-            this.attributes = attributes != null ? attributes : new HashMap<>();
+            this(name, attributes, false, -1, -1);
+        }
+
+        public StartTag(String name, Map<String, String> attributes, boolean selfClosing, int start, int end) {
+            super(start, end);
+            this.name = normalizeName(name);
+            this.attributes = attributes == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
+            this.selfClosing = selfClosing;
         }
 
         public String getName() {
@@ -61,9 +103,13 @@ public class SimpleHtmlParser {
             return attributes;
         }
 
+        public boolean isSelfClosing() {
+            return selfClosing;
+        }
+
         @Override
         public String toString() {
-            return "StartTag[" + name + ", " + attributes + "]";
+            return "StartTag[" + name + ", " + attributes + ", selfClosing=" + selfClosing + "]";
         }
     }
 
@@ -72,8 +118,13 @@ public class SimpleHtmlParser {
         private final Map<String, String> attributes;
 
         public Declaration(String name, Map<String, String> attributes) {
+            this(name, attributes, -1, -1);
+        }
+
+        public Declaration(String name, Map<String, String> attributes, int start, int end) {
+            super(start, end);
             this.name = name;
-            this.attributes = attributes != null ? attributes : new HashMap<>();
+            this.attributes = attributes == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
         }
 
         public String getName() {
@@ -98,7 +149,12 @@ public class SimpleHtmlParser {
         private final String name;
 
         public EndTag(String name) {
-            this.name = name;
+            this(name, -1, -1);
+        }
+
+        public EndTag(String name, int start, int end) {
+            super(start, end);
+            this.name = normalizeName(name);
         }
 
         public String getName() {
@@ -111,121 +167,165 @@ public class SimpleHtmlParser {
         }
     }
 
-    // Token parsers
-    private static final Taker<Void> WHITESPACE = skipWhile(CharPredicate.asciiWhitespace);
+    private record Attribute(String name, String value) {
+    }
 
-    static String ILLEGAL_IDENTIFIER_CHARS = "=/> \t\n\r\f";
+    private record StartTagParts(String name, Map<String, String> attributes, boolean selfClosing) {
+    }
 
-    static Taker<Void> END_TAG = oneOf( string(">"), string("/>")).map(data -> null);
+    private record AttributesAndClose(Map<String, String> attributes, boolean selfClosing) {
+    }
 
-    private static final Taker<String> IDENTIFIER = takeWhile(noneOf(ILLEGAL_IDENTIFIER_CHARS));
+    private record DeclarationParts(String name, String data) {
+    }
 
-    private static final Taker<String> QUOTED_STRING =
-        oneOf(
-            escapedString('\'', '\0',Map.of()),
-            escapedString('"', '\0', Map.of())
-        );
+    private static final Taker<?> HTML_SPACE = chr(CharPredicate.asciiWhitespace).skipOneOrMore();
+    private static final Taker<String> NAME = collectChars(
+        CharPredicate.asciiLetterOrDigit.or(CharPredicate.anyOf("_:-"))
+    ).expecting("HTML name");
+    private static final Taker<String> QUOTED_VALUE = oneOf(
+        escapedString('"', '\0', Map.of()),
+        escapedString('\'', '\0', Map.of())
+    ).expecting("quoted attribute value");
+    private static final Taker<String> UNQUOTED_VALUE = collectChars(noneOf(" \t\n\r\f\"'=<>`"))
+        .expecting("unquoted attribute value");
 
-    private static final Taker<Map<String, String>> COMMENT_BODY = Lexical.takeUntil("-->").map(
-        data -> Map.of("data", data)
+    private static final Taker<String> ATTRIBUTE_VALUE = oneOf(QUOTED_VALUE, UNQUOTED_VALUE)
+        .expecting("attribute value");
+
+    private static final Taker<Attribute> ATTRIBUTE = token(NAME)
+        .then(token(chr('=')).skipThen(token(ATTRIBUTE_VALUE)).optional())
+        .map(name -> value -> new Attribute(normalizeName(name), value.orElse("")))
+        .label("attribute");
+
+    private static final Taker<Map<String, String>> ATTRIBUTES = ATTRIBUTE.foldZeroOrMoreFrom(
+        LinkedHashMap::new,
+        (attributes, attribute) -> {
+            attributes.put(attribute.name(), attribute.value());
+            return attributes;
+        }
     );
 
-    private static final Taker<Character> TAG_START = chr('<').peek(not(oneOf('!','#','/')));
+    private static final Taker<Boolean> TAG_CLOSE = oneOf(
+        token(string("/>")).as(true),
+        token(string(">")).as(false)
+    ).expecting("tag close");
 
-    record KV(String k, String v){}
+    private static final Taker<Element> COMMENT = string("<!--")
+        .skipThen(takeUntil("-->"))
+        .thenSkip(string("-->"))
+        .located()
+        .map(located -> (Element) new Declaration("--", Map.of("data", located.value()), located.start(), located.end()))
+        .label("HTML comment");
 
+    private static final Taker<Element> DECLARATION = string("<!")
+        .skipThen(NAME)
+        .then(takeUntil(">"))
+        .thenSkip(chr('>'))
+        .map(DeclarationParts::new)
+        .located()
+        .map(located -> (Element) new Declaration(
+            located.value().name().toUpperCase(Locale.ROOT),
+            Map.of("data", located.value().data().trim()),
+            located.start(),
+            located.end()
+        ))
+        .label("HTML declaration");
 
-    // Element parsers
-    public static final Taker<Element> element = Taker.ref();
-    private static final Taker<Element> tagBody = Taker.ref();
-    private static final Taker<Element> endTagBody = Taker.ref();
-    private static final Taker<Map<String, String>> attributeList = Taker.ref();
+    private static final Taker<StartTagParts> START_TAG_PARTS = chr('<')
+        .skipThen(NAME)
+        .then(ATTRIBUTES.then(TAG_CLOSE).map(AttributesAndClose::new))
+        .map(name -> attrsAndClose -> new StartTagParts(name, attrsAndClose.attributes(), attrsAndClose.selfClosing()))
+        .label("start tag");
 
-    static {
-        // Initialize recursive parsers
+    private static final Taker<Element> START_TAG = START_TAG_PARTS
+        .located()
+        .map(located -> new StartTag(
+            located.value().name(),
+            located.value().attributes(),
+            located.value().selfClosing(),
+            located.start(),
+            located.end()
+        ));
 
-        // Attribute parser - parse a single attribute (name=value or just name)
-        Taker<KV> attribute = trim(IDENTIFIER).then(
-                    trim(chr('='))
-                        .skipThen(oneOf( QUOTED_STRING,
-                            takeWhile(noneOf(">\"' \t\n\r\f")))).optional()
-                ).map(name -> valOpt -> new KV(name, (String) valOpt.orElse("")));
+    private static final Taker<Element> END_TAG = string("</")
+        .skipThen(NAME)
+        .thenSkip(token(chr('>')))
+        .located()
+        .map(located -> (Element) new EndTag(located.value(), located.start(), located.end()))
+        .label("end tag");
 
-        // Attribute list parser - parse multiple attributes
-        attributeList.set(
-            attribute.foldZeroOrMoreFrom(() -> new HashMap<>(4), (attrs, kv) -> {
-                attrs.put(kv.k, kv.v);
-                return attrs;
-            })
-        );
+    private static final Taker<Element> TEXT = collectChars(CharPredicate.not(CharPredicate.is('<')))
+        .located()
+        .map(located -> (Element) new TextData(located.value(), located.start(), located.end()))
+        .label("text");
 
-        // Tag parser - parse a start tag with optional attributes
-        tagBody.set(
-            IDENTIFIER.then(attributeList.thenSkip(END_TAG))
-                .map(name -> attrs -> new StartTag(name, attrs))
-        );
+    public static final Taker<Element> element = oneOf(
+        COMMENT,
+        DECLARATION,
+        END_TAG,
+        START_TAG,
+        TEXT
+    ).expecting("HTML element");
 
-        // End tag parser - parse an end tag
-        endTagBody.set(IDENTIFIER.thenSkip(chr('>'))
-            .map(EndTag::new)
-        );
-
-        // Comment parser - parse an HTML comment
-        Taker<Element> commentTagBody = string("--").skipThen(COMMENT_BODY).thenSkip(Lexical.string("--"))
-                .map(data -> new Declaration("--", data));
-
-        // Declaration parser - parse a declaration tag like <!DOCTYPE ...>
-        Taker<Element> declarationTagBody = IDENTIFIER.then(attributeList.thenSkip(END_TAG))
-            .map(name -> attrs -> new Declaration(name, attrs));
-        Taker<Element> rawText = takeUntil(c -> c == '<').map(TextData::new);
-        //Taker<Element> rawText = takeUntil(CharPredicate.is('<')).map(TextData::new);
-
-        Taker<Element> anyTag =
-            chr('<').skipThen(
-                oneOf(
-                    // order: the next char after '<' decides which one is cheap to try first
-                    Lexical.chr('!').skipThen(oneOf(commentTagBody, declarationTagBody)),
-                    Lexical.chr('/').skipThen(endTagBody),
-                    // fallback to content
-                    tagBody
-                )
-            );
-        // element tries either a tag (when '<') or raw text, without wasting work
-        element.set(anyTag.or(rawText));
+    private SimpleHtmlParser() {
     }
 
     /**
-     * Parse an HTML document.
-     * 
-     * @param input the HTML document to parse
-     * @return the result of parsing
+     * Parse one HTML token.
+     *
+     * @param input the HTML document fragment to parse
+     * @return the result of parsing one element
      */
     public static Result<Element> parse(String input) {
         return element.parse(Input.of(input));
     }
 
     /**
-     * Parse an HTML document and return all elements.
-     * 
+     * Strictly parse an HTML document into tokens.
+     *
      * @param input the HTML document to parse
-     * @return the list of elements
+     * @return a parser result containing every parsed token
      */
-    public static List<Element> parseAll(String input) {
+    public static Result<List<Element>> parseDocument(String input) {
+        Input current = Input.of(input);
         List<Element> elements = new ArrayList<>();
-        Input currentInput = Input.of(input);
 
-        while (!currentInput.isEof()) {
-            Result<Element> result = element.parse(currentInput);
+        while (!current.isEof()) {
+            Result<Element> result = element.apply(current);
             if (!result.matches()) {
-                // Skip one character and try again
-                currentInput = currentInput.next();
-                continue;
+                return result.cast();
+            }
+            if (result.input().position() == current.position()) {
+                return new NoMatch<>(current, "HTML element to consume input");
             }
 
             elements.add(result.value());
-            currentInput = result.input();
+            current = result.input();
         }
 
-        return Collections.unmodifiableList(elements);
+        return new Match<>(Collections.unmodifiableList(elements), current);
+    }
+
+    /**
+     * Parse an HTML document and return all tokens.
+     *
+     * @param input the HTML document to parse
+     * @return the list of parsed elements
+     */
+    public static List<Element> parseAll(String input) {
+        Result<List<Element>> result = parseDocument(input);
+        if (result.type() != ResultType.MATCH) {
+            throw new IllegalArgumentException(result.error());
+        }
+        return result.value();
+    }
+
+    private static <A> Taker<A> token(Taker<A> parser) {
+        return lexeme(parser, HTML_SPACE);
+    }
+
+    private static String normalizeName(String name) {
+        return name.toLowerCase(Locale.ROOT);
     }
 }

@@ -31,12 +31,47 @@ public class SimpleHtmlParserTest {
     }
 
     @Test
+    public void testParseHtml4AttributeForms() {
+        Result<SimpleHtmlParser.Element> result = SimpleHtmlParser.parse("<INPUT DISABLED value=hello data-id='42' />");
+
+        assertTrue(result.matches(), () -> result.error());
+        assertInstanceOf(SimpleHtmlParser.StartTag.class, result.value());
+        SimpleHtmlParser.StartTag tag = (SimpleHtmlParser.StartTag) result.value();
+
+        assertEquals("input", tag.getName());
+        assertTrue(tag.isSelfClosing());
+        assertEquals("", tag.getAttributes().get("disabled"));
+        assertEquals("hello", tag.getAttributes().get("value"));
+        assertEquals("42", tag.getAttributes().get("data-id"));
+    }
+
+    @Test
+    public void testParseAttributesAcrossLinesAndReportsSpan() {
+        Result<SimpleHtmlParser.Element> result = SimpleHtmlParser.parse("""
+            <a
+              href="/docs"
+              title="Docs">link""");
+
+        assertTrue(result.matches(), () -> result.error());
+        assertInstanceOf(SimpleHtmlParser.StartTag.class, result.value());
+        SimpleHtmlParser.StartTag tag = (SimpleHtmlParser.StartTag) result.value();
+
+        assertEquals("a", tag.getName());
+        assertEquals("/docs", tag.getAttributes().get("href"));
+        assertEquals("Docs", tag.getAttributes().get("title"));
+        assertEquals(0, tag.getStart());
+        assertTrue(tag.getEnd() > tag.getStart());
+    }
+
+    @Test
     public void testParseEndTag() {
         Result<SimpleHtmlParser.Element> result = SimpleHtmlParser.parse("</div>");
         assertTrue(result.matches());
         assertInstanceOf(SimpleHtmlParser.EndTag.class, result.value());
         SimpleHtmlParser.EndTag tag = (SimpleHtmlParser.EndTag) result.value();
         assertEquals("div", tag.getName());
+        assertEquals(0, tag.getStart());
+        assertEquals(6, tag.getEnd());
     }
 
     @Test
@@ -46,6 +81,8 @@ public class SimpleHtmlParserTest {
         assertInstanceOf(SimpleHtmlParser.Declaration.class, result.value());
         SimpleHtmlParser.Declaration comment = (SimpleHtmlParser.Declaration) result.value();
         assertEquals(" This is a comment ", comment.getAttributeValue("data"));
+        assertEquals(0, comment.getStart());
+        assertEquals("<!-- This is a comment -->".length(), comment.getEnd());
     }
 
     @Test
@@ -73,6 +110,14 @@ public class SimpleHtmlParserTest {
         assertInstanceOf(SimpleHtmlParser.EndTag.class, elements.get(2));
         SimpleHtmlParser.EndTag endTag = (SimpleHtmlParser.EndTag) elements.get(2);
         assertEquals("div", endTag.getName());
+    }
+
+    @Test
+    public void testParseDocumentRejectsMalformedTagInsteadOfSkipping() {
+        Result<List<SimpleHtmlParser.Element>> result = SimpleHtmlParser.parseDocument("<div");
+
+        assertFalse(result.matches());
+        assertTrue(result.error().contains("expected"));
     }
 
     @Test
