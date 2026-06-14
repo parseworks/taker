@@ -18,6 +18,14 @@ public interface Failure<A> extends Result<A> {
     /** Returns what was expected by the failed parser. */
     String expected();
 
+    /**
+     * Returns {@code true} when {@link #expected()} names grammar context rather
+     * than an expected token or value.
+     */
+    default boolean context() {
+        return false;
+    }
+
     /** Returns failures from tied alternatives, or {@code null}. */
     List<Failure<A>> combinedFailures();
 
@@ -73,6 +81,16 @@ public interface Failure<A> extends Result<A> {
     }
 
     /**
+     * Returns structured diagnostics for this failure.
+     *
+     * @return diagnostics for this failure
+     */
+    @Override
+    default ParseDiagnostics diagnostics() {
+        return ParseDiagnostics.from(this);
+    }
+
+    /**
      * Returns a human-friendly error message for this failure at the given depth.
      *
      * @param depth the depth of the failure in the chain
@@ -90,25 +108,30 @@ public interface Failure<A> extends Result<A> {
             return cause.error(depth);
         }
 
-        if (depth > 0) builder.append("caused by: ");
-        if (expected != null && !expected.isEmpty()) {
-            builder.append("expected ").append(expected);
+        if (context()) {
+            builder.append("while parsing ");
+            builder.append(expected == null || expected.isEmpty() ? "unknown rule" : expected);
         } else {
-            builder.append("expected correct input");
-        }
+            if (depth > 0) builder.append("caused by: ");
+            if (expected != null && !expected.isEmpty()) {
+                builder.append("expected ").append(expected);
+            } else {
+                builder.append("expected correct input");
+            }
 
-        String foundValue = null;
-        var input = this.input();
-        if (input != null && input.hasMore()) {
-            foundValue = "'" + display(input.current()) + "'";
-        }
+            String foundValue = null;
+            var input = this.input();
+            if (input != null && input.hasMore()) {
+                foundValue = "'" + display(input.current()) + "'";
+            }
 
-        if (foundValue != null) {
-            builder.append(" found ").append(foundValue);
-        } else if (input != null && !input.hasMore()) {
-            builder.append(" reached end of input");
-        } else {
-            builder.append(" found unknown input");
+            if (foundValue != null) {
+                builder.append(" found ").append(foundValue);
+            } else if (input != null && !input.hasMore()) {
+                builder.append(" reached end of input");
+            } else {
+                builder.append(" found unknown input");
+            }
         }
 
         builder.append("\n");

@@ -80,15 +80,30 @@ A parser returns a `Result<A>`.
 - `toOptional()` returns the successful value or `Optional.empty()`.
 - `errorOptional()` returns the formatted error for failures or
   `Optional.empty()` for success.
+- `diagnosticsOptional()` returns structured diagnostics for failures or
+  `Optional.empty()` for success.
+- `diagnostics()` returns structured diagnostics for failures and throws
+  `IllegalStateException` for successful results.
 
 `Failure<A>` exposes structured failure information:
 
-- `expected()` is the current expected label.
+- `expected()` is the current expectation or grammar context label.
+- `context()` is `true` when `expected()` names grammar context from
+  `label(...)` rather than a concrete expectation from `expecting(...)` or a
+  primitive parser.
 - `cause()` is an optional nested failure.
 - `combinedFailures()` is an optional list of failures from alternative parsers.
 - `error()` formats a user-facing diagnostic lazily.
+- `diagnostics()` creates a lazy structured view over the existing failure.
 - Literal character expectations should use escaped display forms for control
   characters, such as `'\n'` or `'\t'`.
+
+`ParseDiagnostics` is the public, renderer-friendly failure view. It contains
+the result type, failure offset, line/column when available, escaped found
+input, distinct expectations, grammar contexts, and nested causes. Rendering is
+lazy: callers can inspect fields directly, call `render()` for a message without
+a source snippet, or call `render(source)` to include a caret snippet from the
+original input. Successful parses do not allocate diagnostics.
 
 ## Failure Types
 
@@ -249,14 +264,18 @@ other alternatives would produce a worse error.
 
 ### `expecting`
 
-`parser.expecting(label)` relabels a failure while preserving the original
-failure as its cause. It does not change successful results or input consumption.
+`parser.expecting(label)` relabels what the parser expected while preserving the
+original failure as its cause. It is intended for tokens, values, and local
+syntax expectations such as `identifier`, `integer`, or `"]"`. It does not
+change successful results or input consumption.
 
 ### `label`
 
 `parser.label(label)` adds a grammar label to a failure while preserving the
 original failure as its cause. It is intended for naming larger grammar rules in
-diagnostics. It does not change successful results or input consumption.
+diagnostics, such as `assignment`, `expression`, or `TOML table`. Renderers
+should present labels as context, for example `while parsing assignment`, not as
+expected tokens. It does not change successful results or input consumption.
 
 ### `optional`
 

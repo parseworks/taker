@@ -18,34 +18,44 @@ import java.util.function.Function;
  * @param expected human-readable expectation
  * @param cause optional underlying cause
  * @param combinedFailures tied failures from alternative parsers
+ * @param context whether {@code expected} is a grammar context label
  * @param <A> the type of the parsed value
  */
 public record NoMatch<A>(
         Input input,
         String expected,
         Failure<?> cause,
-        List<Failure<A>> combinedFailures
+        List<Failure<A>> combinedFailures,
+        boolean context
 ) implements Failure<A> {
 
     /**
      * Constructs a recoverable failure at {@code input}.
      */
     public NoMatch(Input input, String expected) {
-        this(input, expected, null, null);
+        this(input, expected, null, null, false);
     }
 
     /**
      * Constructs a recoverable failure with an underlying cause.
      */
     public NoMatch(Input input, String expected, Failure<?> cause) {
-        this(input, expected, cause, null);
+        this(input, expected, cause, null, false);
+    }
+
+    /**
+     * Constructs a recoverable failure with an underlying cause and optional
+     * grammar context semantics.
+     */
+    public NoMatch(Input input, String expected, Failure<?> cause, boolean context) {
+        this(input, expected, cause, null, context);
     }
 
     /**
      * Constructs a recoverable failure from tied alternative failures.
      */
     public NoMatch(List<Failure<A>> failures) {
-        this(failures.isEmpty() ? null : failures.getFirst().input(), null, null, failures);
+        this(failures.isEmpty() ? null : failures.getFirst().input(), null, null, failures, false);
     }
 
     @Override

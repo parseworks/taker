@@ -162,8 +162,14 @@ Taker<KV> kvParser = identifier
 Result<String> result = identifier.parse("=value");
 if (!result.matches()) {
     System.err.println(result.error());
+    System.err.println(result.diagnostics().render("=value"));
 }
 ```
+
+`error()` is the simple formatted message. `diagnostics()` exposes the same
+failure as structured data, including the failed offset, line/column,
+expectations, found input, and nested causes. The diagnostic renderer is lazy, so
+successful parses do not create rendered error messages.
 
 Use `flatMap` with `Combinators.pure(...)` and `Combinators.fail(...)` for semantic
 validation after syntax has parsed.

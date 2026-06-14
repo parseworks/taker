@@ -45,6 +45,17 @@ public interface Result<A> {
     String error();
 
     /**
+     * Returns structured diagnostics for a failed result.
+     *
+     * @return diagnostics for this failure
+     * @throws IllegalStateException when this result is successful
+     */
+    default ParseDiagnostics diagnostics() {
+        return diagnosticsOptional()
+            .orElseThrow(() -> new IllegalStateException("Successful results do not have diagnostics"));
+    }
+
+    /**
      * Returns the parsed value when this result succeeded.
      *
      * @return the parsed value, or an empty optional for failures
@@ -60,6 +71,15 @@ public interface Result<A> {
      */
     default Optional<String> errorOptional() {
         return !matches() ? Optional.of(error()) : Optional.empty();
+    }
+
+    /**
+     * Returns structured diagnostics when this result failed.
+     *
+     * @return diagnostics for failures, or an empty optional for success
+     */
+    default Optional<ParseDiagnostics> diagnosticsOptional() {
+        return this instanceof Failure<?> failure ? Optional.of(failure.diagnostics()) : Optional.empty();
     }
 
     /**

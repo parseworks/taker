@@ -67,9 +67,10 @@ public class ExpectingCombinatorTest {
         assertFalse(result.matches(), "Taker should fail when assignment syntax is missing '='");
         Failure<?> failure = (Failure<?>) result;
         assertEquals("assignment", failure.expected());
+        assertTrue(failure.context());
         assertNotNull(failure.cause());
-        assertTrue(failure.error().contains("expected assignment"));
-        assertTrue(failure.error().contains("caused by: expected '='"));
+        assertTrue(failure.error().contains("while parsing assignment"));
+        assertTrue(failure.error().contains("expected '='"));
     }
 
     @Test

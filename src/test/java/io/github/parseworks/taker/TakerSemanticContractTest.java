@@ -528,6 +528,7 @@ public class TakerSemanticContractTest {
         assertFalse(result.matches());
         Failure<?> failure = (Failure<?>) result;
         assertEquals("letter", failure.expected());
+        assertTrue(failure.context());
         assertNotNull(failure.cause());
         assertEquals("'a'", failure.cause().expected());
     }

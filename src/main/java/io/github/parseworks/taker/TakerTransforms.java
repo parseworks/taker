@@ -76,7 +76,15 @@ final class TakerTransforms {
     }
 
     static <A> Taker<A> label(Taker<A> parser, String label) {
-        return expecting(parser, label);
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(label, "label");
+        return new Taker<>(input -> {
+            Result<A> result = parser.apply(input);
+            if (result.matches()) {
+                return result;
+            }
+            return new NoMatch<>(result.input(), label, (Failure<?>) result, true);
+        });
     }
 
     static <A, B> Taker<B> flatMap(Taker<A> parser, Function<A, Taker<B>> f) {
