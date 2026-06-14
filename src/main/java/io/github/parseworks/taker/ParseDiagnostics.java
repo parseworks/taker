@@ -122,19 +122,13 @@ public record ParseDiagnostics(
         if (!causes.isEmpty()) {
             builder.append('\n').append("causes:").append('\n');
             for (Cause cause : causes) {
-                builder.append("  - ");
-                if (cause.context()) {
-                    builder.append("while parsing ");
-                    builder.append(cause.expected() == null || cause.expected().isBlank() ? "unknown rule" : cause.expected());
+                builder.append("  - expected ");
+                if (cause.expected() == null || cause.expected().isBlank()) {
+                    builder.append("correct input");
                 } else {
-                    builder.append("expected ");
-                    if (cause.expected() == null || cause.expected().isBlank()) {
-                        builder.append("correct input");
-                    } else {
-                        builder.append(cause.expected());
-                    }
-                    builder.append(", found ").append(cause.found());
+                    builder.append(cause.expected());
                 }
+                builder.append(", found ").append(cause.found());
                 if (cause.line() > 0 && cause.column() > 0) {
                     builder.append(" at line ").append(cause.line())
                         .append(", column ").append(cause.column());
@@ -204,15 +198,16 @@ public record ParseDiagnostics(
         List<Cause> causes = new ArrayList<>();
         Failure<?> current = failure.cause();
         while (current != null) {
-            Input input = current.input();
-            causes.add(new Cause(
-                current.expected(),
-                found(input),
-                input == null ? -1 : input.position(),
-                input instanceof TextInput text ? text.line() : -1,
-                input instanceof TextInput text ? text.column() : -1,
-                current.context()
-            ));
+            if (!current.context()) {
+                Input input = current.input();
+                causes.add(new Cause(
+                    current.expected(),
+                    found(input),
+                    input == null ? -1 : input.position(),
+                    input instanceof TextInput text ? text.line() : -1,
+                    input instanceof TextInput text ? text.column() : -1
+                ));
+            }
             current = current.cause();
         }
         return causes;
@@ -247,9 +242,8 @@ public record ParseDiagnostics(
      * @param offset zero-based offset for the cause
      * @param line one-based line for the cause, or {@code -1}
      * @param column one-based column for the cause, or {@code -1}
-     * @param context whether this cause is a grammar context
      */
-    public record Cause(String expected, String found, int offset, int line, int column, boolean context) {
+    public record Cause(String expected, String found, int offset, int line, int column) {
         public Cause {
             Objects.requireNonNull(found, "found");
         }

@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test;
 import static io.github.parseworks.taker.parsers.Combinators.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for the error handling functionality in the parseworks library.
- * These tests verify that the appropriate error types are used for different error scenarios.
- */
+/** Tests parser failure categories and formatted error messages. */
 public class ErrorHandlingTest {
 
     @Test
@@ -92,7 +89,7 @@ public class ErrorHandlingTest {
         Taker<String> parser = Lexical.string("foo");
         Result<String> result = parser.parse("bar");
 
-        assertTrue(!result.matches());
+        assertFalse(result.matches());
         String errorMessage = result.error();
 
         // Error message should contain "expected" and "found"

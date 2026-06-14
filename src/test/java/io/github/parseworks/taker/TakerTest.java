@@ -162,8 +162,6 @@ public class TakerTest {
         assertEquals(-4, result.value());
     }
 
-    // Note: additional chain-right tests pruned; behavior covered by testChainr1 and AssociativityTest
-
     @Test
     public void testZeroOrMoreSeparatedBy() {
         Taker<List<Character>> parser = chr(Character::isLetter).zeroOrMoreSeparatedBy(chr(','));

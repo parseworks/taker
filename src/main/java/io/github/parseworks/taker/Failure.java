@@ -104,7 +104,7 @@ public interface Failure<A> extends Result<A> {
         var cause = this.cause();
 
         // If this failure has the same expectation as its cause, skip this level to reduce nesting
-        if (cause != null && Objects.equals(expected, cause.expected())) {
+        if (cause != null && context() == cause.context() && Objects.equals(expected, cause.expected())) {
             return cause.error(depth);
         }
 

@@ -65,6 +65,8 @@ class ParseDiagnosticsTest {
         String rendered = result.diagnostics().render("port=oops");
 
         assertEquals("assignment", result.diagnostics().contexts().getFirst());
+        assertTrue(result.diagnostics().causes().stream()
+            .noneMatch(cause -> "assignment".equals(cause.expected())));
         assertTrue(rendered.contains("Parse failed at line 1, column 6"), rendered);
         assertTrue(rendered.contains("port=oops"), rendered);
         assertTrue(rendered.contains("     ^"), rendered);

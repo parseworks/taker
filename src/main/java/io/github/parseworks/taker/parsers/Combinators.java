@@ -388,19 +388,6 @@ public class Combinators {
         });
     }
 
-    /**
-     * Chains a parser according to specified associativity.
-     */
-    public static <A> Taker<A> chain(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, Chains.Associativity associativity) {
-        Objects.requireNonNull(associativity, "associativity");
-        if (associativity == Chains.Associativity.LEFT) {
-            return chainLeft(parser, op);
-        } else {
-            return chainRight(parser, op);
-        }
-    }
-
-
     private static String expectedValue(Object equivalence) {
         if (equivalence instanceof Character c) {
             return expectedChar(c);

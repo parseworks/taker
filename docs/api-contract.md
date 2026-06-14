@@ -459,13 +459,8 @@ code paths that require quiet output.
 `Combinators` exposes static forms of common parser operations:
 
 - `any`, `eof`, `fail`, `not`, `isNot`, `oneOf`, `sequence`, `between`,
-  `satisfy`, `is`, `chainLeft`, `chainRight`, and `chain`.
+  `satisfy`, `is`, `chainLeft`, and `chainRight`.
 - `throwError` deliberately throws and is primarily a test/debugging helper.
-
-### `Chains`
-
-`Chains` provides chain helpers and the `Associativity` enum for left- and
-right-associative expression parsing.
 
 ### `TokensParser`
 

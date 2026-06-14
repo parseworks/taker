@@ -7,10 +7,7 @@ import static io.github.parseworks.taker.parsers.Lexical.string;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Tests for all potential error message types in the parseworks library.
- * is properly generated and has the correct error message format.
- */
+/** Tests for formatted parser error messages. */
 public class ErrorMessageTest {
 
     @Test

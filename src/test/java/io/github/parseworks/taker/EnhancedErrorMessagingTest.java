@@ -6,9 +6,7 @@ import org.junit.jupiter.api.Test;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Tests for the enhanced error messaging features in the ParseWorks library.
- */
+/** Tests for text input diagnostics and recovery behavior. */
 public class EnhancedErrorMessagingTest {
 
     @Test
@@ -41,11 +39,6 @@ public class EnhancedErrorMessagingTest {
         assertTrue(formatted.contains("3 | line 3"));
         assertTrue(formatted.contains("     ^"));  // Caret marker at column 2
     }
-    
-    // Removed severity-level tests as Severity has been eliminated
-
-    
-    // Removed suggestion-related tests as suggestions feature has been removed
     
     @Test
     public void testErrorRecovery() {
