@@ -32,8 +32,9 @@ The following are stable API candidates:
 - public parser libraries under `io.github.parseworks.taker.parsers`
 - concrete result records under `io.github.parseworks.taker.results`
 
-The `io.github.parseworks.taker.impl` package is internal. Users should not
-depend on it even when classes are visible in source form.
+The `io.github.parseworks.taker.impl` and `io.github.parseworks.taker.internal`
+packages are internal. Users should not depend on them even when classes are
+visible in source form.
 
 ## Pre-1.0 Policy
 

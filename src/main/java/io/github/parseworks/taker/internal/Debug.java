@@ -1,13 +1,15 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.internal;
 
-final class TakerDebug {
+import io.github.parseworks.taker.*;
+
+public final class Debug {
 
     private static final ThreadLocal<Integer> depth = ThreadLocal.withInitial(() -> 0);
 
-    private TakerDebug() {
+    private Debug() {
     }
 
-    static <A> Taker<A> systemOut(Taker<A> parser, String label) {
+    public static <A> Taker<A> systemOut(Taker<A> parser, String label) {
         return new Taker<>(input -> {
             int currentDepth = depth.get();
             String indent = "  ".repeat(currentDepth);

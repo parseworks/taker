@@ -1,14 +1,16 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.internal;
+
+import io.github.parseworks.taker.*;
 
 import java.util.Objects;
 import java.util.function.Function;
 
-final class TakerRecovery {
+public final class Recovery {
 
-    private TakerRecovery() {
+    private Recovery() {
     }
 
-    static <A, B> Taker<B> recover(Taker<A> parser, Taker<B> recovery) {
+    public static <A, B> Taker<B> recover(Taker<A> parser, Taker<B> recovery) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(recovery, "recovery");
         return new Taker<>(input -> {
@@ -20,7 +22,7 @@ final class TakerRecovery {
         });
     }
 
-    static <A, B> Taker<B> recoverWith(Taker<A> parser, Function<Failure<A>, Result<B>> recovery) {
+    public static <A, B> Taker<B> recoverWith(Taker<A> parser, Function<Failure<A>, Result<B>> recovery) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(recovery, "recovery");
         return new Taker<>(input -> {

@@ -19,9 +19,9 @@ The JPMS module is `io.github.parseworks.taker` and exports these packages:
 - `io.github.parseworks.taker.parsers`
 - `io.github.parseworks.taker.results`
 
-Classes under `io.github.parseworks.taker.impl` are internal implementation
-details. They must not be exported from the module and should not be referenced
-by user code.
+Classes under `io.github.parseworks.taker.impl` and
+`io.github.parseworks.taker.internal` are internal implementation details. They
+must not be exported from the module and should not be referenced by user code.
 
 ## Stable Public API
 

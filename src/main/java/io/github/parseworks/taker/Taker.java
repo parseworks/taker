@@ -3,6 +3,11 @@ package io.github.parseworks.taker;
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
+import io.github.parseworks.taker.internal.Debug;
+import io.github.parseworks.taker.internal.Lookahead;
+import io.github.parseworks.taker.internal.Recovery;
+import io.github.parseworks.taker.internal.Repetition;
+import io.github.parseworks.taker.internal.Transforms;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -41,7 +46,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the constant value
      */
     public <R> Taker<R> as(R value) {
-        return TakerTransforms.as(this, value);
+        return Transforms.as(this, value);
     }
 
     /**
@@ -217,7 +222,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a list parser
      */
     public Taker<List<A>> oneOrMoreUntil(Taker<?> until) {
-        return TakerRepetition.repeat(this, 1, Integer.MAX_VALUE, until);
+        return Repetition.repeat(this, 1, Integer.MAX_VALUE, until);
     }
 
 
@@ -234,7 +239,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a conditional parser
      */
     public <B> Taker<A> onlyIf(Taker<B> validation) {
-        return TakerLookahead.onlyIf(this, validation);
+        return Lookahead.onlyIf(this, validation);
     }
 
     /**
@@ -245,7 +250,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a conditional parser
      */
     public Taker<A> onlyIf(CharPredicate validation) {
-        return TakerLookahead.onlyIf(this, validation);
+        return Lookahead.onlyIf(this, validation);
     }
 
     /**
@@ -260,7 +265,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a lookahead parser
      */
     public <B> Taker<A> peek(Taker<B> lookahead) {
-        return TakerLookahead.peek(this, lookahead);
+        return Lookahead.peek(this, lookahead);
     }
 
     /**
@@ -270,7 +275,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that logs its progress
      */
     public Taker<A> systemOut(String label) {
-        return TakerDebug.systemOut(this, label);
+        return Debug.systemOut(this, label);
     }
 
     /**
@@ -307,7 +312,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for collecting zero or more occurrences of a pattern
      */
     public Taker<Optional<A>> optional() {
-        return TakerTransforms.optional(this);
+        return Transforms.optional(this);
     }
 
     /**
@@ -339,7 +344,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that returns either the successful parse result or the default value
      */
     public Taker<A> orElse(A other) {
-        return TakerTransforms.orElse(this, other);
+        return Transforms.orElse(this, other);
     }
 
     /**
@@ -588,7 +593,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for matching zero or more occurrences
      */
     public Taker<List<A>> repeat(int target) {
-        return TakerRepetition.repeat(this, target, target, null);
+        return Repetition.repeat(this, target, target, null);
     }
 
     /**
@@ -643,7 +648,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @see #zeroOrMore() for matching zero or more occurrences without an upper limit
      */
     public Taker<List<A>> repeat(int min, int max) {
-        return TakerRepetition.repeat(this, min, max, null);
+        return Repetition.repeat(this, min, max, null);
     }
 
     /**
@@ -654,7 +659,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that requires at least {@code target} matches
      */
     public Taker<List<A>> repeatAtLeast(int target) {
-        return TakerRepetition.repeat(this, target, Integer.MAX_VALUE, null);
+        return Repetition.repeat(this, target, Integer.MAX_VALUE, null);
     }
 
     /**
@@ -665,7 +670,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that accepts at most {@code max} matches
      */
     public Taker<List<A>> repeatAtMost(int max) {
-        return TakerRepetition.repeat(this, 0, max, null);
+        return Repetition.repeat(this, 0, max, null);
     }
 
     /**
@@ -676,7 +681,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning parsed values
      */
     public <SEP> Taker<List<A>> zeroOrMoreSeparatedBy(Taker<SEP> sep) {
-        return TakerRepetition.separatedBy(this, sep, 0);
+        return Repetition.separatedBy(this, sep, 0);
     }
 
     /**
@@ -691,7 +696,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a transformed parser
      */
     public <R> Taker<R> map(Function<A, R> func) {
-        return TakerTransforms.map(this, func);
+        return Transforms.map(this, func);
     }
 
     /**
@@ -706,7 +711,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning the value and zero-based start/end offsets
      */
     public Taker<Located<A>> located() {
-        return TakerTransforms.located(this);
+        return Transforms.located(this);
     }
 
     /**
@@ -717,7 +722,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning parsed values
      */
     public <SEP> Taker<List<A>> oneOrMoreSeparatedBy(Taker<SEP> sep) {
-        return TakerRepetition.separatedBy(this, sep, 1);
+        return Repetition.separatedBy(this, sep, 1);
     }
 
     /**
@@ -750,7 +755,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return TakerRepetition.foldRepeated(this, 0, identitySupplier, accumulator);
+        return Repetition.foldRepeated(this, 0, identitySupplier, accumulator);
     }
 
     /**
@@ -781,7 +786,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return TakerRepetition.foldRepeated(this, 1, identitySupplier, accumulator);
+        return Repetition.foldRepeated(this, 1, identitySupplier, accumulator);
     }
 
     /**
@@ -819,7 +824,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return TakerRepetition.foldSeparatedBy(this, sep, 1, identitySupplier, accumulator);
+        return Repetition.foldSeparatedBy(this, sep, 1, identitySupplier, accumulator);
     }
 
     /**
@@ -857,7 +862,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
         Supplier<? extends B> identitySupplier,
         BiFunction<? super B, ? super A, ? extends B> accumulator
     ) {
-        return TakerRepetition.foldSeparatedBy(this, sep, 0, identitySupplier, accumulator);
+        return Repetition.foldSeparatedBy(this, sep, 0, identitySupplier, accumulator);
     }
 
     /**
@@ -882,7 +887,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     }
 
     private Taker<Void> skipRepeated(int min) {
-        return TakerRepetition.foldRepeated(this, min, () -> null, (ignored, value) -> null);
+        return Repetition.foldRepeated(this, min, () -> null, (ignored, value) -> null);
     }
 
     /**
@@ -937,7 +942,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser returning values parsed before the terminator
      */
     public Taker<List<A>> zeroOrMoreUntil(Taker<?> terminator) {
-        return TakerRepetition.repeat(this, 0, Integer.MAX_VALUE, terminator);
+        return Repetition.repeat(this, 0, Integer.MAX_VALUE, terminator);
     }
 
     /**
@@ -1092,7 +1097,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that tries the recovery parser if this parser fails
      */
     public <B> Taker<B> recover(Taker<B> recovery) {
-        return TakerRecovery.recover(this, recovery);
+        return Recovery.recover(this, recovery);
     }
 
     /**
@@ -1112,7 +1117,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a new parser that applies the recovery function if this parser fails
      */
     public <B> Taker<B> recoverWith(Function<Failure<A>, Result<B>> recovery) {
-        return TakerRecovery.recoverWith(this, recovery);
+        return Recovery.recoverWith(this, recovery);
     }
 
     /**
@@ -1126,7 +1131,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a labeled parser
      */
     public Taker<A> expecting(String label) {
-        return TakerTransforms.expecting(this, label);
+        return Transforms.expecting(this, label);
     }
 
     /**
@@ -1150,7 +1155,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a parser that adds the label to failed diagnostics
      */
     public Taker<A> label(String label) {
-        return TakerTransforms.label(this, label);
+        return Transforms.label(this, label);
     }
 
     /**
@@ -1172,7 +1177,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * @return a monadic parser
      */
     public <B> Taker<B> flatMap(Function<A, Taker<B>> f) {
-        return TakerTransforms.flatMap(this, f);
+        return Transforms.flatMap(this, f);
     }
 
 }

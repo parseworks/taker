@@ -1,15 +1,17 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.internal;
+
+import io.github.parseworks.taker.*;
 
 import io.github.parseworks.taker.results.NoMatch;
 
 import java.util.Objects;
 
-final class TakerLookahead {
+public final class Lookahead {
 
-    private TakerLookahead() {
+    private Lookahead() {
     }
 
-    static <A, B> Taker<A> onlyIf(Taker<A> parser, Taker<B> validation) {
+    public static <A, B> Taker<A> onlyIf(Taker<A> parser, Taker<B> validation) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(validation, "validation");
         return new Taker<>(input -> {
@@ -21,7 +23,7 @@ final class TakerLookahead {
         });
     }
 
-    static <A> Taker<A> onlyIf(Taker<A> parser, CharPredicate validation) {
+    public static <A> Taker<A> onlyIf(Taker<A> parser, CharPredicate validation) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(validation, "validation");
         return new Taker<>(input -> {
@@ -35,7 +37,7 @@ final class TakerLookahead {
         });
     }
 
-    static <A, B> Taker<A> peek(Taker<A> parser, Taker<B> lookahead) {
+    public static <A, B> Taker<A> peek(Taker<A> parser, Taker<B> lookahead) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(lookahead, "lookahead");
         return new Taker<>(input -> {

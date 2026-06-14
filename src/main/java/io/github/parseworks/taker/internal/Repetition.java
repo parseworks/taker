@@ -1,4 +1,6 @@
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.internal;
+
+import io.github.parseworks.taker.*;
 
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
@@ -11,12 +13,12 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-final class TakerRepetition {
+public final class Repetition {
 
-    private TakerRepetition() {
+    private Repetition() {
     }
 
-    static <A> Taker<List<A>> repeat(Taker<A> parser, int min, int max, Taker<?> until) {
+    public static <A> Taker<List<A>> repeat(Taker<A> parser, int min, int max, Taker<?> until) {
         if (min < 0 || max < 0) {
             throw new IllegalArgumentException("The number of repetitions cannot be negative");
         }
@@ -77,7 +79,7 @@ final class TakerRepetition {
         });
     }
 
-    static <A, SEP> Taker<List<A>> separatedBy(Taker<A> parser, Taker<SEP> sep, int min) {
+    public static <A, SEP> Taker<List<A>> separatedBy(Taker<A> parser, Taker<SEP> sep, int min) {
         Objects.requireNonNull(sep, "sep");
         return new Taker<>(in -> {
             List<A> values = new ArrayList<>();
@@ -125,7 +127,7 @@ final class TakerRepetition {
         });
     }
 
-    static <A, B> Taker<B> foldRepeated(
+    public static <A, B> Taker<B> foldRepeated(
         Taker<A> parser,
         int min,
         Supplier<? extends B> identitySupplier,
@@ -159,7 +161,7 @@ final class TakerRepetition {
         });
     }
 
-    static <A, SEP, B> Taker<B> foldSeparatedBy(
+    public static <A, SEP, B> Taker<B> foldSeparatedBy(
         Taker<A> parser,
         Taker<SEP> sep,
         int min,
