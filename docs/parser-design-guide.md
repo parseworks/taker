@@ -271,7 +271,7 @@ Write unit tests for each parser component:
 ```java
 @Test
 public void testNumberParser() {
-    Taker<Integer> parser = number;
+    Taker<Integer> parser = Numeric.integer;
     
     // Test valid inputs
     assertEquals(42, parser.parse(Input.of("42")).value());

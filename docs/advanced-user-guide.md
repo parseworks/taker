@@ -53,6 +53,8 @@ Taker<Integer> addition = number.chainLeftZeroOrMore(
 Useful for exponentiation, where `2^3^2` should be `2^(3^2)`.
 
 ```java
+Taker<Integer> number = Numeric.integer;
+
 Taker<Integer> power = number.chainRightZeroOrMore(
     chr('^').as((a, b) -> (int)Math.pow(a, b)),
     1
@@ -143,7 +145,7 @@ For custom validation:
 
 ```java
 // Parse a positive number
-Taker<Integer> positiveNumber = number.flatMap(n -> {
+Taker<Integer> positiveNumber = Numeric.integer.flatMap(n -> {
     if (n > 0) {
         return pure(n);
     } else {
@@ -356,7 +358,7 @@ Here are some strategies for testing parsers:
 // Test a parser with various inputs
 @Test
 public void testNumberParser() {
-    Taker<Integer> parser = number;
+    Taker<Integer> parser = Numeric.integer;
     
     // Test valid inputs
     assertEquals(42, parser.parse(Input.of("42")).value());
@@ -394,12 +396,11 @@ class ExpressionModule implements ParserModule<Expression> {
     
     @Override
     public Taker<Expression> getParser() {
-        return termModule.getParser().chainLeftZeroOrMore(
+        return termModule.getParser().chainLeftOneOrMore(
             oneOf(
                 chr('+').as((a, b) -> new BinaryExpression(a, Operator.ADD, b)),
                 chr('-').as((a, b) -> new BinaryExpression(a, Operator.SUBTRACT, b))
-            ),
-            null
+            )
         );
     }
 }
@@ -413,12 +414,11 @@ class TermModule implements ParserModule<Expression> {
     
     @Override
     public Taker<Expression> getParser() {
-        return factorModule.getParser().chainLeftZeroOrMore(
+        return factorModule.getParser().chainLeftOneOrMore(
             oneOf(
                 chr('*').as((a, b) -> new BinaryExpression(a, Operator.MULTIPLY, b)),
                 chr('/').as((a, b) -> new BinaryExpression(a, Operator.DIVIDE, b))
-            ),
-            null
+            )
         );
     }
 }
@@ -446,7 +446,11 @@ badRecursion.set(badRecursion.or(string("x")));
 
 // Fix: Ensure the recursive parser makes progress before recursing
 Taker<String> goodRecursion = Taker.ref();
-goodRecursion.set(string("x").then(goodRecursion).optional().map(opt -> "x" + opt.orElse("")));
+goodRecursion.set(
+    string("x")
+        .then(goodRecursion.optional())
+        .map((head, tail) -> head + tail.orElse(""))
+);
 ```
 
 #### Greedy Matching

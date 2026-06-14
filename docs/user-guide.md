@@ -267,8 +267,8 @@ parsers are more flexible, but allocate per parser step.
 
 ## Realistic Examples
 
-The executable examples in
-`src/test/java/io/github/parseworks/taker/examples/RealisticExamplesTest.java`
+The executable examples under
+`src/test/java/io/github/parseworks/taker/examples`
 show larger parsers that are still small enough to study:
 
 - **Sectioned config parser**: parses INI-style sections and key/value pairs

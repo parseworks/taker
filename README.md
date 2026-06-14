@@ -85,16 +85,21 @@ Taker<String> slower = chr(CharPredicate.asciiLetter).collectString();
 Handle nested structures with ease:
 
 ```java
-public static final Taker<Element> element = Taker.ref();
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Taker;
 
-static {
-    element.set(
-        oneOf(
-            tagParser,
-            textParser
-        )
-    );
-}
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.chr;
+
+Taker<String> nested = Taker.ref();
+Taker<String> atom = chr(CharPredicate.asciiLetter).collectString();
+Taker<String> grouped = chr('(')
+    .skipThen(nested)
+    .thenSkip(chr(')'));
+
+nested.set(oneOf(atom, grouped));
+
+String value = nested.parse("((hello))").value();
 ```
 
 ## Error Handling
