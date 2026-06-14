@@ -334,5 +334,6 @@ Design choices that usually matter most:
 Keep large examples executable where possible. The normal test suite includes
 realistic examples under
 `src/test/java/io/github/parseworks/taker/examples`, including a sectioned
-config parser and a recursive JSON-like value parser. The user guide links to
-those examples; this document explains how to design parsers like them.
+config parser, a recursive JSON-like value parser, and a practical TOML parser.
+The user guide links to those examples; this document explains how to design
+parsers like them.

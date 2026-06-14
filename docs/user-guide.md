@@ -276,6 +276,9 @@ show larger parsers that are still small enough to study:
 - **Recursive JSON-like value parser**: parses objects, arrays, strings,
   numbers, booleans, and null using `Taker.ref()`, separated values, and
   whitespace-insensitive tokens.
+- **Practical TOML parser**: parses tables, dotted keys, typed scalar values,
+  arrays, inline tables, comments, and duplicate-key errors while keeping the
+  parser executable as documentation.
 
 These examples are run by the normal Maven test suite, so they double as
 documentation and compatibility checks.

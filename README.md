@@ -124,7 +124,9 @@ the release checklist are documented in
 Executable examples live in `src/test/java/io/github/parseworks/taker/examples`.
 They include a sectioned config parser and a recursive JSON-like value parser
 that demonstrate scanner primitives, whitespace policy, separated values, and
-recursive grammars against realistic input.
+recursive grammars against realistic input. The suite also includes a practical
+TOML parser covering tables, dotted keys, typed values, arrays, inline tables,
+comments, and duplicate-key validation.
 
 ## Benchmarks
 
