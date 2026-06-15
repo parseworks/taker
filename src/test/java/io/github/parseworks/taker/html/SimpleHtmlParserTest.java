@@ -52,7 +52,7 @@ public class SimpleHtmlParserTest {
               href="/docs"
               title="Docs">link""");
 
-        assertTrue(result.matches(), () -> result.error());
+        assertTrue(result.matches(), result::error);
         assertInstanceOf(SimpleHtmlParser.StartTag.class, result.value());
         SimpleHtmlParser.StartTag tag = (SimpleHtmlParser.StartTag) result.value();
 
@@ -99,7 +99,7 @@ public class SimpleHtmlParserTest {
         List<SimpleHtmlParser.Element> elements = SimpleHtmlParser.parseAll("<div>Hello, world!</div>");
         assertEquals(3, elements.size());
 
-        assertInstanceOf(SimpleHtmlParser.StartTag.class, elements.get(0));
+        assertInstanceOf(SimpleHtmlParser.StartTag.class, elements.getFirst());
         SimpleHtmlParser.StartTag startTag = (SimpleHtmlParser.StartTag) elements.get(0);
         assertEquals("div", startTag.getName());
 

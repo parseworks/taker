@@ -25,8 +25,7 @@ class DocumentationExamplesTest {
 
     @Test
     void readmeQuickStartExampleWorks() {
-        Taker<Integer> parser = integer;
-        Result<Integer> result = parser.parse("-123");
+        Result<Integer> result = integer.parse("-123");
 
         assertTrue(result.matches());
         assertEquals(-123, result.value());
