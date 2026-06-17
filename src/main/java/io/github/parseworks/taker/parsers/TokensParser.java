@@ -99,12 +99,12 @@ public final class TokensParser {
 
     /** Matches a character token. */
     public Taker<Character> chr(char value) {
-        return token(Lexical.chr(value));
+        return token(Chars.chr(value));
     }
 
     /** Matches a character token ignoring case. */
     public Taker<Character> chrIgnoreCase(char value) {
-        return token(Lexical.chrIgnoreCase(value));
+        return token(Chars.chrIgnoreCase(value));
     }
 
     /** Matches a string token. */
@@ -119,12 +119,12 @@ public final class TokensParser {
 
     /** Matches one character from the supplied token character set. */
     public Taker<Character> oneOf(String chars) {
-        return token(Lexical.oneOf(chars));
+        return token(Chars.oneOf(chars));
     }
 
     /** Matches one character from the supplied token character set ignoring case. */
     public Taker<Character> oneOfIgnoreCase(String chars) {
-        return token(Lexical.oneOfIgnoreCase(chars));
+        return token(Chars.oneOfIgnoreCase(chars));
     }
 
     /**

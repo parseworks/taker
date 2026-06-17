@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
@@ -189,8 +191,8 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Collects zero or more matches into a list.
      * <pre>{@code
-     * Lexical.chr('a').zeroOrMore().parse("aaa").value(); // ['a', 'a', 'a']
-     * Lexical.chr('a').zeroOrMore().parse("bbb").value(); // []
+     * Chars.chr('a').zeroOrMore().parse("aaa").value(); // ['a', 'a', 'a']
+     * Chars.chr('a').zeroOrMore().parse("bbb").value(); // []
      * }</pre>
      *
      * @return a list parser
@@ -202,8 +204,8 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Collects one or more matches into a list.
      * <pre>{@code
-     * Lexical.chr('a').oneOrMore().parse("aaa").value(); // ['a', 'a', 'a']
-     * Lexical.chr('a').oneOrMore().parse("bbb").matches(); // false
+     * Chars.chr('a').oneOrMore().parse("aaa").value(); // ['a', 'a', 'a']
+     * Chars.chr('a').oneOrMore().parse("bbb").matches(); // false
      * }</pre>
      *
      * @return a list parser
@@ -215,7 +217,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Collects one or more matches until the terminator succeeds.
      * <pre>{@code
-     * Lexical.chr('a').oneOrMoreUntil(Lexical.chr(';')).parse("aaa;").value(); // ['a', 'a', 'a']
+     * Chars.chr('a').oneOrMoreUntil(Chars.chr(';')).parse("aaa;").value(); // ['a', 'a', 'a']
      * }</pre>
      *
      * @param until terminator parser
@@ -229,7 +231,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Succeeds only if validation succeeds without consuming input.
      * <pre>{@code
-     * Taker<Integer> p = Numeric.integer.onlyIf(Lexical.chr('+'));
+     * Taker<Integer> p = Numeric.integer.onlyIf(Chars.chr('+'));
      * p.parse("+123").value(); // 123
      * p.parse("-123").matches(); // false
      * }</pre>
@@ -256,7 +258,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Succeeds if followed by lookahead without consuming lookahead input.
      * <pre>{@code
-     * Taker<String> p = Lexical.word.peek(Lexical.chr('='));
+     * Taker<String> p = Chars.word.peek(Chars.chr('='));
      * p.parse("id=42").value(); // "id"
      * }</pre>
      *
@@ -298,7 +300,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * <pre>{@code
      * // Parse signed numbers
      * Taker<Integer> number = Numeric.integer;
-     * Taker<Integer> signedNumber = Lexical.chr('-').optional().then(number)
+     * Taker<Integer> signedNumber = Chars.chr('-').optional().then(number)
      *     .map((sign, num) -> sign.isPresent() ? -num : num);
      *
      * // Succeeds with 42 for input "42"
@@ -575,7 +577,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse exactly 3 digits
-     * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
+     * Taker<Character> digit = Chars.chr(CharPredicate.asciiDigit);
      * Taker<List<Character>> threeDigits = digit.repeat(3);
      *
      * // Succeeds with [1,2,3] for input "123"
@@ -626,7 +628,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Example usage:
      * <pre>{@code
      * // Parse between 2 and 4 digits
-     * Taker<Character> digit = Lexical.chr(CharPredicate.asciiDigit);
+     * Taker<Character> digit = Chars.chr(CharPredicate.asciiDigit);
      * Taker<List<Character>> digits = digit.repeat(2, 4);
      *
      * // Succeeds with [1,2,3,4] for input "1234"
@@ -687,7 +689,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Transforms the result of this parser using the given function.
      * <pre>{@code
-     * Taker<Integer> p = Lexical.chr('5').map(Character::getNumericValue);
+     * Taker<Integer> p = Chars.chr('5').map(Character::getNumericValue);
      * p.parse("5").value(); // 5
      * }</pre>
      *
@@ -702,7 +704,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Wraps this parser's successful value with the consumed source offsets.
      * <pre>{@code
-     * Located<String> id = Lexical.word.located().parse("name = value").value();
+     * Located<String> id = Chars.word.located().parse("name = value").value();
      * id.value(); // "name"
      * id.start(); // 0
      * id.end();   // 4
@@ -1123,7 +1125,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
     /**
      * Labels this parser with a human-readable expectation for error messages.
      * <pre>{@code
-     * Taker<String> p = Lexical.word.expecting("identifier");
+     * Taker<String> p = Chars.word.expecting("identifier");
      * p.parse("123").matches(); // false, error: "Expected identifier"
      * }</pre>
      *
@@ -1143,9 +1145,9 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * you want the error path to include a rule such as {@code expression},
      * {@code statement}, or {@code object literal}.
      * <pre>{@code
-     * Taker<String> identifier = Lexical.word.label("identifier");
+     * Taker<String> identifier = Chars.word.label("identifier");
      * Taker<String> assignment = identifier
-     *     .thenSkip(Lexical.chr('='))
+     *     .thenSkip(Chars.chr('='))
      *     .then(identifier)
      *     .map((left, right) -> left + "=" + right)
      *     .label("assignment");
@@ -1164,7 +1166,7 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * This is useful when later grammar depends on an earlier parsed value.
      * <pre>{@code
      * Taker<String> p = Numeric.unsignedInteger.flatMap(n ->
-     *     Lexical.chr(',').skipThen(Lexical.chr('a').repeat(n))
+     *     Chars.chr(',').skipThen(Chars.chr('a').repeat(n))
      *         .map(chars -> chars.stream()
      *             .map(String::valueOf)
      *             .collect(java.util.stream.Collectors.joining()))

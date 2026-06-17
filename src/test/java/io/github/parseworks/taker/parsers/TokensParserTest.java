@@ -7,7 +7,7 @@ import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -92,8 +92,8 @@ class TokensParserTest {
     @Test
     void customIgnoredParserCanSkipWhitespaceAndLineComments() {
         Taker<?> ignored = oneOf(
-            Lexical.whitespace.as(null),
-            string("//").skipThen(Lexical.takeUntil(CharPredicate.lineBreak))
+            Chars.whitespace.as(null),
+            string("//").skipThen(Chars.takeUntil(CharPredicate.lineBreak))
                 .thenSkip(chr('\n').optional())
                 .as(null)
         );

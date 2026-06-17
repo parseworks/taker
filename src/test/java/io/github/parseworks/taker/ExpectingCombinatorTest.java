@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +38,7 @@ public class ExpectingCombinatorTest {
     public void expectingWithinCompositeParser() {
         // key '=' value where '=' is labeled for a clearer message
         Taker<String> key = Lexical.regex("[A-Za-z]+");
-        Taker<Character> equalsLabeled = Lexical.chr('=')
+        Taker<Character> equalsLabeled = Chars.chr('=')
                 .expecting("'=' after key");
         Taker<String> value = Lexical.regex("[A-Za-z0-9]+");
 
@@ -57,7 +59,7 @@ public class ExpectingCombinatorTest {
     public void labelAddsGrammarContextAndPreservesCause() {
         Taker<String> identifier = Lexical.string("name").label("identifier");
         Taker<String> assignment = identifier
-                .thenSkip(Lexical.chr('='))
+                .thenSkip(Chars.chr('='))
                 .then(identifier)
                 .map(k -> v -> k + "=" + v)
                 .label("assignment");

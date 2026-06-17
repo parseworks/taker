@@ -1,120 +1,28 @@
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.github.parseworks.taker.parsers.Combinators.satisfy;
-
 /**
- * Common text parsers for characters, strings, and whitespace.
+ * Common text parsers for strings, regular expressions, escaping, and
+ * whitespace trimming.
  * <p>
- * Scanner-level methods such as {@link #takeWhile(CharPredicate)},
- * {@link #collectChars(CharPredicate)}, {@link #skipWhile(CharPredicate)}, and
- * {@link #takeUntil(String)} consume contiguous raw input directly. Prefer them
- * over repeated single-character parsers when the grammar is simply collecting
- * or skipping text.
+ * Use {@link Chars} for character-level parsers and scanner fast paths.
  * <pre>{@code
  * Taker<String> greeting =
- *     Lexical.string("Hello").thenSkip(Lexical.takeWhile(CharPredicate.horizontalWhitespace)).then(Lexical.word);
+ *     Lexical.string("Hello").thenSkip(Chars.skipWhile(CharPredicate.horizontalWhitespace)).then(Chars.word);
  * }</pre>
  */
 public class Lexical {
-
-
-    /** Matches a single ASCII letter ({@code a-z} or {@code A-Z}). */
-    public static final Taker<Character> alpha = satisfy(CharPredicate.asciiLetter.expected(), CharPredicate.asciiLetter);
-
-    /** Matches a single ASCII letter or digit. */
-    public static final Taker<Character> alphaNumeric = satisfy(CharPredicate.asciiLetterOrDigit.expected(), CharPredicate.asciiLetterOrDigit);
-
-    /** Matches a character satisfying the given predicate. */
-    public static Taker<Character> take(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return chr(condition);
-    }
-
-    /** Matches one or more consecutive characters while {@code condition} is true. */
-    public static Taker<String> takeWhile(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int current = start;
-            int length = data.length();
-
-            while (current < length && condition.test(data.charAt(current))) {
-                current++;
-            }
-            if (current == start) {
-                return new NoMatch<>(in, "at least one " + condition.expected());
-            }
-            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
-        });
-    }
-
-    /** Alias for {@link #takeWhile(CharPredicate)} with collection-oriented naming. */
-    public static Taker<String> collectChars(CharPredicate condition) {
-        return takeWhile(condition);
-    }
-
-    /** Skips zero or more matching input characters without materializing text. */
-    public static Taker<Void> skipWhile(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            int count = countMatchingChars(in, condition);
-            return new Match<>(null, in.skip(count));
-        });
-    }
-
-    /** Counts and consumes zero or more matching input characters. */
-    public static Taker<Integer> countWhile(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            int count = countMatchingChars(in, condition);
-            return new Match<>(count, in.skip(count));
-        });
-    }
-
-    private static int countMatchingChars(Input in, CharPredicate condition) {
-        CharSequence data = in.data();
-        int start = in.position();
-        int current = start;
-        int length = data.length();
-
-        while (current < length && condition.test(data.charAt(current))) {
-            current++;
-        }
-        return current - start;
-    }
-
-    /**
-     * Matches one or more ASCII space characters ({@code ' '}).
-     * <p>
-     * This parser does not match tabs, newlines, or other whitespace characters.
-     */
-    public static final Taker<String> spaces = takeWhile(CharPredicate.is(' '));
-
-    /**
-     * Matches one or more Java whitespace characters according to
-     * {@link Character#isWhitespace(char)}.
-     * <p>
-     * This includes line separators such as {@code '\n'} and {@code '\r'}, so
-     * use it only when crossing line boundaries is intended by the grammar.
-     */
-    public static final Taker<String> whitespace = takeWhile(CharPredicate.whitespace);
 
     /**
      * Trims ASCII spaces around the given parser.
@@ -216,15 +124,6 @@ public class Lexical {
         }
     }
 
-    /** Matches a sequence of letters. */
-    public static final Taker<String> word = takeWhile(CharPredicate.letter);
-
-    /**
-     * Matches characters until a newline without consuming the newline.
-     */
-    public static final Taker<String> line = takeUntil(CharPredicate.is('\n'));
-
-
     /** Collects characters until the first occurrence of {@code needle}. */
     public static Taker<String> takeUntil(String needle) {
         Objects.requireNonNull(needle, "needle");
@@ -242,24 +141,6 @@ public class Lexical {
             }
             String out = data.subSequence(start, idx).toString();
             return new Match<>(out, in.skip(idx - start));
-        });
-    }
-
-    /** Collects characters until {@code condition} succeeds. */
-    public static Taker<String> takeUntil(CharPredicate condition) {
-        Objects.requireNonNull(condition, "condition");
-        return new Taker<>(in -> {
-            CharSequence data = in.data();
-            int start = in.position();
-            int len = data.length();
-            for (int i = start; i < len; i++) {
-                if (condition.test(data.charAt(i))) {
-                    String out = data.subSequence(start, i).toString();
-                    return new Match<>(out, in.skip(i - start));
-                }
-            }
-            String out = data.subSequence(start, len).toString();
-            return new Match<>(out, in.skip(len - start));
         });
     }
 
@@ -359,35 +240,6 @@ public class Lexical {
         });
     }
 
-    /** Matches any single character from {@code str}. */
-    public static Taker<Character> oneOf(String str) {
-        Objects.requireNonNull(str, "str");
-        if (str.isEmpty()) {
-            throw new IllegalArgumentException("str must not be empty");
-        }
-        // For small strings (under 10 chars), this approach is efficient
-        if (str.length() < 10) {
-            return satisfy("one of \"" + display(str) + "\"", c -> str.indexOf(c) != -1);
-        }
-
-        // For larger character sets, use a Set for O(1) lookups
-        Set<Character> charSet = new HashSet<>();
-        for (int i = 0; i < str.length(); i++) {
-            charSet.add(str.charAt(i));
-        }
-
-        return satisfy("character in set \"" + display(str) + "\"", charSet::contains);
-    }
-
-    /** Matches any single character from {@code str}, ignoring case. */
-    public static Taker<Character> oneOfIgnoreCase(String str) {
-        Objects.requireNonNull(str, "str");
-        if (str.isEmpty()) {
-            throw new IllegalArgumentException("str must not be empty");
-        }
-        return satisfy("character in set \"" + display(str) + "\" ignoring case", CharPredicate.anyOfIgnoreCase(str));
-    }
-
     /** Matches a regular expression at the current input position. */
     public static Taker<String> regex(String regex, int flags) {
         Objects.requireNonNull(regex, "regex");
@@ -471,24 +323,6 @@ public class Lexical {
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
         Objects.requireNonNull(escapes, "escapes");
         return escapedStringImpl(quote, escape, new HashMap<>(escapes));
-    }
-
-
-
-    /** Matches a specific character. */
-    public static Taker<Character> chr(char c) {
-        return Combinators.is(c);
-    }
-
-    /** Matches a specific character, ignoring case. */
-    public static Taker<Character> chrIgnoreCase(char c) {
-        return chr(CharPredicate.isIgnoreCase(c));
-    }
-
-    /** Matches a single character matching the given predicate. */
-    public static Taker<Character> chr(CharPredicate predicate) {
-        Objects.requireNonNull(predicate, "predicate");
-        return satisfy(predicate.expected(), predicate);
     }
 
     private static boolean charsEqualIgnoreCase(char expected, char actual) {

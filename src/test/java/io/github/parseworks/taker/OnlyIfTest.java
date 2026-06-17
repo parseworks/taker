@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +11,7 @@ public class OnlyIfTest {
 
     @Test
     public void testOnlyIfWithCharPredicate() {
-        Taker<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
+        Taker<Character> parser = Chars.chr('a').onlyIf(CharPredicate.is('a'));
         Result<Character> result = parser.parse("a");
         assertTrue(result.matches(), "Should match 'a'");
         assertEquals('a', result.value());
@@ -20,7 +22,7 @@ public class OnlyIfTest {
 
     @Test
     public void testOnlyIfEOF() {
-        Taker<Character> parser = Lexical.chr('a').onlyIf(CharPredicate.is('a'));
+        Taker<Character> parser = Chars.chr('a').onlyIf(CharPredicate.is('a'));
         Result<Character> result = parser.parse("");
         assertFalse(result.matches(), "Should not match EOF");
     }

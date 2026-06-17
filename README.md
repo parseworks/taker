@@ -6,7 +6,7 @@ Taker is a lean, powerful, and developer-friendly parser combinator library for 
 
 - **Fluent API**: Highly ergonomic DSL for Java using a functional approach.
 - **N-ary Composition**: Use `.then()` and `ApplyBuilder` to cleanly map multiple values without deep nesting.
-- **Performance-Oriented**: Includes scanner primitives like `takeWhile`, `collectChars`, `skipWhile`, `countWhile`, `takeUntil`, and `regex` for efficient lexing.
+- **Performance-Oriented**: Includes scanner primitives like `Chars.takeWhile`, `collectChars`, `skipWhile`, `countWhile`, `takeUntil`, and `Lexical.regex` for efficient lexing.
 - **Robust Diagnostics**: Source-mapped error snippets with line/column info and "expected vs found" messaging.
 - **Recursion Support**: Easy definition of recursive grammars using `Taker.ref()` and `.set()`.
 - **Commit/Cut**: Prevent unnecessary backtracking and improve error locality with `commit()`.
@@ -49,9 +49,11 @@ public class Main {
 Using combinators to parse a simple "Key: Value" pair:
 
 ```java
-import static io.github.parseworks.taker.parsers.Lexical.*;
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;
+
+import static io.github.parseworks.taker.parsers.Chars.*;
+import static io.github.parseworks.taker.parsers.Lexical.trim;
 
 Taker<String> identifier = collectChars(CharPredicate.asciiLetterOrDigit);
 Taker<String> kvPair = identifier
@@ -89,7 +91,7 @@ import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;
 
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 
 Taker<String> nested = Taker.ref();
 Taker<String> atom = chr(CharPredicate.asciiLetter).collectString();

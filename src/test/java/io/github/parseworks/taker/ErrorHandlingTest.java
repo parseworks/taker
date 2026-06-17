@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
@@ -54,9 +56,9 @@ public class ErrorHandlingTest {
         // Define expr in terms of itself, which will cause infinite recursion
         // when there's no base case that can succeed
         expr.set(
-            Lexical.chr('(')
+            Chars.chr('(')
             .skipThen(expr)
-            .thenSkip(Lexical.chr(')'))
+            .thenSkip(Chars.chr(')'))
             .map(Object::toString)
         );
 

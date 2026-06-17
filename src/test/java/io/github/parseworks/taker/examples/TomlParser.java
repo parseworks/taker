@@ -5,6 +5,7 @@ import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.parsers.Chars;
 import io.github.parseworks.taker.examples.TomlModel.TomlArray;
 import io.github.parseworks.taker.examples.TomlModel.TomlBoolean;
 import io.github.parseworks.taker.examples.TomlModel.TomlDate;
@@ -23,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.collectChars;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Chars.collectChars;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.regex;
 import static io.github.parseworks.taker.parsers.Lexical.string;
@@ -111,7 +112,7 @@ final class TomlParser {
         .then(VALUE)
         .map(TomlAssignment::new);
 
-    private static final Taker<Void> COMMENT = token(chr('#')).skipThen(takeUntil(CharPredicate.is('\n'))).as(null);
+    private static final Taker<Void> COMMENT = token(chr('#')).skipThen(Chars.takeUntil(CharPredicate.is('\n'))).as(null);
     private static final Taker<Void> TRAILING = token(COMMENT.optional()).as(null);
     private static final Taker<TomlLine> LINE = oneOf(TABLE_HEADER, ASSIGNMENT).thenSkip(TRAILING);
 

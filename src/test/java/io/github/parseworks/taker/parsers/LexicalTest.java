@@ -7,23 +7,23 @@ import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import org.junit.jupiter.api.Test;
 
-import static io.github.parseworks.taker.CharPredicate.noneOf;
-import static io.github.parseworks.taker.parsers.Lexical.alphaNumeric;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.chrIgnoreCase;
+import static io.github.parseworks.taker.CharPredicate.notAnyOf;
+import static io.github.parseworks.taker.parsers.Chars.alphaNumeric;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Chars.chrIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
-import static io.github.parseworks.taker.parsers.Lexical.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.oneOfIgnoreCase;
+import static io.github.parseworks.taker.parsers.Chars.oneOf;
+import static io.github.parseworks.taker.parsers.Chars.oneOfIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.regex;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static io.github.parseworks.taker.parsers.Lexical.stringIgnoreCase;
 import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
-import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
+import static io.github.parseworks.taker.parsers.Chars.takeWhile;
 import static io.github.parseworks.taker.parsers.Lexical.lexeme;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
 import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
-import static io.github.parseworks.taker.parsers.Lexical.word;
+import static io.github.parseworks.taker.parsers.Chars.word;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -163,7 +163,7 @@ public class LexicalTest {
 
     @Test
     void takeWhileSupportsCharacterSets() {
-        Taker<String> parser = takeWhile(noneOf("=/>\t\n\r\f"));
+        Taker<String> parser = takeWhile(notAnyOf("=/>\t\n\r\f"));
         Result<String> result = parser.parse(Input.of("div>"));
 
         assertTrue(result.matches());
@@ -213,7 +213,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateStopsBeforeFirstMatch() {
-        Taker<String> parser = takeUntil(c -> c == '>');
+        Taker<String> parser = Chars.takeUntil(c -> c == '>');
         Result<String> result = parser.parse(Input.of("abc>def"));
 
         assertTrue(result.matches());
@@ -223,7 +223,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateConsumesToEofWhenMissing() {
-        Taker<String> parser = takeUntil(c -> c == '>');
+        Taker<String> parser = Chars.takeUntil(c -> c == '>');
         Result<String> result = parser.parse(Input.of("abcdef"));
 
         assertTrue(result.matches());
@@ -233,7 +233,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateCanMatchWhitespace() {
-        Taker<String> parser = takeUntil(Character::isWhitespace);
+        Taker<String> parser = Chars.takeUntil(Character::isWhitespace);
         Result<String> result = parser.parse(Input.of("hello world"));
 
         assertTrue(result.matches());
@@ -243,7 +243,7 @@ public class LexicalTest {
 
     @Test
     void takeUntilPredicateCanSucceedAtCurrentPosition() {
-        Taker<String> parser = takeUntil(c -> c == 'a');
+        Taker<String> parser = Chars.takeUntil(c -> c == 'a');
         Result<String> result = parser.parse(Input.of("abc"));
 
         assertTrue(result.matches());

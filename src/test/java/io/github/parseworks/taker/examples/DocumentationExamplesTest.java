@@ -1,5 +1,7 @@
 package io.github.parseworks.taker.examples;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -11,9 +13,9 @@ import java.util.function.BinaryOperator;
 import static io.github.parseworks.taker.parsers.Combinators.any;
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.skipWhile;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Chars.collectChars;
+import static io.github.parseworks.taker.parsers.Chars.skipWhile;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Numeric.integer;

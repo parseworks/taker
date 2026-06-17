@@ -1,5 +1,7 @@
 package io.github.parseworks.taker.html;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
@@ -15,10 +17,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static io.github.parseworks.taker.CharPredicate.noneOf;
+import static io.github.parseworks.taker.CharPredicate.notAnyOf;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.collectChars;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Chars.collectChars;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.lexeme;
 import static io.github.parseworks.taker.parsers.Lexical.string;
@@ -187,7 +189,7 @@ public class SimpleHtmlParser {
         escapedString('"', '\0', Map.of()),
         escapedString('\'', '\0', Map.of())
     ).expecting("quoted attribute value");
-    private static final Taker<String> UNQUOTED_VALUE = collectChars(noneOf(" \t\n\r\f\"'=<>`"))
+    private static final Taker<String> UNQUOTED_VALUE = collectChars(notAnyOf(" \t\n\r\f\"'=<>`"))
         .expecting("unquoted attribute value");
 
     private static final Taker<String> ATTRIBUTE_VALUE = oneOf(QUOTED_VALUE, UNQUOTED_VALUE)

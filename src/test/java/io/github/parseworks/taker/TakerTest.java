@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,7 @@ import java.util.function.BinaryOperator;
 
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
+import static io.github.parseworks.taker.parsers.Chars.*;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 import static org.junit.jupiter.api.Assertions.*;
@@ -113,8 +116,8 @@ public class TakerTest {
 
     @Test
     public void testZeroOrMore() {
-        Taker<String> parser = Lexical.chr(Character::isLetter).collectString()
-                .then(Lexical.chr(Character::isDigit).collectString())
+        Taker<String> parser = Chars.chr(Character::isLetter).collectString()
+                .then(Chars.chr(Character::isDigit).collectString())
                 .map((letters, digits) -> letters + digits);
         Input input = Input.of("abc123");
         Result<String> result = parser.parse(input);

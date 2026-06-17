@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
@@ -71,7 +73,7 @@ public class CommitAndPartialMatchTest {
     @Test
     void committedSequenceFailureBecomesPartial() {
         Taker<Character> parser = commit(
-            Lexical.chr('a').skipThen(Lexical.chr('b')).skipThen(Lexical.chr('c'))
+            Chars.chr('a').skipThen(Chars.chr('b')).skipThen(Chars.chr('c'))
         );
 
         Result<Character> result = parser.apply(Input.of("abd"));
@@ -81,7 +83,7 @@ public class CommitAndPartialMatchTest {
 
     @Test
     void committedRepeatFailureBecomesPartial() {
-        Taker<List<Character>> parser = commit(Lexical.chr('a').repeat(3));
+        Taker<List<Character>> parser = commit(Chars.chr('a').repeat(3));
 
         Result<List<Character>> result = parser.apply(Input.of("aab"));
 

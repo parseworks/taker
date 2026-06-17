@@ -84,6 +84,17 @@ public interface CharPredicate {
     }
 
     /**
+     * Returns a predicate that tests if a character is not equal to the target
+     * character.
+     *
+     * @param target the character to reject
+     * @return a predicate that is {@code true} if the character does not match the target
+     */
+    static CharPredicate not(char target) {
+        return named("not '" + display(target) + "'", c -> c != target);
+    }
+
+    /**
      * Returns a predicate that tests if a character is equal to the target character.
      *
      * @param target the character to compare against
@@ -105,16 +116,6 @@ public interface CharPredicate {
         char upper = Character.toUpperCase(target);
         return named("'" + display(target) + "' ignoring case",
                 c -> c == target || Character.toLowerCase(c) == lower || Character.toUpperCase(c) == upper);
-    }
-
-    /**
-     * Returns a predicate that tests if a character is not equal to the target character.
-     *
-     * @param target the character to compare against
-     * @return a predicate that is {@code true} if the character does not match the target
-     */
-    static CharPredicate isNot(char target) {
-        return named("not '" + display(target) + "'", c -> c != target);
     }
 
     /**
@@ -154,7 +155,7 @@ public interface CharPredicate {
      */
     static CharPredicate anyOf(String chars) {
         Objects.requireNonNull(chars, "chars");
-        return named("one of \"" + display(chars) + "\"", charSet(chars));
+        return named(anyOfExpected(chars), charSet(chars));
     }
 
     /**
@@ -166,7 +167,7 @@ public interface CharPredicate {
      */
     static CharPredicate anyOfIgnoreCase(String chars) {
         Objects.requireNonNull(chars, "chars");
-        return named("one of \"" + display(chars) + "\" ignoring case", ignoreCaseCharSet(chars));
+        return named(anyOfExpected(chars) + " ignoring case", ignoreCaseCharSet(chars));
     }
 
     /**
@@ -181,7 +182,7 @@ public interface CharPredicate {
         for (CharPredicate predicate : copy) {
             Objects.requireNonNull(predicate, "predicate");
         }
-        return named("any of predicates", c -> {
+        return named(joinExpected(" or ", copy), c -> {
             for (CharPredicate predicate : copy) {
                 if (predicate.test(c)) {
                     return true;
@@ -192,15 +193,16 @@ public interface CharPredicate {
     }
 
     /**
-     * Returns a predicate that tests if a character is not present in the given string.
+     * Returns a predicate that tests if a character is not present in the given
+     * string.
      *
-     * @param chars a string containing the characters to avoid
+     * @param chars a string containing the characters to reject
      * @return a predicate that is {@code true} if the character is not in the string
      */
-    static CharPredicate noneOf(String chars) {
+    static CharPredicate notAnyOf(String chars) {
         Objects.requireNonNull(chars, "chars");
         CharPredicate included = charSet(chars);
-        return named("none of \"" + display(chars) + "\"", c -> !included.test(c));
+        return named(noneOfExpected(chars), c -> !included.test(c));
     }
 
     /**
@@ -210,10 +212,10 @@ public interface CharPredicate {
      * @param chars a string containing the characters to avoid
      * @return a predicate that is {@code true} if the character does not match any supplied character ignoring case
      */
-    static CharPredicate noneOfIgnoreCase(String chars) {
+    static CharPredicate notAnyOfIgnoreCase(String chars) {
         Objects.requireNonNull(chars, "chars");
         CharPredicate included = ignoreCaseCharSet(chars);
-        return named("none of \"" + display(chars) + "\" ignoring case", c -> !included.test(c));
+        return named(noneOfExpected(chars) + " ignoring case", c -> !included.test(c));
     }
 
     /**
@@ -228,7 +230,7 @@ public interface CharPredicate {
         for (CharPredicate predicate : copy) {
             Objects.requireNonNull(predicate, "predicate");
         }
-        return named("all predicates", c -> {
+        return named(joinExpected(" and ", copy), c -> {
             for (CharPredicate predicate : copy) {
                 if (!predicate.test(c)) {
                     return false;
@@ -334,6 +336,11 @@ public interface CharPredicate {
      */
     CharPredicate lineBreak = named("line break", anyOf("\n\r"));
 
+    /**
+     * A predicate that tests if a character is not a line break.
+     */
+    CharPredicate notLineBreak = named("not line break", lineBreak.negate());
+
     record NamedCharPredicate(String expected, CharPredicate predicate) implements CharPredicate {
         public NamedCharPredicate {
             Objects.requireNonNull(expected, "expected");
@@ -418,7 +425,49 @@ public interface CharPredicate {
             case '\t' -> "\\t";
             case '\f' -> "\\f";
             case '\b' -> "\\b";
+            case '\\' -> "\\\\";
+            case '\'' -> "\\'";
+            case '"' -> "\\\"";
             default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
         };
+    }
+
+    private static String anyOfExpected(String chars) {
+        if (chars.isEmpty()) {
+            return "no characters";
+        }
+        return "one of " + quotedChars(chars);
+    }
+
+    private static String noneOfExpected(String chars) {
+        if (chars.isEmpty()) {
+            return "any character";
+        }
+        return "none of " + quotedChars(chars);
+    }
+
+    private static String quotedChars(String chars) {
+        StringBuilder builder = new StringBuilder(chars.length() * 5);
+        for (int i = 0; i < chars.length(); i++) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append('\'').append(display(chars.charAt(i))).append('\'');
+        }
+        return builder.toString();
+    }
+
+    private static String joinExpected(String separator, CharPredicate[] predicates) {
+        if (predicates.length == 0) {
+            return "no predicates";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < predicates.length; i++) {
+            if (i > 0) {
+                builder.append(separator);
+            }
+            builder.append(predicates[i].expected());
+        }
+        return builder.toString();
     }
 }

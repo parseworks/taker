@@ -1,11 +1,13 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Combinators;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.BinaryOperator;
 
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Numeric.doubleValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;

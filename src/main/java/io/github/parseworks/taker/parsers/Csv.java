@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.parseworks.taker.CharPredicate.anyOf;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Chars.*;
 import static io.github.parseworks.taker.parsers.Lexical.*;
 
 public class Csv {

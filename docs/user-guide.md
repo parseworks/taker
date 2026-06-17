@@ -107,7 +107,7 @@ Use `then`, `thenSkip`, and `skipThen` to sequence parsers.
 ```java
 import io.github.parseworks.taker.Taker;
 
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 
 Taker<String> helloWorld = string("hello")
@@ -126,8 +126,8 @@ For anything more complex than strings, use `map` to build domain objects.
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Taker;
 
-import static io.github.parseworks.taker.parsers.Lexical.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.collectChars;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 
 record KV(String key, String value) {}
 
@@ -192,7 +192,7 @@ import io.github.parseworks.taker.Taker;
 import java.util.function.BinaryOperator;
 
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Numeric.integer;
 
@@ -239,9 +239,9 @@ nested.set(collectChars(CharPredicate.asciiLetter).or(parens));
 Use scanner primitives for consecutive raw input characters:
 
 ```java
-Taker<String> word = Lexical.collectChars(CharPredicate.asciiLetter);
-Taker<Void> spaces = Lexical.skipWhile(CharPredicate.horizontalWhitespace);
-Taker<Integer> indentWidth = Lexical.countWhile(CharPredicate.is(' '));
+Taker<String> word = Chars.collectChars(CharPredicate.asciiLetter);
+Taker<Void> spaces = Chars.skipWhile(CharPredicate.horizontalWhitespace);
+Taker<Integer> indentWidth = Chars.countWhile(CharPredicate.is(' '));
 ```
 
 Prefer these over `chr(predicate).oneOrMore()` or

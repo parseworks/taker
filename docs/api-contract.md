@@ -56,8 +56,8 @@ The following types are intended to be stable public API:
 - `skip(offset)` advances by `offset` characters.
 - `hasMore()` is equivalent to `!isEof()`.
 - Case-insensitive matching belongs at the parser or predicate layer. Use
-  `Lexical.chrIgnoreCase`, `Lexical.stringIgnoreCase`,
-  `Lexical.oneOfIgnoreCase`, or the `CharPredicate.*IgnoreCase` helpers instead
+  `Chars.chrIgnoreCase`, `Lexical.stringIgnoreCase`,
+  `Chars.oneOfIgnoreCase`, or the `CharPredicate.*IgnoreCase` helpers instead
   of transforming the input cursor.
 
 `TextInput` additionally exposes line/column and snippet formatting. Error
@@ -140,19 +140,19 @@ input on success, or callers risk non-terminating iteration.
 
 ### `take`
 
-`Lexical.take(predicate)` matches exactly one character when the predicate succeeds.
+`Chars.take(predicate)` matches exactly one character when the predicate succeeds.
 It fails at EOF or when the predicate is false.
 
 ### `takeWhile`
 
-`Lexical.takeWhile(predicate)` greedily consumes one or more matching characters.
+`Chars.takeWhile(predicate)` greedily consumes one or more matching characters.
 It fails if no characters match.
 
 Use `.orElse("")` when a zero-length match is desired.
 
 ### `collectChars`
 
-`Lexical.collectChars(predicate)` is an explicit alias for `takeWhile(predicate)`.
+`Chars.collectChars(predicate)` is an explicit alias for `takeWhile(predicate)`.
 It greedily consumes one or more matching input characters and returns the
 matched text.
 
@@ -163,7 +163,7 @@ result allocation.
 
 ### `skipWhile`
 
-`Lexical.skipWhile(predicate)` greedily consumes zero or more matching characters
+`Chars.skipWhile(predicate)` greedily consumes zero or more matching characters
 and returns `null`.
 
 It always succeeds and does not allocate a matched string. Use it for ignored
@@ -171,14 +171,14 @@ input such as whitespace or comments when the skipped text is not needed.
 
 ### `countWhile`
 
-`Lexical.countWhile(predicate)` greedily consumes zero or more matching characters
+`Chars.countWhile(predicate)` greedily consumes zero or more matching characters
 and returns the number of consumed characters.
 
 It always succeeds and does not allocate a matched string.
 
 ### `takeUntil`
 
-`Lexical.takeUntil(predicate)` and `Lexical.takeUntil(String)` consume characters
+`Chars.takeUntil(predicate)` and `Lexical.takeUntil(String)` consume characters
 until a terminator is found. The terminator is not consumed. If no terminator is
 found, these parsers consume to EOF and succeed.
 
@@ -249,8 +249,8 @@ the character that was validated by negative lookahead.
   diagnostic can report multiple expectations.
 
 `oneOf` requires at least one parser. Character-set forms such as
-`Combinators.oneOf(char...)`, `Lexical.oneOf(chars)`, and
-`Lexical.oneOfIgnoreCase(chars)` require at least one character.
+`Combinators.oneOf(char...)`, `Chars.oneOf(chars)`, and
+`Chars.oneOfIgnoreCase(chars)` require at least one character.
 
 ### `commit`
 
@@ -333,7 +333,7 @@ values with `String.valueOf(value)`. It is the allocation-conscious equivalent
 of collecting a list with `oneOrMore()` and joining it afterward.
 
 For raw input characters, prefer the scanner-level
-`Lexical.collectChars(predicate)` / `Lexical.takeWhile(predicate)` APIs. Use
+`Chars.collectChars(predicate)` / `Chars.takeWhile(predicate)` APIs. Use
 `collectString()` when the repeated parser produces values that are not simply
 consecutive characters from the input.
 
@@ -402,13 +402,28 @@ code paths that require quiet output.
 
 ## Built-In Parser Library Contract
 
-### `Lexical`
+### `Chars`
 
-`Lexical` contains character, string, regex, and quoted-string parsers.
+`Chars` contains character-level parsers and scanner fast paths.
 
+- `take(predicate)` matches exactly one character when the predicate succeeds.
 - `chr(char)` matches exactly one character.
 - `chrIgnoreCase(char)` matches exactly one character ignoring case.
 - `chr(CharPredicate)` matches one character satisfying the predicate.
+- `oneOf(chars)` matches one character from the supplied character set.
+- `oneOfIgnoreCase(chars)` matches one character from the supplied character set
+  ignoring case.
+- `spaces` matches one or more ASCII spaces (`' '`) and does not match tabs,
+  newlines, or other whitespace.
+- `whitespace` matches one or more characters accepted by
+  `Character.isWhitespace`, including line separators.
+- `word` matches one or more letters.
+- `line` consumes until a newline and does not consume the newline.
+
+### `Lexical`
+
+`Lexical` contains string, regex, quoted-string, and trim parsers.
+
 - `string(str)` matches `str` exactly. The empty string succeeds without
   consuming input. On failure, it reports the next expected character at the
   failure position using escaped literal formatting for control characters.
@@ -417,13 +432,6 @@ code paths that require quiet output.
   `string(str)` formatting.
 - `regex(pattern, flags)` matches with `Matcher.lookingAt()` from the current
   input position.
-- `oneOf(chars)` matches one character from the supplied character set.
-- `oneOfIgnoreCase(chars)` matches one character from the supplied character set
-  ignoring case.
-- `spaces` matches one or more ASCII spaces (`' '`) and does not match tabs,
-  newlines, or other whitespace.
-- `whitespace` matches one or more characters accepted by
-  `Character.isWhitespace`, including line separators.
 - `trim(parser)` skips ASCII spaces around `parser`. It does not skip tabs,
   newlines, or other Unicode whitespace.
 - `trimSpaces(parser)` is an explicit alias for `trim(parser)`.
@@ -432,8 +440,6 @@ code paths that require quiet output.
   of the grammar.
 - `lexeme(parser, ignored)` repeatedly applies caller-defined ignored input
   before and after `parser`.
-- `word` matches one or more letters.
-- `line` consumes until a newline and does not consume the newline.
 - `escapedString(quote, escape, escapes)` parses a quoted string and applies the
   supplied escape replacements.
 

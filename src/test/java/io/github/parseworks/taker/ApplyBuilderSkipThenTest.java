@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Lexical;
 import org.junit.jupiter.api.Test;
 
@@ -12,15 +14,15 @@ public class ApplyBuilderSkipThenTest {
         StringBuilder sb = new StringBuilder();
         Taker<String> p1 = new Taker<>(in -> {
             sb.append("1");
-            return Lexical.chr('1').apply(in).map(c -> "1");
+            return Chars.chr('1').apply(in).map(c -> "1");
         });
         Taker<String> p2 = new Taker<>(in -> {
             sb.append("2");
-            return Lexical.chr('2').apply(in).map(c -> "2");
+            return Chars.chr('2').apply(in).map(c -> "2");
         });
         Taker<String> p3 = new Taker<>(in -> {
             sb.append("3");
-            return Lexical.chr('3').apply(in).map(c -> "3");
+            return Chars.chr('3').apply(in).map(c -> "3");
         });
 
         // For p1.then(p2).skipThen(p3):
@@ -37,9 +39,9 @@ public class ApplyBuilderSkipThenTest {
 
     @Test
     public void testSkipThenWindBack() {
-        Taker<Character> p1 = Lexical.chr('1');
-        Taker<Character> p2 = Lexical.chr('2');
-        Taker<Character> p3 = Lexical.chr('3');
+        Taker<Character> p1 = Chars.chr('1');
+        Taker<Character> p2 = Chars.chr('2');
+        Taker<Character> p3 = Chars.chr('3');
 
         // Should be: runs p1, p2, p3. If fails at p3, winds back to start.
         Taker<Character> combined = p1.then(p2).skipThen(p3);

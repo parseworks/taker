@@ -1,9 +1,12 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import org.junit.jupiter.api.Test;
 
-import static io.github.parseworks.taker.parsers.Lexical.take;
-import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
+import static io.github.parseworks.taker.parsers.Chars.take;
+import static io.github.parseworks.taker.parsers.Chars.takeWhile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,8 +28,8 @@ public class CharPredicateTest {
     }
 
     @Test
-    public void testIsNot() {
-        CharPredicate p = CharPredicate.isNot('a');
+    public void testNotChar() {
+        CharPredicate p = CharPredicate.not('a');
         assertFalse(p.test('a'));
         assertTrue(p.test('b'));
     }
@@ -60,8 +63,8 @@ public class CharPredicateTest {
     }
 
     @Test
-    public void testNoneOf() {
-        CharPredicate p = CharPredicate.noneOf("abc");
+    public void testNotAnyOf() {
+        CharPredicate p = CharPredicate.notAnyOf("abc");
         assertFalse(p.test('a'));
         assertFalse(p.test('b'));
         assertFalse(p.test('c'));
@@ -69,8 +72,22 @@ public class CharPredicateTest {
     }
 
     @Test
-    public void testNoneOfIgnoreCase() {
-        CharPredicate p = CharPredicate.noneOfIgnoreCase("abc");
+    public void testDelimiterAliases() {
+        CharPredicate notComma = CharPredicate.not(',');
+        assertFalse(notComma.test(','));
+        assertTrue(notComma.test('a'));
+        assertEquals("not ','", notComma.expected());
+
+        CharPredicate notDelimiter = CharPredicate.notAnyOf(",;\n");
+        assertFalse(notDelimiter.test(','));
+        assertFalse(notDelimiter.test('\n'));
+        assertTrue(notDelimiter.test('a'));
+        assertEquals("none of ',', ';', '\\n'", notDelimiter.expected());
+    }
+
+    @Test
+    public void testNotAnyOfIgnoreCase() {
+        CharPredicate p = CharPredicate.notAnyOfIgnoreCase("abc");
         assertFalse(p.test('a'));
         assertFalse(p.test('B'));
         assertFalse(p.test('c'));
@@ -118,6 +135,8 @@ public class CharPredicateTest {
         assertTrue(CharPredicate.lineBreak.test('\n'));
         assertTrue(CharPredicate.lineBreak.test('\r'));
         assertFalse(CharPredicate.lineBreak.test(' '));
+        assertFalse(CharPredicate.notLineBreak.test('\n'));
+        assertTrue(CharPredicate.notLineBreak.test(' '));
     }
 
     @Test
@@ -141,11 +160,32 @@ public class CharPredicateTest {
         assertTrue(lowerHex.test('9'));
         assertTrue(lowerHex.test('c'));
         assertFalse(lowerHex.test('g'));
+        assertEquals("ASCII digit or 'a'..'f'", lowerHex.expected());
 
         CharPredicate lowerAsciiLetter = CharPredicate.allOf(CharPredicate.asciiLetter, CharPredicate.asciiLowerCase);
         assertTrue(lowerAsciiLetter.test('a'));
         assertFalse(lowerAsciiLetter.test('A'));
+        assertEquals("ASCII letter and ASCII lowercase letter", lowerAsciiLetter.expected());
         assertFalse(CharPredicate.not(CharPredicate.asciiDigit).test('3'));
+    }
+
+    @Test
+    public void testExpectedDisplayEscapesCharacters() {
+        assertEquals("'\\n'", CharPredicate.is('\n').expected());
+        assertEquals("'\\\\'", CharPredicate.is('\\').expected());
+        assertEquals("'\\''", CharPredicate.is('\'').expected());
+        assertEquals("'\\\"'", CharPredicate.is('"').expected());
+        assertEquals("one of '\\t', '\\n', '\\\\', '\\\"', '\\''", CharPredicate.anyOf("\t\n\\\"'").expected());
+        assertEquals("one of 'a', 'b', 'c'", CharPredicate.anyOf("abc").expected());
+        assertEquals("none of 'a', 'b', 'c'", CharPredicate.notAnyOf("abc").expected());
+    }
+
+    @Test
+    public void testEmptySetExpectedDisplay() {
+        assertFalse(CharPredicate.anyOf("").test('a'));
+        assertEquals("no characters", CharPredicate.anyOf("").expected());
+        assertTrue(CharPredicate.notAnyOf("").test('a'));
+        assertEquals("any character", CharPredicate.notAnyOf("").expected());
     }
 
     @Test

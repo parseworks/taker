@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.Objects;
@@ -13,7 +15,7 @@ import static io.github.parseworks.taker.parsers.Combinators.pure;
  * {@code thenSkip}, or {@code skipThen}, and conclude with {@code map}.
  * <pre>{@code
  * Taker<Integer> sum =
- *     Numeric.number.thenSkip(Lexical.chr('+'))
+ *     Numeric.number.thenSkip(Chars.chr('+'))
  *                   .then(Numeric.number)
  *                   .map((a, b) -> a + b);
  * }</pre>

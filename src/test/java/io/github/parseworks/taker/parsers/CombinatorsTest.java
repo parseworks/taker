@@ -59,7 +59,7 @@ public class CombinatorsTest {
 
     @Test
     public void testNot() {
-        Taker<Character> aParser = Lexical.chr('a');
+        Taker<Character> aParser = Chars.chr('a');
         Taker<Void> notAParser = not(aParser);
 
         // Match case (not 'a') succeeds without consuming input
@@ -98,7 +98,7 @@ public class CombinatorsTest {
     @Test
     public void testOneOfList() {
         List<Taker<Character>> parsers = Arrays.asList(
-                Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c')
+                Chars.chr('a'), Chars.chr('b'), Chars.chr('c')
         );
         Taker<Character> parser = oneOf(parsers);
 
@@ -117,31 +117,31 @@ public class CombinatorsTest {
     @Test
     public void testOneOfVarargs() {
         // Test with 2 parsers
-        Taker<Character> parser2 = oneOf(Lexical.chr('a'), Lexical.chr('b'));
+        Taker<Character> parser2 = oneOf(Chars.chr('a'), Chars.chr('b'));
         assertTrue(parser2.parse("a").matches());
         assertTrue(parser2.parse("b").matches());
         assertFalse(parser2.parse("c").matches());
 
         // Test with 3 parsers
-        Taker<Character> parser3 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'));
+        Taker<Character> parser3 = oneOf(Chars.chr('a'), Chars.chr('b'), Chars.chr('c'));
         assertTrue(parser3.parse("c").matches());
         assertFalse(parser3.parse("d").matches());
 
         // Additional tests for 4, 5, and 6 parser variants
-        Taker<Character> parser4 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'));
+        Taker<Character> parser4 = oneOf(Chars.chr('a'), Chars.chr('b'), Chars.chr('c'), Chars.chr('d'));
         assertTrue(parser4.parse("d").matches());
 
-        Taker<Character> parser5 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'));
+        Taker<Character> parser5 = oneOf(Chars.chr('a'), Chars.chr('b'), Chars.chr('c'), Chars.chr('d'), Chars.chr('e'));
         assertTrue(parser5.parse("e").matches());
 
-        Taker<Character> parser6 = oneOf(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'), Lexical.chr('d'), Lexical.chr('e'), Lexical.chr('f'));
+        Taker<Character> parser6 = oneOf(Chars.chr('a'), Chars.chr('b'), Chars.chr('c'), Chars.chr('d'), Chars.chr('e'), Chars.chr('f'));
         assertTrue(parser6.parse("f").matches());
     }
 
     @Test
     public void testSequenceList() {
         List<Taker<Character>> parsers = Arrays.asList(
-                Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c')
+                Chars.chr('a'), Chars.chr('b'), Chars.chr('c')
         );
         Taker<List<Character>> parser = sequence(parsers);
 
@@ -158,13 +158,13 @@ public class CombinatorsTest {
     @Test
     public void testSequenceVarargs() {
         // Test with 2 parsers
-        Taker<String> parser2 = sequence(Lexical.chr('a'), Lexical.chr('b'))
+        Taker<String> parser2 = sequence(Chars.chr('a'), Chars.chr('b'))
                 .map((a, b) -> String.valueOf(a) + b);
         assertTrue(parser2.parse("ab").matches());
         assertEquals("ab", parser2.parse("ab").value());
 
         // Test with 3 parsers
-        Taker<String> parser3 = sequence(Lexical.chr('a'), Lexical.chr('b'), Lexical.chr('c'))
+        Taker<String> parser3 = sequence(Chars.chr('a'), Chars.chr('b'), Chars.chr('c'))
                 .map((a, b, c) -> String.valueOf(a) + b + c);
         assertTrue(parser3.parse("abc").matches());
         assertEquals("abc", parser3.parse("abc").value());
@@ -206,8 +206,8 @@ public class CombinatorsTest {
     @Test
     public void testCombinedNotIsNot() {
         // Test combining not and isNot
-        Taker<Void> notDigit = not(Lexical.chr(Character::isDigit));
-        Taker<Character> letter = Lexical.chr(Character::isLetter);
+        Taker<Void> notDigit = not(Chars.chr(Character::isDigit));
+        Taker<Character> letter = Chars.chr(Character::isLetter);
 
         // Taker that accepts a letter that's followed by a non-digit
         Taker<Character> letterFollowedByNonDigit = letter.peek(notDigit);

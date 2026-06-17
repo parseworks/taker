@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Numeric;
 import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.results.Match;
@@ -22,11 +24,11 @@ import java.util.concurrent.TimeUnit;
 
 import static io.github.parseworks.taker.parsers.Combinators.not;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Lexical.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
+import static io.github.parseworks.taker.parsers.Chars.collectChars;
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
+import static io.github.parseworks.taker.parsers.Chars.takeWhile;
 import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
 import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
@@ -86,8 +88,8 @@ public class ParserBenchmarks {
 
             collectedLetters = chr(CharPredicate.asciiLetter).collectString();
             directlyCollectedLetters = collectChars(CharPredicate.asciiLetter);
-            countedLetters = Lexical.countWhile(CharPredicate.asciiLetter);
-            skippedLetters = Lexical.skipWhile(CharPredicate.asciiLetter);
+            countedLetters = Chars.countWhile(CharPredicate.asciiLetter);
+            skippedLetters = Chars.skipWhile(CharPredicate.asciiLetter);
             listedLettersJoined = chr(CharPredicate.asciiLetter).oneOrMore().map(ParserBenchmarks::join);
             lettersInput = lettersInput(10_000);
 
@@ -131,7 +133,7 @@ public class ParserBenchmarks {
             Taker<Character> eol = string("\r\n").as('\n').or(chr('\n'));
 
             Taker<String> quotedField = escapedString('"', '\\', Map.of('"', '"'));
-            Taker<String> unquotedFieldCore = takeWhile(CharPredicate.noneOf(",\n\r"));
+            Taker<String> unquotedFieldCore = takeWhile(CharPredicate.notAnyOf(",\n\r"));
             Taker<String> unquotedField = unquotedFieldCore.onlyIf(not(chr('"')));
 
             Taker<String> boolToken = oneOf(string("true"), string("false"));

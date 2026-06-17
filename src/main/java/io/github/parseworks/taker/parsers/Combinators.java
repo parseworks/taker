@@ -73,7 +73,7 @@ public class Combinators {
         if (items.length == 0) {
             throw new IllegalArgumentException("There must be at least one character defined");
         }
-        return Lexical.oneOf(new String(items));
+        return Chars.oneOf(new String(items));
     }
 
     /**
@@ -256,7 +256,7 @@ public class Combinators {
 
     /** Matches a character between open and close characters. */
     public static <A> Taker<A> between(char open, Taker<A> parser, char close) {
-        return between(Lexical.chr(open), parser, Lexical.chr(close));
+        return between(Chars.chr(open), parser, Chars.chr(close));
     }
 
     /** Matches a character between bracket characters. */

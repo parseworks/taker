@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 import static io.github.parseworks.taker.CharPredicate.asciiDigit;
-import static io.github.parseworks.taker.parsers.Lexical.chr;
-import static io.github.parseworks.taker.parsers.Lexical.takeWhile;
+import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Chars.takeWhile;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 
 public class IsoDates {

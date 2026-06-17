@@ -1,5 +1,7 @@
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.parsers.Chars;
+
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +11,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import static io.github.parseworks.taker.parsers.Lexical.alpha;
+import static io.github.parseworks.taker.parsers.Chars.alpha;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IterativeParsingTest {
