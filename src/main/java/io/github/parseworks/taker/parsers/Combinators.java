@@ -351,40 +351,110 @@ public class Combinators {
     }
 
     /**
-     * Chains a parser right-associatively.
+     * Chains a parser right-associatively, returning {@code identity} when
+     * this parser does not match.
+     *
+     * <pre>{@code
+     * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
+     * var p = number.chainRightZeroOrMore(chr('^').as(power), 1L);
+     * // "2^3^2" = 2^(3^2) = 512
+     * }
+     *
+     * @param elem element parser
+     * @param op operator parser producing a {@link java.util.function.BinaryOperator}
+     * @param identity value returned when {@code elem} matches zero times
+     * @return a chain parser (right-associative)
      */
-    public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
-        Objects.requireNonNull(parser, "parser");
+    public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
+        Objects.requireNonNull(elem, "elem");
         Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
-            Result<A> result = parser.apply(in);
-            if (!result.matches()) return new Match<>(identity, in);
+            Result<A> first = elem.apply(in);
+            if (!first.matches()) return new Match<>(identity, in);
 
-            Result<java.util.function.BinaryOperator<A>> opResult = op.apply(result.input());
-            if (!opResult.matches()) return result;
+            // Collect operator+value pairs left-to-right without recursion
+            List<java.util.AbstractMap.SimpleEntry<java.util.function.BinaryOperator<A>, A>> opsAndValues = null;
+            Input current = first.input();
+            while (true) {
+                Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
+                if (!opResult.matches()) break;
 
-            Result<A> restResult = chainRight(parser, op, identity).apply(opResult.input());
-            return new Match<>(opResult.value().apply(result.value(), restResult.value()), restResult.input());
+                Result<A> next = elem.apply(opResult.input());
+                if (!next.matches()) break;
+
+                if (opsAndValues == null) {
+                    opsAndValues = new ArrayList<>();
+                }
+                opsAndValues.add(new java.util.AbstractMap.SimpleEntry<>(opResult.value(), next.value()));
+                current = next.input();
+            }
+
+            // Fold right-to-left to preserve right-associativity.
+            if (opsAndValues == null) {
+                return new Match<>(first.value(), current);
+            }
+
+            A inner = opsAndValues.get(opsAndValues.size() - 1).getValue();
+            for (int i = opsAndValues.size() - 2; i >= 0; i--) {
+                var pair = opsAndValues.get(i);
+                inner = pair.getKey().apply(pair.getValue(), inner);
+            }
+            A acc = opsAndValues.get(opsAndValues.size() - 1).getKey().apply(first.value(), inner);
+            return new Match<>(acc, current);
         });
     }
 
     /**
      * Chains a parser right-associatively, requiring at least one match.
+     *
+     * <pre>{@code
+     * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
+     * var p = number.chainRightOneOrMore(chr('^').as(power));
+     * // "2^3^2" = 2^(3^2) = 512
+     * }
+     *
+     * @param elem element parser
+     * @param op operator parser producing a {@link java.util.function.BinaryOperator}
+     * @return a chain parser (right-associative)
      */
-    public static <A> Taker<A> chainRight(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
-        Objects.requireNonNull(parser, "parser");
+    public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op) {
+        Objects.requireNonNull(elem, "elem");
         Objects.requireNonNull(op, "op");
         return new Taker<>(in -> {
-            Result<A> result = parser.apply(in);
-            if (!result.matches()) return result;
+            Result<A> first = elem.apply(in);
+            if (!first.matches()) return first;
 
-            Result<java.util.function.BinaryOperator<A>> opResult = op.apply(result.input());
-            if (!opResult.matches()) return result;
+            // Collect operator+value pairs left-to-right without recursion
+            List<java.util.AbstractMap.SimpleEntry<java.util.function.BinaryOperator<A>, A>> opsAndValues = null;
+            Input current = first.input();
+            while (true) {
+                Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
+                if (!opResult.matches()) break;
 
-            Result<A> restResult = chainRight(parser, op).apply(opResult.input());
-            if (!restResult.matches()) return result;
+                Result<A> next = elem.apply(opResult.input());
+                if (!next.matches()) break;
 
-            return new Match<>(opResult.value().apply(result.value(), restResult.value()), restResult.input());
+                if (opsAndValues == null) {
+                    opsAndValues = new ArrayList<>();
+                }
+                opsAndValues.add(new java.util.AbstractMap.SimpleEntry<>(opResult.value(), next.value()));
+                current = next.input();
+            }
+
+            // Fold right-to-left to preserve right-associativity.
+            A acc = first.value();
+            if (opsAndValues != null && opsAndValues.size() == 1) {
+                var pair = opsAndValues.get(0);
+                acc = pair.getKey().apply(acc, pair.getValue());
+            } else if (opsAndValues != null) {
+                A inner = opsAndValues.get(opsAndValues.size() - 1).getValue();
+                for (int i = opsAndValues.size() - 2; i >= 0; i--) {
+                    var pair = opsAndValues.get(i);
+                    inner = pair.getKey().apply(pair.getValue(), inner);
+                }
+                acc = opsAndValues.get(opsAndValues.size() - 1).getKey().apply(first.value(), inner);
+            }
+            return new Match<>(acc, current);
         });
     }
 
