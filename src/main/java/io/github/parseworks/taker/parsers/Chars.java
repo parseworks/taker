@@ -71,10 +71,11 @@ public final class Chars {
             while (current < length && condition.test(data.charAt(current))) {
                 current++;
             }
-            if (current == start) {
+            int count = current - start;
+            if (count == 0) {
                 return new NoMatch<>(in, "at least one " + condition.expected());
             }
-            return new Match<>(data.subSequence(start, current).toString(), in.skip(current - start));
+            return new Match<>(data.subSequence(start, current).toString(), in.skip(count));
         });
     }
 
@@ -110,12 +111,14 @@ public final class Chars {
             int len = data.length();
             for (int i = start; i < len; i++) {
                 if (condition.test(data.charAt(i))) {
+                    int count = i - start;
                     String out = data.subSequence(start, i).toString();
-                    return new Match<>(out, in.skip(i - start));
+                    return new Match<>(out, in.skip(count));
                 }
             }
+            int count = len - start;
             String out = data.subSequence(start, len).toString();
-            return new Match<>(out, in.skip(len - start));
+            return new Match<>(out, in.skip(count));
         });
     }
 

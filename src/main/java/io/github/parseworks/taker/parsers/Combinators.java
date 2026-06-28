@@ -358,7 +358,7 @@ public class Combinators {
      * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
      * var p = number.chainRightZeroOrMore(chr('^').as(power), 1L);
      * // "2^3^2" = 2^(3^2) = 512
-     * }
+     * }</pre>
      *
      * @param elem element parser
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}
@@ -411,6 +411,8 @@ public class Combinators {
      * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
      * var p = number.chainRightOneOrMore(chr('^').as(power));
      * // "2^3^2" = 2^(3^2) = 512
+     * }</pre>
+
      * }
      *
      * @param elem element parser
