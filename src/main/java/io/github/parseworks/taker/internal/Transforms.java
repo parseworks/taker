@@ -22,8 +22,10 @@
 
 package io.github.parseworks.taker.internal;
 
-import io.github.parseworks.taker.*;
-
+import io.github.parseworks.taker.Failure;
+import io.github.parseworks.taker.Located;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 

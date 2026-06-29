@@ -22,11 +22,8 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Combinators;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BinaryOperator;
 
 import static io.github.parseworks.taker.parsers.Chars.chr;

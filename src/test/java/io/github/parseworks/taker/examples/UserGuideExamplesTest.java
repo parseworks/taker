@@ -33,9 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
 
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Chars.*;
-import static io.github.parseworks.taker.parsers.Lexical.*;
+import static io.github.parseworks.taker.parsers.Lexical.regex;
+import static io.github.parseworks.taker.parsers.Lexical.trim;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

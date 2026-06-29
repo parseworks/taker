@@ -22,17 +22,12 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Chars;
-
 import org.junit.jupiter.api.Test;
 
-import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ParseDiagnosticsTest {
 

@@ -22,8 +22,6 @@
 
 package io.github.parseworks.taker.examples;
 
-import io.github.parseworks.taker.parsers.Chars;
-
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -34,15 +32,10 @@ import java.util.List;
 import java.util.Map;
 
 import static io.github.parseworks.taker.CharPredicate.notAnyOf;
-import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Chars.chr;
-import static io.github.parseworks.taker.parsers.Chars.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.escapedString;
-import static io.github.parseworks.taker.parsers.Chars.skipWhile;
-import static io.github.parseworks.taker.parsers.Lexical.string;
+import static io.github.parseworks.taker.parsers.Chars.*;
 import static io.github.parseworks.taker.parsers.Chars.takeUntil;
-import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
-import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Numeric.doubleValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

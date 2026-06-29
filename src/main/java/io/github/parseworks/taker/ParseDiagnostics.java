@@ -22,12 +22,7 @@
 
 package io.github.parseworks.taker;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.SequencedSet;
+import java.util.*;
 
 /**
  * Structured information about a parser failure.

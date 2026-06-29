@@ -22,33 +22,14 @@
 
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.CharPredicate;
-import io.github.parseworks.taker.Failure;
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.*;
 import org.junit.jupiter.api.Test;
 
 import static io.github.parseworks.taker.CharPredicate.notAnyOf;
-import static io.github.parseworks.taker.parsers.Chars.alphaNumeric;
-import static io.github.parseworks.taker.parsers.Chars.chr;
-import static io.github.parseworks.taker.parsers.Chars.chrIgnoreCase;
-import static io.github.parseworks.taker.parsers.Lexical.escapedString;
-import static io.github.parseworks.taker.parsers.Chars.oneOf;
-import static io.github.parseworks.taker.parsers.Chars.oneOfIgnoreCase;
-import static io.github.parseworks.taker.parsers.Lexical.regex;
-import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Lexical.stringIgnoreCase;
+import static io.github.parseworks.taker.parsers.Chars.*;
+import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
-import static io.github.parseworks.taker.parsers.Chars.takeWhile;
-import static io.github.parseworks.taker.parsers.Lexical.lexeme;
-import static io.github.parseworks.taker.parsers.Lexical.trim;
-import static io.github.parseworks.taker.parsers.Lexical.trimSpaces;
-import static io.github.parseworks.taker.parsers.Lexical.trimWhitespace;
-import static io.github.parseworks.taker.parsers.Chars.word;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LexicalTest {
 

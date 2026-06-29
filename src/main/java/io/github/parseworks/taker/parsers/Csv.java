@@ -22,11 +22,7 @@
 
 package io.github.parseworks.taker.parsers;
 
-import io.github.parseworks.taker.Taker;
-import io.github.parseworks.taker.CharPredicate;
-import io.github.parseworks.taker.Failure;
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.*;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
@@ -40,8 +36,8 @@ import static io.github.parseworks.taker.CharPredicate.anyOf;
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Combinators.commit;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Chars.*;
-import static io.github.parseworks.taker.parsers.Lexical.*;
+import static io.github.parseworks.taker.parsers.Lexical.escapedString;
+import static io.github.parseworks.taker.parsers.Lexical.string;
 
 public class Csv {
 

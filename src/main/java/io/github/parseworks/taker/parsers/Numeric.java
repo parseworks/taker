@@ -29,8 +29,8 @@ import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 
-import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 
 public class Numeric {
 

@@ -22,8 +22,6 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Chars;
-
 import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;

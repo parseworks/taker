@@ -22,8 +22,9 @@
 
 package io.github.parseworks.taker.internal;
 
-import io.github.parseworks.taker.*;
-
+import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.NoMatch;
 
 import java.util.Objects;

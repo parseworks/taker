@@ -22,7 +22,9 @@
 
 package io.github.parseworks.taker.internal;
 
-import io.github.parseworks.taker.*;
+import io.github.parseworks.taker.Input;
+import io.github.parseworks.taker.Result;
+import io.github.parseworks.taker.Taker;
 
 public final class Debug {
 

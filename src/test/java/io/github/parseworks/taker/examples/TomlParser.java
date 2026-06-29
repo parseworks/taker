@@ -22,21 +22,9 @@
 
 package io.github.parseworks.taker.examples;
 
-import io.github.parseworks.taker.CharPredicate;
-import io.github.parseworks.taker.Failure;
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.*;
+import io.github.parseworks.taker.examples.TomlModel.*;
 import io.github.parseworks.taker.parsers.Chars;
-import io.github.parseworks.taker.examples.TomlModel.TomlArray;
-import io.github.parseworks.taker.examples.TomlModel.TomlBoolean;
-import io.github.parseworks.taker.examples.TomlModel.TomlDate;
-import io.github.parseworks.taker.examples.TomlModel.TomlDocument;
-import io.github.parseworks.taker.examples.TomlModel.TomlFloat;
-import io.github.parseworks.taker.examples.TomlModel.TomlInteger;
-import io.github.parseworks.taker.examples.TomlModel.TomlString;
-import io.github.parseworks.taker.examples.TomlModel.TomlTable;
-import io.github.parseworks.taker.examples.TomlModel.TomlValue;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 
@@ -45,13 +33,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Chars.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.escapedString;
-import static io.github.parseworks.taker.parsers.Lexical.regex;
-import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.*;
 
 /**
  * A compact TOML parser suitable for executable documentation.

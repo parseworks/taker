@@ -22,8 +22,8 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.parsers.Combinators;
+import io.github.parseworks.taker.results.NoMatch;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

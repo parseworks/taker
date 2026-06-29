@@ -22,11 +22,9 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Chars;
-
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.Objects;
 
 import static io.github.parseworks.taker.parsers.Combinators.pure;
 

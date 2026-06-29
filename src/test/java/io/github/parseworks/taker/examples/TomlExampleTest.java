@@ -24,23 +24,13 @@ package io.github.parseworks.taker.examples;
 
 import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.examples.TomlModel.TomlArray;
-import io.github.parseworks.taker.examples.TomlModel.TomlBoolean;
-import io.github.parseworks.taker.examples.TomlModel.TomlDate;
-import io.github.parseworks.taker.examples.TomlModel.TomlDocument;
-import io.github.parseworks.taker.examples.TomlModel.TomlFloat;
-import io.github.parseworks.taker.examples.TomlModel.TomlInteger;
-import io.github.parseworks.taker.examples.TomlModel.TomlString;
-import io.github.parseworks.taker.examples.TomlModel.TomlTable;
+import io.github.parseworks.taker.examples.TomlModel.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TomlExampleTest {
 

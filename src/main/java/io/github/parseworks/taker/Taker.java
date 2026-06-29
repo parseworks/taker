@@ -23,10 +23,9 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.internal.*;
-
+import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
-import io.github.parseworks.taker.parsers.Combinators;
 
 import java.util.*;
 import java.util.function.BiFunction;

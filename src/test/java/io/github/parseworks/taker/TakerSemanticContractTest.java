@@ -23,7 +23,6 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Chars;
-
 import io.github.parseworks.taker.parsers.Combinators;
 import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.parsers.Numeric;
@@ -34,17 +33,10 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static io.github.parseworks.taker.parsers.Combinators.eof;
-import static io.github.parseworks.taker.parsers.Combinators.commit;
+import static io.github.parseworks.taker.parsers.Chars.*;
+import static io.github.parseworks.taker.parsers.Combinators.*;
 import static io.github.parseworks.taker.parsers.Combinators.oneOf;
-import static io.github.parseworks.taker.parsers.Combinators.pure;
-import static io.github.parseworks.taker.parsers.Chars.chr;
-import static io.github.parseworks.taker.parsers.Chars.collectChars;
-import static io.github.parseworks.taker.parsers.Chars.countWhile;
-import static io.github.parseworks.taker.parsers.Chars.skipWhile;
 import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Chars.takeUntil;
-import static io.github.parseworks.taker.parsers.Chars.takeWhile;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TakerSemanticContractTest {

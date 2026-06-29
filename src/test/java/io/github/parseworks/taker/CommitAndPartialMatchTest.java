@@ -23,9 +23,8 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Chars;
-
-import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.results.PartialMatch;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

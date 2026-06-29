@@ -22,31 +22,17 @@
 
 package io.github.parseworks.taker.html;
 
-import io.github.parseworks.taker.parsers.Chars;
-
-import io.github.parseworks.taker.CharPredicate;
-import io.github.parseworks.taker.Input;
-import io.github.parseworks.taker.Result;
-import io.github.parseworks.taker.ResultType;
-import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.*;
 import io.github.parseworks.taker.results.Match;
 import io.github.parseworks.taker.results.NoMatch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import static io.github.parseworks.taker.CharPredicate.notAnyOf;
-import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Chars.collectChars;
-import static io.github.parseworks.taker.parsers.Lexical.escapedString;
-import static io.github.parseworks.taker.parsers.Lexical.lexeme;
-import static io.github.parseworks.taker.parsers.Lexical.string;
-import static io.github.parseworks.taker.parsers.Lexical.takeUntil;
+import static io.github.parseworks.taker.parsers.Combinators.oneOf;
+import static io.github.parseworks.taker.parsers.Lexical.*;
 
 /**
  * Practical HTML4-oriented tokenizer example.

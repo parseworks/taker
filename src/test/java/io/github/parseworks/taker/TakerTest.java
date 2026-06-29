@@ -23,18 +23,15 @@
 package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Chars;
-
-import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.function.BinaryOperator;
 
+import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Combinators.isNot;
 import static io.github.parseworks.taker.parsers.Combinators.not;
-import static io.github.parseworks.taker.parsers.Chars.*;
-import static io.github.parseworks.taker.parsers.Lexical.*;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 import static org.junit.jupiter.api.Assertions.*;
 
