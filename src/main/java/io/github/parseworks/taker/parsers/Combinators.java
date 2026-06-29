@@ -197,19 +197,31 @@ public class Combinators {
                 }
                 failures.add((Failure<A>) result);
             }
-            assert failures != null;
+            Objects.requireNonNull(failures, "failures");
             return new NoMatch<>(failures);
         });
     }
 
-    /** Matches the first succeeding parser. */
+    /**
+     * Matches the first succeeding parser.
+     *
+     * @param <A>       the result type of all parsers
+     * @param parsers   two or more alternative parsers (order matters — first match wins)
+     * @return a choice parser that tries each in order
+     */
     @SafeVarargs
     public static <A> Taker<A> oneOf(Taker<A>... parsers) {
         Objects.requireNonNull(parsers, "parsers");
         return oneOf(Arrays.asList(parsers));
     }
 
-    /** Applies multiple parsers in sequence. */
+    /**
+     * Applies multiple parsers in sequence, collecting results into a {@link List}.
+     *
+     * @param <A>       the result type of all parsers
+     * @param parsers   ordered list of parsers (must not be empty)
+     * @return a parser returning the collected results
+     */
     public static <A> Taker<List<A>> sequence(List<Taker<A>> parsers) {
         Objects.requireNonNull(parsers, "parsers");
         for (Taker<A> parser : parsers) {
@@ -231,7 +243,12 @@ public class Combinators {
     }
 
     /**
-     * Applies two parsers in sequence and returns an ApplyBuilder.
+     * Applies two parsers in sequence and returns an {@link ApplyBuilder}.
+     *
+     * @param <A>       the result type of both parsers
+     * @param parserA   first parser
+     * @param parserB   second parser
+     * @return a builder for mapping both values
      */
     public static <A> ApplyBuilder<A, A> sequence(Taker<A> parserA, Taker<A> parserB) {
         Objects.requireNonNull(parserA, "parserA");
