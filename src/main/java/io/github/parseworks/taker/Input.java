@@ -21,6 +21,7 @@
  */
 
 package io.github.parseworks.taker;
+import io.github.parseworks.taker.internal.LinearMap;
 
 /**
  * Immutable cursor over a character input.
@@ -56,6 +57,16 @@ public interface Input {
     /** Returns {@code true} when this cursor has at least one current character. */
     default boolean hasMore(){
         return !isEof();
+    }
+
+    /** Returns the current parsing context. Internal use only. */
+    default LinearMap context() {
+        return LinearMap.empty();
+    }
+
+    /** Returns a new cursor with the specified parsing context. Internal use only. */
+    default Input withContext(LinearMap context) {
+        return this;
     }
 
 }

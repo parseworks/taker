@@ -22,6 +22,7 @@
 
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.internal.LinearMap;
 import java.util.Arrays;
 
 final class Inputs {
@@ -37,21 +38,24 @@ final class Inputs {
 
         private final int position;
         private final CharSequence data;
+        private final LinearMap context;
         private volatile int[] lineOffsets;
 
-        private CharSequenceInput(int position, CharSequence data) {
+        private CharSequenceInput(int position, CharSequence data, LinearMap context) {
             this.position = position;
             this.data = data;
+            this.context = context;
         }
 
-        private CharSequenceInput(int position, CharSequence data, int[] lineOffsets) {
+        private CharSequenceInput(int position, CharSequence data, LinearMap context, int[] lineOffsets) {
             this.position = position;
             this.data = data;
+            this.context = context;
             this.lineOffsets = lineOffsets;
         }
 
         private CharSequenceInput(CharSequence data) {
-            this(0, data);
+            this(0, data, LinearMap.empty());
         }
 
         private int[] getLineOffsets() {
@@ -129,7 +133,7 @@ final class Inputs {
             if (isEof()) {
                 throw new IllegalStateException("End of input");
             }
-            return new CharSequenceInput(position + 1, data, lineOffsets);
+            return new CharSequenceInput(position + 1, data, context, lineOffsets);
         }
 
         @Override
@@ -144,7 +148,17 @@ final class Inputs {
             if (newPosition < 0) {
                 newPosition = 0;
             }
-            return new CharSequenceInput(newPosition, data, lineOffsets);
+            return new CharSequenceInput(newPosition, data, context, lineOffsets);
+        }
+
+        @Override
+        public LinearMap context() {
+            return context;
+        }
+
+        @Override
+        public Input withContext(LinearMap context) {
+            return new CharSequenceInput(position, data, context, lineOffsets);
         }
 
         @Override
