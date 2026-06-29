@@ -118,7 +118,7 @@ public class LexicalTest {
 
         Failure<String> quoteMismatch = (Failure<String>) escapedString('"', '\\', java.util.Map.of()).parse("x");
         assertEquals(0, quoteMismatch.input().position());
-        assertEquals("'\"'", quoteMismatch.expected());
+        assertEquals("'\\\"'", quoteMismatch.expected());
     }
 
     @Test

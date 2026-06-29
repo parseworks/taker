@@ -440,7 +440,15 @@ public interface CharPredicate {
         return builder.toString();
     }
 
-    private static String display(char c) {
+    /**
+     * Displays {@code c} in a human-readable form: control characters are
+     * escaped ({@code \n}, {@code \t}, etc.) and ISO-control is rendered as
+     * a four-digit hex escape. Use this when formatting error messages or diagnostics.
+     *
+     * @param c the character to display
+     * @return a displayable representation of the character
+     */
+    public static String display(char c) {
         return switch (c) {
             case '\n' -> "\\n";
             case '\r' -> "\\r";

@@ -493,18 +493,7 @@ public class Combinators {
     }
 
     private static String expectedChar(char c) {
-        return "'" + display(c) + "'";
-    }
-
-    private static String display(char c) {
-        return switch (c) {
-            case '\n' -> "\\n";
-            case '\r' -> "\\r";
-            case '\t' -> "\\t";
-            case '\f' -> "\\f";
-            case '\b' -> "\\b";
-            default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
-        };
+        return "'" + CharPredicate.display(c) + "'";
     }
 
 }

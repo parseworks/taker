@@ -22,6 +22,7 @@
 
 package io.github.parseworks.taker.parsers;
 
+import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
@@ -358,25 +359,7 @@ public class Lexical {
     }
 
     private static String expectedChar(char c) {
-        return "'" + display(c) + "'";
+        return "'" + CharPredicate.display(c) + "'";
     }
 
-    private static String display(String chars) {
-        StringBuilder builder = new StringBuilder(chars.length());
-        for (int i = 0; i < chars.length(); i++) {
-            builder.append(display(chars.charAt(i)));
-        }
-        return builder.toString();
-    }
-
-    private static String display(char c) {
-        return switch (c) {
-            case '\n' -> "\\n";
-            case '\r' -> "\\r";
-            case '\t' -> "\\t";
-            case '\f' -> "\\f";
-            case '\b' -> "\\b";
-            default -> Character.isISOControl(c) ? "\\u%04x".formatted((int) c) : String.valueOf(c);
-        };
-    }
 }
