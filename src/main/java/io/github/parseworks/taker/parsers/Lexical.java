@@ -39,10 +39,6 @@ import java.util.regex.Pattern;
  * whitespace trimming.
  * <p>
  * Use {@link Chars} for character-level parsers and scanner fast paths.
- * <pre>{@code
- * Taker<String> greeting =
- *     Lexical.string("Hello").thenSkip(Chars.skipWhile(CharPredicate.horizontalWhitespace)).then(Chars.word);
- * }</pre>
  */
 public class Lexical {
 

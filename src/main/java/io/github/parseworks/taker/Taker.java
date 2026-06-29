@@ -22,16 +22,11 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.parsers.Chars;
+import io.github.parseworks.taker.internal.*;
 
 import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
 import io.github.parseworks.taker.parsers.Combinators;
-import io.github.parseworks.taker.internal.Debug;
-import io.github.parseworks.taker.internal.Lookahead;
-import io.github.parseworks.taker.internal.Recovery;
-import io.github.parseworks.taker.internal.Repetition;
-import io.github.parseworks.taker.internal.Transforms;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -49,9 +44,6 @@ import java.util.stream.StreamSupport;
  * references created with {@link #ref()} and initialized with {@link #set(Taker)}
  * or {@link #set(Function)}. Parser composition is usually expressed with the
  * fluent instance methods on this type.
- * <pre>{@code
- * Taker<Integer> parser = Numeric.integer;
- * }</pre>
  *
  * @param <A> result type
  */
@@ -61,9 +53,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Replaces the result of this parser with a constant value on success.
-     * <pre>{@code
-     * Lexical.string("true").as(true).value(); // true
-     * }</pre>
      *
      * @param value constant value to return
      * @param <R>   result type
@@ -187,11 +176,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Tries this parser first, and if it fails, tries the alternative parser.
-     * <pre>{@code
-     * Taker<Integer> p = Numeric.integer.or(Combinators.pure(0));
-     * p.parse("42").value(); // 42
-     * p.parse("abc").value(); // 0
-     * }</pre>
      *
      * @param other alternative parser
      * @return a choice parser
@@ -212,10 +196,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Collects zero or more matches into a list.
-     * <pre>{@code
-     * Chars.chr('a').zeroOrMore().parse("aaa").value(); // ['a', 'a', 'a']
-     * Chars.chr('a').zeroOrMore().parse("bbb").value(); // []
-     * }</pre>
      *
      * @return a list parser
      */
@@ -225,10 +205,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Collects one or more matches into a list.
-     * <pre>{@code
-     * Chars.chr('a').oneOrMore().parse("aaa").value(); // ['a', 'a', 'a']
-     * Chars.chr('a').oneOrMore().parse("bbb").matches(); // false
-     * }</pre>
      *
      * @return a list parser
      */
@@ -238,9 +214,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Collects one or more matches until the terminator succeeds.
-     * <pre>{@code
-     * Chars.chr('a').oneOrMoreUntil(Chars.chr(';')).parse("aaa;").value(); // ['a', 'a', 'a']
-     * }</pre>
      *
      * @param until terminator parser
      * @return a list parser
@@ -252,11 +225,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Succeeds only if validation succeeds without consuming input.
-     * <pre>{@code
-     * Taker<Integer> p = Numeric.integer.onlyIf(Chars.chr('+'));
-     * p.parse("+123").value(); // 123
-     * p.parse("-123").matches(); // false
-     * }</pre>
      *
      * @param validation validation parser
      * @param <B>        validation result type
@@ -279,10 +247,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Succeeds if followed by lookahead without consuming lookahead input.
-     * <pre>{@code
-     * Taker<String> p = Chars.word.peek(Chars.chr('='));
-     * p.parse("id=42").value(); // "id"
-     * }</pre>
      *
      * @param lookahead lookahead parser
      * @param <B>       lookahead result type
@@ -317,18 +281,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * parameters, modifiers, or any syntax structures that may or may not be present. It provides
      * a convenient way to handle the presence or absence of elements without disrupting the overall
      * parsing flow.
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Parse signed numbers
-     * Taker<Integer> number = Numeric.integer;
-     * Taker<Integer> signedNumber = Chars.chr('-').optional().then(number)
-     *     .map((sign, num) -> sign.isPresent() ? -num : num);
-     *
-     * // Succeeds with 42 for input "42"
-     * // Succeeds with -42 for input "-42"
-     * // Fails for input "abc" (no number found)
-     * }</pre>
      *
      * @return a parser that always succeeds, returning either an Optional containing this
      * parser's result or an empty Optional
@@ -354,15 +306,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * </ol>
      * <p>
      * Important: When returning the default value, the input position remains unchanged from the original position.
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Parse an integer, or use 0 as default if parsing fails
-     * Taker<Integer> parser = Numeric.integer.orElse(0);
-     *
-     * // Succeeds with 42 for input "42"
-     * // Succeeds with 0 for input "abc"
-     * }</pre>
      *
      * @param other the default value to return if this parser fails
      * @return a parser that returns either the successful parse result or the default value
@@ -407,22 +350,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *   <li>Failed parse attempts are skipped automatically</li>
      *   <li>The iterator follows the standard Java Iterator contract</li>
      * </ul>
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Create a parser that matches integers
-     * Taker<Integer> intParser = integer;
-     *
-     * // Create an input from a string containing mixed content
-     * Input input = Input.of("123 abc 456 def 789");
-     *
-     * // Iterate over all integers in the input
-     * Iterator<Integer> numbers = intParser.iterateParse(input);
-     * while (numbers.hasNext()) {
-     *     Integer number = numbers.next();
-     *     System.out.println(number); // Prints: 123, 456, 789
-     * }
-     * }</pre>
      *
      * @param input the input to parse
      * @return an iterator that yields parse results one at a time
@@ -538,20 +465,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *   <li>If any unconsumed input remains, the method returns a failure result</li>
      *   <li>If the parser fails or unconsumed input exists, an error is returned</li>
      * </ol>
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Parse a complete integer from the input
-     * Taker<Integer> intParser = Numeric.integer;
-     * Input input = Input.of("123");
-     * Result<Integer> result = intParser.parseAll(input);
-     *
-     * if (result.matches()) {
-     *     Integer value = result.value(); // Successfully parsed value
-     * } else {
-     *     String error = result.error(); // Error message for failure
-     * }
-     * }</pre>
      *
      * @param in the input to parse
      * @return the result of parsing the input, ensuring the entire input is consumed
@@ -595,18 +508,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *   <li>The input position is advanced after each successful application</li>
      *   <li>Unlike {@link #oneOrMore()}, this parser requires exactly the specified number of matches</li>
      * </ul>
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Parse exactly 3 digits
-     * Taker<Character> digit = Chars.chr(CharPredicate.asciiDigit);
-     * Taker<List<Character>> threeDigits = digit.repeat(3);
-     *
-     * // Succeeds with [1,2,3] for input "123"
-     * // Succeeds with [1,2,3] for input "123abc" (consuming only "123")
-     * // Fails for input "12" (not enough digits)
-     * // Fails for input "ab12" (first element not a digit)
-     * }</pre>
      *
      * @param target the exact number of times to apply this parser
      * @return a parser that applies this parser exactly the specified number of times
@@ -646,20 +547,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      *   <li>The input position is advanced after each successful application</li>
      *   <li>Collection stops either when the maximum count is reached or when this parser fails</li>
      * </ul>
-     * <p>
-     * Example usage:
-     * <pre>{@code
-     * // Parse between 2 and 4 digits
-     * Taker<Character> digit = Chars.chr(CharPredicate.asciiDigit);
-     * Taker<List<Character>> digits = digit.repeat(2, 4);
-     *
-     * // Succeeds with [1,2,3,4] for input "1234"
-     * // Succeeds with [1,2,3,4] for input "12345" (consuming only "1234")
-     * // Succeeds with [1,2,3] for input "123"
-     * // Succeeds with [1,2] for input "12"
-     * // Fails for input "1" (not enough digits)
-     * // Fails for input "abc" (no digits found)
-     * }</pre>
      *
      * @param min the minimum number of times to apply this parser
      * @param max the maximum number of times to apply this parser
@@ -710,10 +597,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Transforms the result of this parser using the given function.
-     * <pre>{@code
-     * Taker<Integer> p = Chars.chr('5').map(Character::getNumericValue);
-     * p.parse("5").value(); // 5
-     * }</pre>
      *
      * @param func transformation function
      * @param <R>  transformed result type
@@ -725,12 +608,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Wraps this parser's successful value with the consumed source offsets.
-     * <pre>{@code
-     * Located<String> id = Chars.word.located().parse("name = value").value();
-     * id.value(); // "name"
-     * id.start(); // 0
-     * id.end();   // 4
-     * }</pre>
      *
      * @return a parser returning the value and zero-based start/end offsets
      */
@@ -1014,99 +891,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
         return new CheckParser<>();
     }
 
-    private static class CheckParser<A> extends Taker<A> {
-
-        private final ThreadLocal<IntObjectMap<ArrayDeque<Taker<?>>>> contextLocal =
-            ThreadLocal.withInitial(IntObjectMap::new);
-
-        @Override
-        public Result<A> apply(Input in) {
-            int pos = in.position();
-            IntObjectMap<ArrayDeque<Taker<?>>> ctx = contextLocal.get();
-
-            ArrayDeque<Taker<?>> stack = ctx.get(pos);
-            if (stack == null) {
-                stack = new ArrayDeque<>();
-                ctx.put(pos, stack);
-            }
-
-            for (Taker<?> p : stack) {
-                if (p == this) {
-                    return new NoMatch<>(in, "no infinite recursion");
-                }
-            }
-
-            stack.push(this);
-            try {
-                return applyHandler.apply(in);
-            } catch (RuntimeException e) {
-                if (e instanceof IllegalStateException && "Taker not initialized".equals(e.getMessage())) {
-                    throw e;
-                }
-                return new NoMatch<>(in, "parser to function correctly");
-            } finally {
-                stack.pop();
-                if (stack.isEmpty()) {
-                    ctx.remove(pos);
-                }
-            }
-        }
-    }
-
-    private static final class IntObjectMap<V> {
-        private static final int DEFAULT_CAPACITY = 16;
-        private int[] keys = new int[DEFAULT_CAPACITY];
-        private Object[] values = new Object[DEFAULT_CAPACITY];
-        private int size;
-
-        void put(int key, V value) {
-            for (int i = 0; i < size; i++) {
-                if (keys[i] == key) {
-                    values[i] = value;
-                    return;
-                }
-            }
-
-            if (size == keys.length) {
-                grow();
-            }
-
-            keys[size] = key;
-            values[size] = value;
-            size++;
-        }
-
-        @SuppressWarnings("unchecked")
-        V get(int key) {
-            for (int i = 0; i < size; i++) {
-                if (keys[i] == key) {
-                    return (V) values[i];
-                }
-            }
-            return null;
-        }
-
-        void remove(int key) {
-            for (int i = 0; i < size; i++) {
-                if (keys[i] == key) {
-                    if (i < size - 1) {
-                        System.arraycopy(keys, i + 1, keys, i, size - i - 1);
-                        System.arraycopy(values, i + 1, values, i, size - i - 1);
-                    }
-                    values[size - 1] = null;
-                    size--;
-                    return;
-                }
-            }
-        }
-
-        private void grow() {
-            int newCapacity = keys.length * 2;
-            keys = Arrays.copyOf(keys, newCapacity);
-            values = Arrays.copyOf(values, newCapacity);
-        }
-    }
-
     /**
      * Creates a parser that attempts to recover by trying an alternative parser.
      * <p>
@@ -1146,10 +930,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Labels this parser with a human-readable expectation for error messages.
-     * <pre>{@code
-     * Taker<String> p = Chars.word.expecting("identifier");
-     * p.parse("123").matches(); // false, error: "Expected identifier"
-     * }</pre>
      *
      * @param label descriptive label
      * @return a labeled parser
@@ -1166,14 +946,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * want to relabel a specific expected token; use {@code label(...)} when
      * you want the error path to include a rule such as {@code expression},
      * {@code statement}, or {@code object literal}.
-     * <pre>{@code
-     * Taker<String> identifier = Chars.word.label("identifier");
-     * Taker<String> assignment = identifier
-     *     .thenSkip(Chars.chr('='))
-     *     .then(identifier)
-     *     .map((left, right) -> left + "=" + right)
-     *     .label("assignment");
-     * }</pre>
      *
      * @param label grammar label
      * @return a parser that adds the label to failed diagnostics
@@ -1186,15 +958,6 @@ public class Taker<A> implements Function<Input, Result<A>>{
      * Uses this parser's successful value to choose the next parser.
      * <p>
      * This is useful when later grammar depends on an earlier parsed value.
-     * <pre>{@code
-     * Taker<String> p = Numeric.unsignedInteger.flatMap(n ->
-     *     Chars.chr(',').skipThen(Chars.chr('a').repeat(n))
-     *         .map(chars -> chars.stream()
-     *             .map(String::valueOf)
-     *             .collect(java.util.stream.Collectors.joining()))
-     * );
-     * p.parse("3,aaa").value(); // "aaa"
-     * }</pre>
      *
      * @param f   function returning the next parser
      * @param <B> next result type

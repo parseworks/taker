@@ -39,14 +39,6 @@ import java.util.Objects;
  * token grammars easier to write. Each token parser skips ignored input before
  * and after the wrapped parser. The ignored parser should consume input when it
  * succeeds; non-consuming success stops the skip loop.
- * <pre>{@code
- * TokensParser tokens = TokensParser.skipping(CharPredicate.whitespace);
- *
- * Taker<String> assignment = tokens.identifier()
- *     .thenSkip(tokens.chr('='))
- *     .then(tokens.identifier())
- *     .map((left, right) -> left + "=" + right);
- * }</pre>
  */
 public final class TokensParser {
 

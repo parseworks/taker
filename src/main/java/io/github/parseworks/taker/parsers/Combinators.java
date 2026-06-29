@@ -376,12 +376,6 @@ public class Combinators {
      * Chains a parser right-associatively, returning {@code identity} when
      * this parser does not match.
      *
-     * <pre>{@code
-     * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
-     * var p = number.chainRightZeroOrMore(chr('^').as(power), 1L);
-     * // "2^3^2" = 2^(3^2) = 512
-     * }</pre>
-     *
      * @param elem element parser
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}
      * @param identity value returned when {@code elem} matches zero times
@@ -428,14 +422,6 @@ public class Combinators {
 
     /**
      * Chains a parser right-associatively, requiring at least one match.
-     *
-     * <pre>{@code
-     * BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
-     * var p = number.chainRightOneOrMore(chr('^').as(power));
-     * // "2^3^2" = 2^(3^2) = 512
-     * }</pre>
-
-     * }
      *
      * @param elem element parser
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}

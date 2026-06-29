@@ -35,12 +35,6 @@ import static io.github.parseworks.taker.parsers.Combinators.pure;
  * <p>
  * Created by {@link Taker#then(Taker)}. Chain with {@code then},
  * {@code thenSkip}, or {@code skipThen}, and conclude with {@code map}.
- * <pre>{@code
- * Taker<Integer> sum =
- *     Numeric.number.thenSkip(Chars.chr('+'))
- *                   .then(Numeric.number)
- *                   .map((a, b) -> a + b);
- * }</pre>
 
  * @param <A> first parser result type
  * @param <B> second parser result type
