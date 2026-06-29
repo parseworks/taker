@@ -11,18 +11,6 @@ Taker is a lean, powerful, and developer-friendly parser combinator library for 
 - **Recursion Support**: Easy definition of recursive grammars using `Taker.ref()` and `.set()`.
 - **Commit/Cut**: Prevent unnecessary backtracking and improve error locality with `commit()`.
 
-## Installation
-
-Add the following dependency to your `pom.xml`:
-
-```xml
-<dependency>
-    <groupId>io.github.parseworks</groupId>
-    <artifactId>taker</artifactId>
-    <version>1.0-SNAPSHOT</version>
-</dependency>
-```
-
 ## Quick Start
 
 ### Basic Parsing
