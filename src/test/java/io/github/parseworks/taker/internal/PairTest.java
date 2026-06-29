@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package io.github.parseworks.taker.impl;
+package io.github.parseworks.taker.internal;
 
 import org.junit.jupiter.api.Test;
 
