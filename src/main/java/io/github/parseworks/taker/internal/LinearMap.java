@@ -38,14 +38,35 @@ public final class LinearMap {
         this.next = next;
     }
 
+    /**
+     * Returns an empty map.
+     *
+     * @return null representing an empty map
+     */
     public static LinearMap empty() {
         return null;
     }
 
+    /**
+     * Pushes a new entry onto the map.
+     *
+     * @param map the current map
+     * @param pos the input position
+     * @param taker the parser
+     * @return a new map with the entry added
+     */
     public static LinearMap push(LinearMap map, int pos, Taker<?> taker) {
         return new LinearMap(pos, taker, map);
     }
 
+    /**
+     * Checks if the map contains the specified position and parser.
+     *
+     * @param map the map to search
+     * @param pos the input position
+     * @param taker the parser
+     * @return true if the entry exists, false otherwise
+     */
     public static boolean contains(LinearMap map, int pos, Taker<?> taker) {
         LinearMap current = map;
         while (current != null) {

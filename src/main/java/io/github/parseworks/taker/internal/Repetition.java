@@ -35,11 +35,24 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+/**
+ * Internal helpers for repetition and folding.
+ */
 public final class Repetition {
 
     private Repetition() {
     }
 
+    /**
+     * Repeatedly applies a parser and collects the results into a list.
+     *
+     * @param <A> result type
+     * @param parser the parser to repeat
+     * @param min minimum number of repetitions
+     * @param max maximum number of repetitions
+     * @param until an optional terminator parser that stops repetition
+     * @return a list parser
+     */
     public static <A> Taker<List<A>> repeat(Taker<A> parser, int min, int max, Taker<?> until) {
         if (min < 0 || max < 0) {
             throw new IllegalArgumentException("The number of repetitions cannot be negative");
@@ -101,6 +114,17 @@ public final class Repetition {
         });
     }
 
+    /**
+     * Repeatedly applies a parser separated by another parser and collects the
+     * results into a list.
+     *
+     * @param <A> result type
+     * @param <SEP> separator result type
+     * @param parser the parser to repeat
+     * @param sep the separator parser
+     * @param min minimum number of repetitions
+     * @return a list parser
+     */
     public static <A, SEP> Taker<List<A>> separatedBy(Taker<A> parser, Taker<SEP> sep, int min) {
         Objects.requireNonNull(sep, "sep");
         return new Taker<>(in -> {
@@ -149,6 +173,17 @@ public final class Repetition {
         });
     }
 
+    /**
+     * Repeatedly applies a parser and folds the results into an accumulator.
+     *
+     * @param <A> result type
+     * @param <B> accumulator type
+     * @param parser the parser to repeat
+     * @param min minimum number of repetitions
+     * @param identitySupplier supplier for the initial accumulator value
+     * @param accumulator function to combine results
+     * @return a folded parser
+     */
     public static <A, B> Taker<B> foldRepeated(
         Taker<A> parser,
         int min,
@@ -183,6 +218,20 @@ public final class Repetition {
         });
     }
 
+    /**
+     * Repeatedly applies a parser separated by another parser and folds the
+     * results into an accumulator.
+     *
+     * @param <A> result type
+     * @param <SEP> separator result type
+     * @param <B> accumulator type
+     * @param parser the parser to repeat
+     * @param sep the separator parser
+     * @param min minimum number of repetitions
+     * @param identitySupplier supplier for the initial accumulator value
+     * @param accumulator function to combine results
+     * @return a folded parser
+     */
     public static <A, SEP, B> Taker<B> foldSeparatedBy(
         Taker<A> parser,
         Taker<SEP> sep,

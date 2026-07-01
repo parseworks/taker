@@ -29,11 +29,24 @@ import io.github.parseworks.taker.Taker;
 import java.util.Objects;
 import java.util.function.Function;
 
+/**
+ * Internal helpers for error recovery.
+ */
 public final class Recovery {
 
     private Recovery() {
     }
 
+    /**
+     * Creates a parser that attempts to recover from a failure by using an
+     * alternative parser.
+     *
+     * @param <A> parser result type
+     * @param <B> recovery result type
+     * @param parser the primary parser
+     * @param recovery the recovery parser to use if the primary fails
+     * @return a recovering parser
+     */
     public static <A, B> Taker<B> recover(Taker<A> parser, Taker<B> recovery) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(recovery, "recovery");
@@ -46,6 +59,16 @@ public final class Recovery {
         });
     }
 
+    /**
+     * Creates a parser that attempts to recover from a failure by using a
+     * recovery function that takes the failure as input.
+     *
+     * @param <A> parser result type
+     * @param <B> recovery result type
+     * @param parser the primary parser
+     * @param recovery the recovery function
+     * @return a recovering parser
+     */
     public static <A, B> Taker<B> recoverWith(Taker<A> parser, Function<Failure<A>, Result<B>> recovery) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(recovery, "recovery");

@@ -4,8 +4,20 @@ import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.NoMatch;
 
+/**
+ * A parser wrapper that checks for infinite recursion.
+ *
+ * @param <A> result type
+ */
 public class CheckParser<A> extends Taker<A> {
 
+    /**
+     * Applies the parser to the input, ensuring that the same parser is not
+     * applied at the same position recursively.
+     *
+     * @param in the input to parse
+     * @return the parse result
+     */
     @Override
     public Result<A> apply(Input in) {
         int pos = in.position();

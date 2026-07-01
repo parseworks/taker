@@ -26,6 +26,9 @@ import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 
+/**
+ * Internal debugging helpers for parsers.
+ */
 public final class Debug {
 
     private static final ThreadLocal<Integer> depth = ThreadLocal.withInitial(() -> 0);
@@ -33,6 +36,14 @@ public final class Debug {
     private Debug() {
     }
 
+    /**
+     * Wraps a parser with logging that prints to System.out.
+     *
+     * @param <A> the result type
+     * @param parser the parser to wrap
+     * @param label a label for the parser in the logs
+     * @return the wrapped parser
+     */
     public static <A> Taker<A> systemOut(Taker<A> parser, String label) {
         return new Taker<>(input -> {
             int currentDepth = depth.get();

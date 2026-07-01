@@ -59,12 +59,25 @@ public interface Input {
         return !isEof();
     }
 
-    /** Returns the current parsing context. Internal use only. */
+    /**
+     * Returns the current parsing context.
+     * <p>
+     * Internal use only. Used for features like recursion detection.
+     *
+     * @return the current parsing context
+     */
     default LinearMap context() {
         return LinearMap.empty();
     }
 
-    /** Returns a new cursor with the specified parsing context. Internal use only. */
+    /**
+     * Returns a new cursor with the specified parsing context.
+     * <p>
+     * Internal use only.
+     *
+     * @param context the new parsing context
+     * @return a new cursor with the updated context
+     */
     default Input withContext(LinearMap context) {
         return this;
     }

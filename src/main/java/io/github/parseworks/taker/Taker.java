@@ -855,12 +855,18 @@ public class Taker<A> implements Function<Input, Result<A>>{
     protected Function<Input, Result<A>> applyHandler;
     /**
      * A default apply handler that throws an exception if the parser is not initialized.
+     * <p>
+     * Used to detect calls to uninitialized parser references.
      */
     private Function<Input, Result<A>> defaultApplyHandler;
 
 
     /**
      * Constructor used by parser references that are initialized later.
+     * <p>
+     * Initializes the {@link #applyHandler} with {@link #defaultApplyHandler}
+     * which throws an {@link IllegalStateException} if applied before being
+     * initialized via {@link #set(Taker)}.
      */
     protected Taker() {
         this.applyHandler = defaultApplyHandler = in -> {

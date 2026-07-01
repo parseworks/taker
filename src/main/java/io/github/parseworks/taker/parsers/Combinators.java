@@ -259,7 +259,7 @@ public class Combinators {
     /**
      * Applies three parsers in sequence and returns an ApplyBuilder3.
      */
-    public static <A> ApplyBuilder<A, A>.ApplyBuilder3<A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
+    public static <A> ApplyBuilder.ApplyBuilder3<A, A, A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
         Objects.requireNonNull(parserA, "parserA");
         Objects.requireNonNull(parserB, "parserB");
         Objects.requireNonNull(parserC, "parserC");

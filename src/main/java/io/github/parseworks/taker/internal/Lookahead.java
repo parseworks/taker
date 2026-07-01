@@ -29,11 +29,24 @@ import io.github.parseworks.taker.results.NoMatch;
 
 import java.util.Objects;
 
+/**
+ * Internal helpers for lookahead and validation.
+ */
 public final class Lookahead {
 
     private Lookahead() {
     }
 
+    /**
+     * Creates a parser that only succeeds if the validation parser succeeds at
+     * the current position.
+     *
+     * @param <A> result type
+     * @param <B> validation result type
+     * @param parser the main parser
+     * @param validation the lookahead validation parser
+     * @return a validated parser
+     */
     public static <A, B> Taker<A> onlyIf(Taker<A> parser, Taker<B> validation) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(validation, "validation");
@@ -46,6 +59,15 @@ public final class Lookahead {
         });
     }
 
+    /**
+     * Creates a parser that only succeeds if the current character matches the
+     * predicate.
+     *
+     * @param <A> result type
+     * @param parser the main parser
+     * @param validation the character predicate
+     * @return a validated parser
+     */
     public static <A> Taker<A> onlyIf(Taker<A> parser, CharPredicate validation) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(validation, "validation");
@@ -60,6 +82,16 @@ public final class Lookahead {
         });
     }
 
+    /**
+     * Creates a parser that succeeds if the main parser succeeds AND is
+     * followed by input that matches the lookahead parser.
+     *
+     * @param <A> result type
+     * @param <B> lookahead result type
+     * @param parser the main parser
+     * @param lookahead the lookahead parser
+     * @return a peek-validated parser
+     */
     public static <A, B> Taker<A> peek(Taker<A> parser, Taker<B> lookahead) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(lookahead, "lookahead");

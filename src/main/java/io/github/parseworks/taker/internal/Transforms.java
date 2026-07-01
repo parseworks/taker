@@ -33,11 +33,24 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Internal helpers for transforming parser results.
+ */
 public final class Transforms {
 
     private Transforms() {
     }
 
+    /**
+     * Creates a parser that returns a constant value if the underlying parser
+     * succeeds.
+     *
+     * @param <A> underlying result type
+     * @param <R> constant result type
+     * @param parser the underlying parser
+     * @param value the constant value to return
+     * @return a constant-returning parser
+     */
     public static <A, R> Taker<R> as(Taker<A> parser, R value) {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
@@ -49,6 +62,15 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Creates a parser that returns an {@link Optional} containing the result
+     * if the underlying parser succeeds, or {@link Optional#empty()} if it
+     * fails.
+     *
+     * @param <A> result type
+     * @param parser the underlying parser
+     * @return an optional parser
+     */
     public static <A> Taker<Optional<A>> optional(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
@@ -60,6 +82,15 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Creates a parser that returns the specified default value if the
+     * underlying parser fails.
+     *
+     * @param <A> result type
+     * @param parser the underlying parser
+     * @param other the default value
+     * @return a parser with a default value
+     */
     public static <A> Taker<A> orElse(Taker<A> parser, A other) {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
@@ -71,12 +102,29 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Maps the result of a parser using a function.
+     *
+     * @param <A> input result type
+     * @param <R> output result type
+     * @param parser the underlying parser
+     * @param mapper the mapping function
+     * @return a mapped parser
+     */
     public static <A, R> Taker<R> map(Taker<A> parser, Function<A, R> mapper) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(mapper, "mapper");
         return new Taker<>(in -> parser.apply(in).map(mapper));
     }
 
+    /**
+     * Creates a parser that returns the result wrapped in a {@link Located}
+     * object containing start and end positions.
+     *
+     * @param <A> result type
+     * @param parser the underlying parser
+     * @return a located parser
+     */
     public static <A> Taker<Located<A>> located(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
@@ -89,6 +137,14 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Assigns an expected label to a parser, used in error messages.
+     *
+     * @param <A> result type
+     * @param parser the underlying parser
+     * @param label the expected label
+     * @return a parser with an expected label
+     */
     public static <A> Taker<A> expecting(Taker<A> parser, String label) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(label, "label");
@@ -101,6 +157,14 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Assigns a name label to a parser, typically used for better debugging.
+     *
+     * @param <A> result type
+     * @param parser the underlying parser
+     * @param label the label
+     * @return a labeled parser
+     */
     public static <A> Taker<A> label(Taker<A> parser, String label) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(label, "label");
@@ -113,6 +177,16 @@ public final class Transforms {
         });
     }
 
+    /**
+     * Chains two parsers where the second parser depends on the result of the
+     * first.
+     *
+     * @param <A> first result type
+     * @param <B> second result type
+     * @param parser the first parser
+     * @param f function that returns the second parser based on the first result
+     * @return a flat-mapped parser
+     */
     public static <A, B> Taker<B> flatMap(Taker<A> parser, Function<A, Taker<B>> f) {
         Objects.requireNonNull(parser, "parser");
         Objects.requireNonNull(f, "f");

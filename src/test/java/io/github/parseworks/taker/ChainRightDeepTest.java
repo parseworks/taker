@@ -68,15 +68,78 @@ public class ChainRightDeepTest {
     }
 
     @Test
-    void chainRightZeroOrMore_powerTower_isRightAssociative() {
-        // 2^1 = 2, and right-assoc means 2^(1) for two elements
+    void chainRightOneOrMore_powerTower_isRightAssociative() {
+        // 2^3^2 = 2^(3^2) = 2^9 = 512 (right-assoc)
+        // left-assoc would be (2^3)^2 = 8^2 = 64
         BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
         Taker<Long> parser = number.chainRightOneOrMore(chr('^').as(power));
 
-        // 2^3^2 = 2^(3^2) = 2^9 = 512
         Result<Long> result = parser.parse("2^3^2");
         assertTrue(result.matches(), "should match: " + result.error());
-        assertEquals(512L, result.value());
+        assertEquals(512L, result.value(), "2^(3^2) = 512, not (2^3)^2 = 64");
+    }
+
+    @Test
+    void chainRightOneOrMore_powerTower_4elements_isRightAssociative() {
+        // 2^1^2^3 = 2^(1^(2^3)) = 2^(1^8) = 2^1 = 2
+        // left-assoc: ((2^1)^2)^3 = (2^2)^3 = 4^3 = 64
+        BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
+        Taker<Long> parser = number.chainRightOneOrMore(chr('^').as(power));
+
+        Result<Long> result = parser.parse("2^1^2^3");
+        assertTrue(result.matches(), "should match: " + result.error());
+        assertEquals(2L, result.value(), "2^(1^(2^3)) = 2, not ((2^1)^2)^3 = 64");
+    }
+
+    @Test
+    void chainRightZeroOrMore_subtract_isRightAssociative() {
+        // Identity variant with non-commutative operator
+        // 3-2-1 right-assoc = 3-(2-1) = 2, left-assoc = (3-2)-1 = 0
+        BinaryOperator<Long> subtract = (a, b) -> a - b;
+        Taker<Long> parser = number.chainRightZeroOrMore(chr('-').as(subtract), 0L);
+
+        Result<Long> result = parser.parse("3-2-1");
+        assertTrue(result.matches(), "should match: " + result.error());
+        assertEquals(2L, result.value(), "3-(2-1) = 2, not (3-2)-1 = 0");
+    }
+
+    @Test
+    void chainRightZeroOrMore_subtract_4elements_isRightAssociative() {
+        // 5-1-1-1 right-assoc = 5-(1-(1-1)) = 4
+        BinaryOperator<Long> subtract = (a, b) -> a - b;
+        Taker<Long> parser = number.chainRightZeroOrMore(chr('-').as(subtract), 0L);
+
+        Result<Long> result = parser.parse("5-1-1-1");
+        assertTrue(result.matches(), "should match: " + result.error());
+        assertEquals(4L, result.value(), "5-(1-(1-1)) = 4");
+    }
+
+    @Test
+    void chainRightZeroOrMore_powerTower_isRightAssociative() {
+        // Same as OneOrMore variant, verifying identity variant also folds right
+        // 2^3^2 = 2^(3^2) = 2^9 = 512
+        BinaryOperator<Long> power = (a, b) -> (long) Math.pow(a, b);
+        Taker<Long> parser = number.chainRightZeroOrMore(chr('^').as(power), 1L);
+
+        Result<Long> result = parser.parse("2^3^2");
+        assertTrue(result.matches(), "should match: " + result.error());
+        assertEquals(512L, result.value(), "2^(3^2) = 512");
+    }
+
+    @Test
+    void chainRightZeroOrMore_and_oneOrMore_agree_onNonEmptyInput() {
+        // Both variants must produce identical results for non-empty input
+        BinaryOperator<Long> subtract = (a, b) -> a - b;
+        Taker<Long> zom = number.chainRightZeroOrMore(chr('-').as(subtract), 0L);
+        Taker<Long> oom = number.chainRightOneOrMore(chr('-').as(subtract));
+
+        for (String input : new String[]{"3-2-1", "5-1-1-1", "10-3-2", "100-50-25-25"}) {
+            Result<Long> rZom = zom.parse(input);
+            Result<Long> rOom = oom.parse(input);
+            assertTrue(rZom.matches(), "zom should match " + input);
+            assertTrue(rOom.matches(), "oom should match " + input);
+            assertEquals(rOom.value(), rZom.value(), "zom and oom must agree on " + input);
+        }
     }
 
     /**
