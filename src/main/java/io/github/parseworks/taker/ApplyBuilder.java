@@ -80,57 +80,6 @@ public class ApplyBuilder<A, B> {
         R apply(A a, B b, C c, D d, E e);
     }
 
-    /**
-     * Function of arity 6.
-     *
-     * @param <A> first argument type
-     * @param <B> second argument type
-     * @param <C> third argument type
-     * @param <D> fourth argument type
-     * @param <E> fifth argument type
-     * @param <G> sixth argument type
-     * @param <R> result type
-     */
-    @FunctionalInterface
-    public interface Func6<A, B, C, D, E, G, R> {
-        R apply(A a, B b, C c, D d, E e, G g);
-    }
-
-    /**
-     * Function of arity 7.
-     *
-     * @param <A> first argument type
-     * @param <B> second argument type
-     * @param <C> third argument type
-     * @param <D> fourth argument type
-     * @param <E> fifth argument type
-     * @param <G> sixth argument type
-     * @param <H> seventh argument type
-     * @param <R> result type
-     */
-    @FunctionalInterface
-    public interface Func7<A, B, C, D, E, G, H, R> {
-        R apply(A a, B b, C c, D d, E e, G g, H h);
-    }
-
-    /**
-     * Function of arity 8.
-     *
-     * @param <A> first argument type
-     * @param <B> second argument type
-     * @param <C> third argument type
-     * @param <D> fourth argument type
-     * @param <E> fifth argument type
-     * @param <G> sixth argument type
-     * @param <H> seventh argument type
-     * @param <I> eighth argument type
-     * @param <R> result type
-     */
-    @FunctionalInterface
-    public interface Func8<A, B, C, D, E, G, H, I, R> {
-        R apply(A a, B b, C c, D d, E e, G g, H h, I i);
-    }
-
     private final Taker<A> pa;
     private final Taker<B> pb;
 
@@ -388,174 +337,19 @@ public class ApplyBuilder<A, B> {
             return map(a -> b -> c -> d -> e -> f.apply(a, b, c, d, e));
         }
 
-        public <G> ApplyBuilder5<A, B, C, D, E> thenSkip(Taker<G> pg) {
-            Objects.requireNonNull(pg, "pg");
-            return new ApplyBuilder5<>(pa, pb, pc, pd, pe.thenSkip(pg));
+        public <F> ApplyBuilder5<A, B, C, D, E> thenSkip(Taker<F> pf) {
+            Objects.requireNonNull(pf, "pf");
+            return new ApplyBuilder5<>(pa, pb, pc, pd, pe.thenSkip(pf));
         }
 
-        public <G> Taker<G> skipThen(Taker<G> pg) {
-            Objects.requireNonNull(pg, "pg");
-            return allSkipped().skipThen(pg);
+        public <F> Taker<F> skipThen(Taker<F> pf) {
+            Objects.requireNonNull(pf, "pf");
+            return allSkipped().skipThen(pf);
         }
 
         private Taker<Void> allSkipped() {
             return new ApplyBuilder4<>(pa, pb, pc, pd).allSkipped().thenSkip(pe).map(any -> null);
         }
 
-        public <G> ApplyBuilder6<A, B, C, D, E, G> then(Taker<G> pg) {
-            Objects.requireNonNull(pg, "pg");
-            return new ApplyBuilder6<>(pa, pb, pc, pd, pe, pg);
-        }
-    }
-
-    /** Builder for mapping six parsed values. */
-    public static class ApplyBuilder6<A, B, C, D, E, G> {
-        private final Taker<A> pa;
-        private final Taker<B> pb;
-        private final Taker<C> pc;
-        private final Taker<D> pd;
-        private final Taker<E> pe;
-        private final Taker<G> pg;
-
-        private ApplyBuilder6(Taker<A> pa, Taker<B> pb, Taker<C> pc, Taker<D> pd, Taker<E> pe, Taker<G> pg) {
-            this.pa = Objects.requireNonNull(pa, "pa");
-            this.pb = Objects.requireNonNull(pb, "pb");
-            this.pc = Objects.requireNonNull(pc, "pc");
-            this.pd = Objects.requireNonNull(pd, "pd");
-            this.pe = Objects.requireNonNull(pe, "pe");
-            this.pg = Objects.requireNonNull(pg, "pg");
-        }
-
-        public <R> Taker<R> map(
-            Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, R>>>>>> f
-        ) {
-            Objects.requireNonNull(f, "f");
-            return apply(new ApplyBuilder5<>(pa, pb, pc, pd, pe).map(f), pg);
-        }
-
-        public <R> Taker<R> map(Func6<A, B, C, D, E, G, R> f) {
-            Objects.requireNonNull(f, "f");
-            return map(a -> b -> c -> d -> e -> g -> f.apply(a, b, c, d, e, g));
-        }
-
-        public <H> ApplyBuilder6<A, B, C, D, E, G> thenSkip(Taker<H> ph) {
-            Objects.requireNonNull(ph, "ph");
-            return new ApplyBuilder6<>(pa, pb, pc, pd, pe, pg.thenSkip(ph));
-        }
-
-        public <H> Taker<H> skipThen(Taker<H> ph) {
-            Objects.requireNonNull(ph, "ph");
-            return allSkipped().skipThen(ph);
-        }
-
-        private Taker<Void> allSkipped() {
-            return new ApplyBuilder5<>(pa, pb, pc, pd, pe).allSkipped().thenSkip(pg).map(any -> null);
-        }
-
-        public <H> ApplyBuilder7<A, B, C, D, E, G, H> then(Taker<H> ph) {
-            Objects.requireNonNull(ph, "ph");
-            return new ApplyBuilder7<>(pa, pb, pc, pd, pe, pg, ph);
-        }
-    }
-
-    /** Builder for mapping seven parsed values. */
-    public static class ApplyBuilder7<A, B, C, D, E, G, H> {
-        private final Taker<A> pa;
-        private final Taker<B> pb;
-        private final Taker<C> pc;
-        private final Taker<D> pd;
-        private final Taker<E> pe;
-        private final Taker<G> pg;
-        private final Taker<H> ph;
-
-        private ApplyBuilder7(Taker<A> pa, Taker<B> pb, Taker<C> pc, Taker<D> pd, Taker<E> pe, Taker<G> pg, Taker<H> ph) {
-            this.pa = Objects.requireNonNull(pa, "pa");
-            this.pb = Objects.requireNonNull(pb, "pb");
-            this.pc = Objects.requireNonNull(pc, "pc");
-            this.pd = Objects.requireNonNull(pd, "pd");
-            this.pe = Objects.requireNonNull(pe, "pe");
-            this.pg = Objects.requireNonNull(pg, "pg");
-            this.ph = Objects.requireNonNull(ph, "ph");
-        }
-
-        public <R> Taker<R> map(
-            Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, R>>>>>>> f
-        ) {
-            Objects.requireNonNull(f, "f");
-            return apply(new ApplyBuilder6<>(pa, pb, pc, pd, pe, pg).map(f), ph);
-        }
-
-        public <R> Taker<R> map(Func7<A, B, C, D, E, G, H, R> f) {
-            Objects.requireNonNull(f, "f");
-            return map(a -> b -> c -> d -> e -> g -> h -> f.apply(a, b, c, d, e, g, h));
-        }
-
-        public <J> ApplyBuilder7<A, B, C, D, E, G, H> thenSkip(Taker<J> pj) {
-            Objects.requireNonNull(pj, "pj");
-            return new ApplyBuilder7<>(pa, pb, pc, pd, pe, pg, ph.thenSkip(pj));
-        }
-
-        public <J> Taker<J> skipThen(Taker<J> pj) {
-            Objects.requireNonNull(pj, "pj");
-            return allSkipped().skipThen(pj);
-        }
-
-        private Taker<Void> allSkipped() {
-            return new ApplyBuilder6<>(pa, pb, pc, pd, pe, pg).allSkipped().thenSkip(ph).map(any -> null);
-        }
-
-        public <J> ApplyBuilder8<A, B, C, D, E, G, H, J> then(Taker<J> pj) {
-            Objects.requireNonNull(pj, "pj");
-            return new ApplyBuilder8<>(pa, pb, pc, pd, pe, pg, ph, pj);
-        }
-    }
-
-    /** Builder for mapping eight parsed values. */
-    public static class ApplyBuilder8<A, B, C, D, E, G, H, J> {
-        private final Taker<A> pa;
-        private final Taker<B> pb;
-        private final Taker<C> pc;
-        private final Taker<D> pd;
-        private final Taker<E> pe;
-        private final Taker<G> pg;
-        private final Taker<H> ph;
-        private final Taker<J> pj;
-
-        private ApplyBuilder8(Taker<A> pa, Taker<B> pb, Taker<C> pc, Taker<D> pd, Taker<E> pe, Taker<G> pg, Taker<H> ph, Taker<J> pj) {
-            this.pa = Objects.requireNonNull(pa, "pa");
-            this.pb = Objects.requireNonNull(pb, "pb");
-            this.pc = Objects.requireNonNull(pc, "pc");
-            this.pd = Objects.requireNonNull(pd, "pd");
-            this.pe = Objects.requireNonNull(pe, "pe");
-            this.pg = Objects.requireNonNull(pg, "pg");
-            this.ph = Objects.requireNonNull(ph, "ph");
-            this.pj = Objects.requireNonNull(pj, "pj");
-        }
-
-        public <R> Taker<R> map(
-            Function<A, Function<B, Function<C, Function<D, Function<E, Function<G, Function<H, Function<J, R>>>>>>>> f
-        ) {
-            Objects.requireNonNull(f, "f");
-            return apply(new ApplyBuilder7<>(pa, pb, pc, pd, pe, pg, ph).map(f), pj);
-        }
-
-        public <R> Taker<R> map(Func8<A, B, C, D, E, G, H, J, R> f) {
-            Objects.requireNonNull(f, "f");
-            return map(a -> b -> c -> d -> e -> g -> h -> j -> f.apply(a, b, c, d, e, g, h, j));
-        }
-
-        public <K> ApplyBuilder8<A, B, C, D, E, G, H, J> thenSkip(Taker<K> pk) {
-            Objects.requireNonNull(pk, "pk");
-            return new ApplyBuilder8<>(pa, pb, pc, pd, pe, pg, ph, pj.thenSkip(pk));
-        }
-
-        public <K> Taker<K> skipThen(Taker<K> pk) {
-            Objects.requireNonNull(pk, "pk");
-            return allSkipped().skipThen(pk);
-        }
-
-        private Taker<Void> allSkipped() {
-            return new ApplyBuilder7<>(pa, pb, pc, pd, pe, pg, ph).allSkipped().thenSkip(pj).map(any -> null);
-        }
     }
 }

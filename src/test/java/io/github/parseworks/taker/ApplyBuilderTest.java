@@ -94,63 +94,6 @@ public class ApplyBuilderTest {
         assertEquals(15, result.value()); // 1+2+3+4+5 = 15
     }
     
-    // Test six-parser combination
-    @Test
-    public void testSixParserCombination() {
-        Taker<Integer> p1 = intParser(1);
-        Taker<Integer> p2 = intParser(2);
-        Taker<Integer> p3 = intParser(3);
-        Taker<Integer> p4 = intParser(4);
-        Taker<Integer> p5 = intParser(5);
-        Taker<Integer> p6 = intParser(6);
-        
-        Taker<Integer> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6)
-            .map((a, b, c, d, e, f) -> a + b + c + d + e + f);
-        
-        Result<Integer> result = combined.parse("123456");
-        assertTrue(result.matches());
-        assertEquals(21, result.value()); // Sum = 21
-    }
-    
-    // Test seven-parser combination
-    @Test
-    public void testSevenParserCombination() {
-        Taker<String> p1 = stringParser("a");
-        Taker<String> p2 = stringParser("b");
-        Taker<String> p3 = stringParser("c");
-        Taker<String> p4 = stringParser("d");
-        Taker<String> p5 = stringParser("e");
-        Taker<String> p6 = stringParser("f");
-        Taker<String> p7 = stringParser("g");
-        
-        Taker<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7)
-            .map((a, b, c, d, e, f, g) -> a + b + c + d + e + f + g);
-        
-        Result<String> result = combined.parse("abcdefg");
-        assertTrue(result.matches());
-        assertEquals("abcdefg", result.value());
-    }
-    
-    // Test eight-parser combination
-    @Test
-    public void testEightParserCombination() {
-        Taker<String> p1 = stringParser("1");
-        Taker<String> p2 = stringParser("2");
-        Taker<String> p3 = stringParser("3");
-        Taker<String> p4 = stringParser("4");
-        Taker<String> p5 = stringParser("5");
-        Taker<String> p6 = stringParser("6");
-        Taker<String> p7 = stringParser("7");
-        Taker<String> p8 = stringParser("8");
-        
-        Taker<String> combined = p1.then(p2).then(p3).then(p4).then(p5).then(p6).then(p7).then(p8)
-            .map((a, b, c, d, e, f, g, h) -> a + b + c + d + e + f + g + h);
-        
-        Result<String> result = combined.parse("12345678");
-        assertTrue(result.matches());
-        assertEquals("12345678", result.value());
-    }
-    
     // Test with mixed types
     @Test
     public void testMixedTypesCombination() {
