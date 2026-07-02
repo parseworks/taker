@@ -26,18 +26,43 @@ package io.github.parseworks.taker;
  * Extends {@link Input} with line, column, and error reporting information.
  */
 public interface TextInput extends Input {
-    /** Returns the 1-based line number. */
+    /**
+     * Returns the 1-based line number.
+     *
+     * @return current line number
+     */
     int line();
     
-    /** Returns the 1-based column number. */
+    /**
+     * Returns the 1-based column number.
+     *
+     * @return current column number
+     */
     int column();
     
-    /** Returns the text at the specified line number. */
+    /**
+     * Returns the text at the specified line number.
+     *
+     * @param lineNumber 1-based line number
+     * @return line text, or {@code null}
+     */
     String getLine(int lineNumber);
     
-    /** Returns a snippet around the current position. */
+    /**
+     * Returns a snippet around the current position.
+     *
+     * @param before characters before the current position
+     * @param after characters after the current position
+     * @return snippet text
+     */
     String getSnippet(int before, int after);
     
-    /** Returns a formatted snippet with line numbers and a caret marker. */
+    /**
+     * Returns a formatted snippet with line numbers and a caret marker.
+     *
+     * @param linesBefore lines before the current line
+     * @param linesAfter lines after the current line
+     * @return formatted snippet
+     */
     String getFormattedSnippet(int linesBefore, int linesAfter);
 }

@@ -43,13 +43,25 @@ public interface Result<A> {
      */
     ResultType type();
 
-    /** Returns {@code true} when the parser succeeded. */
+    /**
+     * Returns {@code true} when the parser succeeded.
+     *
+     * @return whether this result is a match
+     */
     boolean matches();
 
-    /** Returns the parsed value. Throws when this result is a failure. */
+    /**
+     * Returns the parsed value. Throws when this result is a failure.
+     *
+     * @return parsed value
+     */
     A value();
 
-    /** Returns the input cursor reported by this result. */
+    /**
+     * Returns the input cursor reported by this result.
+     *
+     * @return result input cursor
+     */
     Input input();
 
     /**
@@ -60,10 +72,20 @@ public interface Result<A> {
      */
     <B> Result<B> cast();
 
-    /** Transforms a successful value and propagates failures unchanged. */
+    /**
+     * Transforms a successful value and propagates failures unchanged.
+     *
+     * @param mapper value mapper
+     * @param <B> mapped result type
+     * @return mapped result
+     */
     <B> Result<B> map(java.util.function.Function<A, B> mapper);
 
-    /** Returns a formatted error message for failures, or an empty string for success. */
+    /**
+     * Returns a formatted error message for failures, or an empty string for success.
+     *
+     * @return formatted error message
+     */
     String error();
 
     /**

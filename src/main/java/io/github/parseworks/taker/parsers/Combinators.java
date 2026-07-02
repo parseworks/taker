@@ -41,7 +41,13 @@ public class Combinators {
     private Combinators() {
     }
 
-    /** Always succeeds without consuming input. */
+    /**
+     * Always succeeds without consuming input.
+     *
+     * @param value value to return
+     * @param <A> result type
+     * @return a parser returning {@code value}
+     */
     public static <A> Taker<A> pure(A value) {
         return new Taker<>(input -> new Match<>(value, input));
     }
@@ -49,6 +55,10 @@ public class Combinators {
     /**
      * Commits the parser. If the parser fails and has consumed input, it returns
      * a PartialMatch.
+     *
+     * @param parser parser to commit
+     * @param <A> result type
+     * @return a committed parser
      */
     public static <A> Taker<A> commit(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
@@ -61,7 +71,11 @@ public class Combinators {
         });
     }
 
-    /** Matches any single character. */
+    /**
+     * Matches any single character.
+     *
+     * @return a parser for one character
+     */
     public static Taker<Character> any() {
         return new Taker<>(input -> {
             if (input.isEof()) {
@@ -72,7 +86,12 @@ public class Combinators {
         });
     }
 
-    /** Unconditionally throws an exception. */
+    /**
+     * Unconditionally throws an exception.
+     *
+     * @param supplier exception supplier
+     * @return a parser that throws
+     */
     public static Taker<? super Object> throwError(Supplier<? extends Exception> supplier) {
         Objects.requireNonNull(supplier, "supplier");
         return new Taker<>(in -> {
@@ -89,7 +108,12 @@ public class Combinators {
     }
 
 
-    /** Matches any of the given characters. */
+    /**
+     * Matches any of the given characters.
+     *
+     * @param items accepted characters
+     * @return a parser for one matching character
+     */
     public static Taker<Character> oneOf(char... items) {
         Objects.requireNonNull(items, "items");
         if (items.length == 0) {
@@ -100,6 +124,8 @@ public class Combinators {
 
     /**
      * Succeeds if the input is at the end of the file (EOF).
+     *
+     * @return an end-of-input parser
      */
     public static Taker<Void> eof() {
         return new Taker<>(input -> {
@@ -113,6 +139,9 @@ public class Combinators {
 
     /**
      * Unconditionally fails, consuming no input.
+     *
+     * @param <A> result type
+     * @return a parser that fails
      */
     public static <A> Taker<A> fail() {
         return new Taker<>(in -> new NoMatch<>(in, "parser explicitly set to fail"));
@@ -120,6 +149,10 @@ public class Combinators {
 
     /**
      * Fails with a specific error message.
+     *
+     * @param expected expected label
+     * @param <A> result type
+     * @return a parser that fails
      */
     public static <A> Taker<A> fail(String expected) {
         Objects.requireNonNull(expected, "expected");
@@ -131,6 +164,10 @@ public class Combinators {
      * <p>
      * Use {@code not(parser).skipThen(any())} when the grammar should consume
      * the character that was validated by negative lookahead.
+     *
+     * @param parser parser to negate
+     * @param <A> parser result type
+     * @return a negative lookahead parser
      */
     public static <A> Taker<Void> not(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
@@ -143,7 +180,12 @@ public class Combinators {
         });
     }
 
-    /** Matches anything except the given character. */
+    /**
+     * Matches anything except the given character.
+     *
+     * @param value rejected character
+     * @return a parser for one different character
+     */
     public static Taker<Character> isNot(char value) {
         String expected = "any character except " + expectedChar(value);
         return new Taker<>(in -> {
@@ -160,7 +202,13 @@ public class Combinators {
     }
 
 
-    /** Matches the first succeeding parser in the list. */
+    /**
+     * Matches the first succeeding parser in the list.
+     *
+     * @param parsers alternative parsers
+     * @param <A> result type
+     * @return a choice parser
+     */
     public static <A> Taker<A> oneOf(List<Taker<A>> parsers) {
         Objects.requireNonNull(parsers, "parsers");
         if (parsers.isEmpty()) {
@@ -258,6 +306,12 @@ public class Combinators {
 
     /**
      * Applies three parsers in sequence and returns an ApplyBuilder3.
+     *
+     * @param parserA first parser
+     * @param parserB second parser
+     * @param parserC third parser
+     * @param <A> result type of all parsers
+     * @return a builder for mapping three values
      */
     public static <A> ApplyBuilder.ApplyBuilder3<A, A, A> sequence(Taker<A> parserA, Taker<A> parserB, Taker<A> parserC) {
         Objects.requireNonNull(parserA, "parserA");
@@ -266,7 +320,17 @@ public class Combinators {
         return parserA.then(parserB).then(parserC);
     }
 
-    /** Matches a character between open and close parsers. */
+    /**
+     * Parses a value between optional opening and closing parsers.
+     *
+     * @param open opening parser, or {@code null}
+     * @param parser value parser
+     * @param close closing parser, or {@code null}
+     * @param <A> value result type
+     * @param <B> opening result type
+     * @param <C> closing result type
+     * @return a parser returning the value parser result
+     */
     public static <A, B, C> Taker<A> between(Taker<B> open, Taker<A> parser, Taker<C> close) {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
@@ -288,22 +352,51 @@ public class Combinators {
         });
     }
 
-    /** Matches a character between bracket parsers. */
+    /**
+     * Parses a value between two uses of the same bracket parser.
+     *
+     * @param bracket opening and closing parser
+     * @param parser value parser
+     * @param <A> value result type
+     * @param <B> bracket result type
+     * @return a parser returning the value parser result
+     */
     public static <A, B> Taker<A> between(Taker<B> bracket, Taker<A> parser) {
         return between(bracket, parser, bracket);
     }
 
-    /** Matches a character between open and close characters. */
+    /**
+     * Parses a value between opening and closing characters.
+     *
+     * @param open opening character
+     * @param parser value parser
+     * @param close closing character
+     * @param <A> value result type
+     * @return a parser returning the value parser result
+     */
     public static <A> Taker<A> between(char open, Taker<A> parser, char close) {
         return between(Chars.chr(open), parser, Chars.chr(close));
     }
 
-    /** Matches a character between bracket characters. */
+    /**
+     * Parses a value between two uses of the same bracket character.
+     *
+     * @param bracket opening and closing character
+     * @param parser value parser
+     * @param <A> value result type
+     * @return a parser returning the value parser result
+     */
     public static <A> Taker<A> between(char bracket, Taker<A> parser) {
         return between(bracket, parser, bracket);
     }
 
-    /** Matches a character satisfying the predicate. */
+    /**
+     * Matches a character satisfying the predicate.
+     *
+     * @param expectedType expected label
+     * @param predicate predicate to satisfy
+     * @return a parser for one matching character
+     */
     public static Taker<Character> satisfy(String expectedType, CharPredicate predicate) {
         Objects.requireNonNull(expectedType, "expectedType");
         Objects.requireNonNull(predicate, "predicate");
@@ -320,7 +413,13 @@ public class Combinators {
         });
     }
 
-    /** Matches the given value. */
+    /**
+     * Matches the given value.
+     *
+     * @param equivalence value to match
+     * @param <A> result type
+     * @return a parser for the value
+     */
     public static <A> Taker<A> is(A equivalence) {
         Objects.requireNonNull(equivalence, "equivalence");
         String expected = expectedValue(equivalence);
@@ -339,6 +438,12 @@ public class Combinators {
 
     /**
      * Chains a parser left-associatively.
+     *
+     * @param parser element parser
+     * @param op operator parser
+     * @param identity value returned when no element matches
+     * @param <A> result type
+     * @return a left-associative chain parser
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
         Objects.requireNonNull(parser, "parser");
@@ -365,6 +470,11 @@ public class Combinators {
 
     /**
      * Chains a parser left-associatively, requiring at least one match.
+     *
+     * @param parser element parser
+     * @param op operator parser
+     * @param <A> result type
+     * @return a left-associative chain parser
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
         Objects.requireNonNull(parser, "parser");
@@ -396,6 +506,7 @@ public class Combinators {
      * @param elem element parser
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}
      * @param identity value returned when {@code elem} matches zero times
+     * @param <A> result type
      * @return a chain parser (right-associative)
      */
     public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
@@ -427,12 +538,13 @@ public class Combinators {
                 return new Match<>(first.value(), current);
             }
 
-            A inner = opsAndValues.get(opsAndValues.size() - 1).getValue();
-            for (int i = opsAndValues.size() - 2; i >= 0; i--) {
+            A acc = opsAndValues.getLast().getValue();
+            for (int i = opsAndValues.size() - 1; i > 0; i--) {
                 var pair = opsAndValues.get(i);
-                inner = pair.getKey().apply(pair.getValue(), inner);
+                acc = pair.getKey().apply(opsAndValues.get(i - 1).getValue(), acc);
             }
-            A acc = opsAndValues.get(opsAndValues.size() - 1).getKey().apply(first.value(), inner);
+            var firstPair = opsAndValues.getFirst();
+            acc = firstPair.getKey().apply(first.value(), acc);
             return new Match<>(acc, current);
         });
     }
@@ -442,6 +554,7 @@ public class Combinators {
      *
      * @param elem element parser
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}
+     * @param <A> result type
      * @return a chain parser (right-associative)
      */
     public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op) {
@@ -470,16 +583,14 @@ public class Combinators {
 
             // Fold right-to-left to preserve right-associativity.
             A acc = first.value();
-            if (opsAndValues != null && opsAndValues.size() == 1) {
-                var pair = opsAndValues.get(0);
-                acc = pair.getKey().apply(acc, pair.getValue());
-            } else if (opsAndValues != null) {
-                A inner = opsAndValues.get(opsAndValues.size() - 1).getValue();
-                for (int i = opsAndValues.size() - 2; i >= 0; i--) {
+            if (opsAndValues != null) {
+                acc = opsAndValues.getLast().getValue();
+                for (int i = opsAndValues.size() - 1; i > 0; i--) {
                     var pair = opsAndValues.get(i);
-                    inner = pair.getKey().apply(pair.getValue(), inner);
+                    acc = pair.getKey().apply(opsAndValues.get(i - 1).getValue(), acc);
                 }
-                acc = opsAndValues.get(opsAndValues.size() - 1).getKey().apply(first.value(), inner);
+                var firstPair = opsAndValues.getFirst();
+                acc = firstPair.getKey().apply(first.value(), acc);
             }
             return new Match<>(acc, current);
         });

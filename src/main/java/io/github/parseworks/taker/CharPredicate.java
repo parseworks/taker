@@ -153,6 +153,10 @@ public interface CharPredicate {
 
     /**
      * Alias for {@link #range(char, char)}.
+     *
+     * @param start start of the range, inclusive
+     * @param end end of the range, inclusive
+     * @return a predicate matching characters in the range
      */
     static CharPredicate between(char start, char end) {
         return range(start, end);
@@ -363,7 +367,19 @@ public interface CharPredicate {
      */
     CharPredicate notLineBreak = named("not line break", lineBreak.negate());
 
+    /**
+     * Named predicate implementation.
+     *
+     * @param expected expectation label
+     * @param predicate wrapped predicate
+     */
     record NamedCharPredicate(String expected, CharPredicate predicate) implements CharPredicate {
+        /**
+         * Creates a named predicate.
+         *
+         * @param expected expectation label
+         * @param predicate wrapped predicate
+         */
         public NamedCharPredicate {
             Objects.requireNonNull(expected, "expected");
             Objects.requireNonNull(predicate, "predicate");

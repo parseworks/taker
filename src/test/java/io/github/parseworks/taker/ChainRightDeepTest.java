@@ -190,6 +190,18 @@ public class ChainRightDeepTest {
         assertEquals(2L, result.value(), "Right associativity: 3-(2-1)=2, not (3-2)-1=0");
     }
 
+    @Test
+    void chainRightOneOrMore_mixedOperators_usesCorrectOuterOperator() {
+        BinaryOperator<Long> add = Long::sum;
+        BinaryOperator<Long> subtract = (a, b) -> a - b;
+        Taker<BinaryOperator<Long>> op = chr('-').as(subtract).or(chr('+').as(add));
+        Taker<Long> parser = number.chainRightOneOrMore(op);
+
+        Result<Long> result = parser.parse("10-3+1");
+        assertTrue(result.matches(), "should match: " + result.error());
+        assertEquals(6L, result.value(), "Right associativity: 10-(3+1)=6");
+    }
+
     /**
      * Deep right-assoc with a NON-commutative operator still produces correct result.
      * This proves we're genuinely folding right-to-left, not left-to-right.

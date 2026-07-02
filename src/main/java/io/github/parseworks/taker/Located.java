@@ -31,6 +31,13 @@ package io.github.parseworks.taker;
  * @param <A> parsed value type
  */
 public record Located<A>(A value, int start, int end) {
+    /**
+     * Creates a located value.
+     *
+     * @param value parsed value
+     * @param start zero-based inclusive start offset
+     * @param end zero-based exclusive end offset
+     */
     public Located {
         if (start < 0) {
             throw new IllegalArgumentException("start cannot be negative");
@@ -40,7 +47,11 @@ public record Located<A>(A value, int start, int end) {
         }
     }
 
-    /** Number of characters covered by this location. */
+    /**
+     * Number of characters covered by this location.
+     *
+     * @return covered character count
+     */
     public int length() {
         return end - start;
     }

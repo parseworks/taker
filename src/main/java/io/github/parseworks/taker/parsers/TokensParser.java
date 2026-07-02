@@ -107,32 +107,62 @@ public final class TokensParser {
         return current == start ? in : in.skip(current - start);
     }
 
-    /** Matches a character token. */
+    /**
+     * Matches a character token.
+     *
+     * @param value character to match
+     * @return token parser
+     */
     public Taker<Character> chr(char value) {
         return token(Chars.chr(value));
     }
 
-    /** Matches a character token ignoring case. */
+    /**
+     * Matches a character token ignoring case.
+     *
+     * @param value character to match
+     * @return token parser
+     */
     public Taker<Character> chrIgnoreCase(char value) {
         return token(Chars.chrIgnoreCase(value));
     }
 
-    /** Matches a string token. */
+    /**
+     * Matches a string token.
+     *
+     * @param value string to match
+     * @return token parser
+     */
     public Taker<String> string(String value) {
         return token(Lexical.string(value));
     }
 
-    /** Matches a string token ignoring case. */
+    /**
+     * Matches a string token ignoring case.
+     *
+     * @param value string to match
+     * @return token parser
+     */
     public Taker<String> stringIgnoreCase(String value) {
         return token(Lexical.stringIgnoreCase(value));
     }
 
-    /** Matches one character from the supplied token character set. */
+    /**
+     * Matches one character from the supplied token character set.
+     *
+     * @param chars accepted characters
+     * @return token parser
+     */
     public Taker<Character> oneOf(String chars) {
         return token(Chars.oneOf(chars));
     }
 
-    /** Matches one character from the supplied token character set ignoring case. */
+    /**
+     * Matches one character from the supplied token character set ignoring case.
+     *
+     * @param chars accepted characters
+     * @return token parser
+     */
     public Taker<Character> oneOfIgnoreCase(String chars) {
         return token(Chars.oneOfIgnoreCase(chars));
     }

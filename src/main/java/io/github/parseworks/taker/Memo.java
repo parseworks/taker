@@ -48,6 +48,7 @@ public final class Memo {
     private int threshold;
     private boolean atLimit;
 
+    /** Creates an empty memo table. */
     public Memo() {
         this.positions = new int[16];
         this.results = new Result<?>[16];
@@ -62,6 +63,10 @@ public final class Memo {
 
     /**
      * Returns a cached result for {@code position}, or {@code null} on miss.
+     *
+     * @param position input position
+     * @param <A> cached result type
+     * @return cached result, or {@code null}
      */
     @SuppressWarnings("unchecked")
     public <A> Result<A> get(int position) {
@@ -83,6 +88,9 @@ public final class Memo {
     /**
      * Stores a result for {@code position}. Silently ignores if already present.
      * When at capacity limit, overwrites the probed slot (effectively evicts).
+     *
+     * @param position input position
+     * @param result result to store
      */
     public void put(int position, Result<?> result) {
         int len = positions.length;

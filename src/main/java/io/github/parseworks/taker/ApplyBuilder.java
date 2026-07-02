@@ -48,6 +48,14 @@ public class ApplyBuilder<A, B> {
      */
     @FunctionalInterface
     public interface Func3<A, B, C, R> {
+        /**
+         * Applies this function to three arguments.
+         *
+         * @param a first argument
+         * @param b second argument
+         * @param c third argument
+         * @return function result
+         */
         R apply(A a, B b, C c);
     }
 
@@ -62,6 +70,15 @@ public class ApplyBuilder<A, B> {
      */
     @FunctionalInterface
     public interface Func4<A, B, C, D, R> {
+        /**
+         * Applies this function to four arguments.
+         *
+         * @param a first argument
+         * @param b second argument
+         * @param c third argument
+         * @param d fourth argument
+         * @return function result
+         */
         R apply(A a, B b, C c, D d);
     }
 
@@ -77,6 +94,16 @@ public class ApplyBuilder<A, B> {
      */
     @FunctionalInterface
     public interface Func5<A, B, C, D, E, R> {
+        /**
+         * Applies this function to five arguments.
+         *
+         * @param a first argument
+         * @param b second argument
+         * @param c third argument
+         * @param d fourth argument
+         * @param e fifth argument
+         * @return function result
+         */
         R apply(A a, B b, C c, D d, E e);
     }
 
@@ -225,7 +252,13 @@ public class ApplyBuilder<A, B> {
         return new ApplyBuilder3<>(pa, pb, pc);
     }
 
-    /** Builder for mapping three parsed values. */
+    /**
+     * Builder for mapping three parsed values.
+     *
+     * @param <A> first parser result type
+     * @param <B> second parser result type
+     * @param <C> third parser result type
+     */
     public static class ApplyBuilder3<A, B, C> {
         private final Taker<A> pa;
         private final Taker<B> pb;
@@ -237,21 +270,49 @@ public class ApplyBuilder<A, B> {
             this.pc = Objects.requireNonNull(pc, "pc");
         }
 
+        /**
+         * Maps the three parsed values with a curried function.
+         *
+         * @param f curried mapper
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Function<A, Function<B, Function<C, R>>> f) {
             Objects.requireNonNull(f, "f");
             return apply(new ApplyBuilder<>(pa, pb).map(f), pc);
         }
 
+        /**
+         * Maps the three parsed values.
+         *
+         * @param f mapper function
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Func3<A, B, C, R> f) {
             Objects.requireNonNull(f, "f");
             return map(a -> b -> c -> f.apply(a, b, c));
         }
 
+        /**
+         * Parses another parser after this sequence and discards its value.
+         *
+         * @param pd parser to skip
+         * @param <D> skipped parser result type
+         * @return this builder with the skipped parser appended
+         */
         public <D> ApplyBuilder3<A, B, C> thenSkip(Taker<D> pd) {
             Objects.requireNonNull(pd, "pd");
             return new ApplyBuilder3<>(pa, pb, pc.thenSkip(pd));
         }
 
+        /**
+         * Parses another parser after this sequence and returns its value.
+         *
+         * @param pd parser to return
+         * @param <D> returned parser result type
+         * @return a parser returning {@code pd}'s value
+         */
         public <D> Taker<D> skipThen(Taker<D> pd) {
             Objects.requireNonNull(pd, "pd");
             return allSkipped().skipThen(pd);
@@ -261,13 +322,27 @@ public class ApplyBuilder<A, B> {
             return new ApplyBuilder<>(pa, pb).allSkipped().thenSkip(pc).map(any -> null);
         }
 
+        /**
+         * Appends a parser to this sequence.
+         *
+         * @param pd parser to append
+         * @param <D> appended parser result type
+         * @return a builder for four parsed values
+         */
         public <D> ApplyBuilder4<A, B, C, D> then(Taker<D> pd) {
             Objects.requireNonNull(pd, "pd");
             return new ApplyBuilder4<>(pa, pb, pc, pd);
         }
     }
 
-    /** Builder for mapping four parsed values. */
+    /**
+     * Builder for mapping four parsed values.
+     *
+     * @param <A> first parser result type
+     * @param <B> second parser result type
+     * @param <C> third parser result type
+     * @param <D> fourth parser result type
+     */
     public static class ApplyBuilder4<A, B, C, D> {
         private final Taker<A> pa;
         private final Taker<B> pb;
@@ -281,21 +356,49 @@ public class ApplyBuilder<A, B> {
             this.pd = Objects.requireNonNull(pd, "pd");
         }
 
+        /**
+         * Maps the four parsed values with a curried function.
+         *
+         * @param f curried mapper
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, R>>>> f) {
             Objects.requireNonNull(f, "f");
             return apply(new ApplyBuilder3<>(pa, pb, pc).map(f), pd);
         }
 
+        /**
+         * Maps the four parsed values.
+         *
+         * @param f mapper function
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Func4<A, B, C, D, R> f) {
             Objects.requireNonNull(f, "f");
             return map(a -> b -> c -> d -> f.apply(a, b, c, d));
         }
 
+        /**
+         * Parses another parser after this sequence and discards its value.
+         *
+         * @param pe parser to skip
+         * @param <E> skipped parser result type
+         * @return this builder with the skipped parser appended
+         */
         public <E> ApplyBuilder4<A, B, C, D> thenSkip(Taker<E> pe) {
             Objects.requireNonNull(pe, "pe");
             return new ApplyBuilder4<>(pa, pb, pc, pd.thenSkip(pe));
         }
 
+        /**
+         * Parses another parser after this sequence and returns its value.
+         *
+         * @param pe parser to return
+         * @param <E> returned parser result type
+         * @return a parser returning {@code pe}'s value
+         */
         public <E> Taker<E> skipThen(Taker<E> pe) {
             Objects.requireNonNull(pe, "pe");
             return allSkipped().skipThen(pe);
@@ -305,13 +408,28 @@ public class ApplyBuilder<A, B> {
             return new ApplyBuilder3<>(pa, pb, pc).allSkipped().thenSkip(pd).map(any -> null);
         }
 
+        /**
+         * Appends a parser to this sequence.
+         *
+         * @param pe parser to append
+         * @param <E> appended parser result type
+         * @return a builder for five parsed values
+         */
         public <E> ApplyBuilder5<A, B, C, D, E> then(Taker<E> pe) {
             Objects.requireNonNull(pe, "pe");
             return new ApplyBuilder5<>(pa, pb, pc, pd, pe);
         }
     }
 
-    /** Builder for mapping five parsed values. */
+    /**
+     * Builder for mapping five parsed values.
+     *
+     * @param <A> first parser result type
+     * @param <B> second parser result type
+     * @param <C> third parser result type
+     * @param <D> fourth parser result type
+     * @param <E> fifth parser result type
+     */
     public static class ApplyBuilder5<A, B, C, D, E> {
         private final Taker<A> pa;
         private final Taker<B> pb;
@@ -327,21 +445,49 @@ public class ApplyBuilder<A, B> {
             this.pe = Objects.requireNonNull(pe, "pe");
         }
 
+        /**
+         * Maps the five parsed values with a curried function.
+         *
+         * @param f curried mapper
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Function<A, Function<B, Function<C, Function<D, Function<E, R>>>>> f) {
             Objects.requireNonNull(f, "f");
             return apply(new ApplyBuilder4<>(pa, pb, pc, pd).map(f), pe);
         }
 
+        /**
+         * Maps the five parsed values.
+         *
+         * @param f mapper function
+         * @param <R> mapped result type
+         * @return a mapped parser
+         */
         public <R> Taker<R> map(Func5<A, B, C, D, E, R> f) {
             Objects.requireNonNull(f, "f");
             return map(a -> b -> c -> d -> e -> f.apply(a, b, c, d, e));
         }
 
+        /**
+         * Parses another parser after this sequence and discards its value.
+         *
+         * @param pf parser to skip
+         * @param <F> skipped parser result type
+         * @return this builder with the skipped parser appended
+         */
         public <F> ApplyBuilder5<A, B, C, D, E> thenSkip(Taker<F> pf) {
             Objects.requireNonNull(pf, "pf");
             return new ApplyBuilder5<>(pa, pb, pc, pd, pe.thenSkip(pf));
         }
 
+        /**
+         * Parses another parser after this sequence and returns its value.
+         *
+         * @param pf parser to return
+         * @param <F> returned parser result type
+         * @return a parser returning {@code pf}'s value
+         */
         public <F> Taker<F> skipThen(Taker<F> pf) {
             Objects.requireNonNull(pf, "pf");
             return allSkipped().skipThen(pf);

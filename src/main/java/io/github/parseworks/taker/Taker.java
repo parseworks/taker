@@ -404,6 +404,12 @@ public class Taker<A> implements Function<Input, Result<A>> {
     }
 
 
+    /**
+     * Creates a sequential stream over matches found in the input.
+     *
+     * @param input input to scan
+     * @return stream of parsed values
+     */
     public Stream<A> stream(Input input) {
         return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(
@@ -873,6 +879,9 @@ public class Taker<A> implements Function<Input, Result<A>> {
      * Invokes the underlying apply handler. Used by {@code CheckParser}
      * (the only subclass) to bypass its own {@link #apply} override.
      * Do not call from external subclasses.
+     *
+     * @param in input to parse
+     * @return parse result
      */
     protected final Result<A> applyHandlerApply(Input in) {
         return applyHandler.apply(in);

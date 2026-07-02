@@ -32,7 +32,12 @@ import io.github.parseworks.taker.results.NoMatch;
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Combinators.pure;
 
+/** Numeric parser collection. */
 public class Numeric {
+
+    /** Creates a numeric parser helper. */
+    public Numeric() {
+    }
 
     /** Matches a non-zero digit (1-9). */
     public static final Taker<Character> nonZeroDigit = chr(CharPredicate.range('1', '9')).expecting("non-zero digit");
@@ -213,6 +218,7 @@ public class Numeric {
         }
     });
 
+    /** Matches an unsigned long-compatible decimal number. */
     public static final Taker<Long> number = new Taker<>(in -> {
         CharSequence data = in.data();
         int start = in.position();

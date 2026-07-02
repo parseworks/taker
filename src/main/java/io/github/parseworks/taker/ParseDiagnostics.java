@@ -51,6 +51,18 @@ public record ParseDiagnostics(
     List<Cause> causes
 ) {
 
+    /**
+     * Creates parse diagnostics.
+     *
+     * @param type result type
+     * @param offset failure offset
+     * @param line failure line
+     * @param column failure column
+     * @param found found input description
+     * @param expected expected labels
+     * @param contexts context labels
+     * @param causes nested causes
+     */
     public ParseDiagnostics {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(found, "found");
@@ -250,6 +262,15 @@ public record ParseDiagnostics(
      * @param column one-based column for the cause, or {@code -1}
      */
     public record Cause(String expected, String found, int offset, int line, int column) {
+        /**
+         * Creates a diagnostic cause.
+         *
+         * @param expected expected label
+         * @param found found input description
+         * @param offset failure offset
+         * @param line failure line
+         * @param column failure column
+         */
         public Cause {
             Objects.requireNonNull(found, "found");
         }

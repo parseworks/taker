@@ -22,8 +22,12 @@
 
 package io.github.parseworks.taker;
 
+/** Parser result category. */
 public enum ResultType {
+    /** Successful parse. */
     MATCH,
+    /** Recoverable failed parse. */
     NO_MATCH,
+    /** Committed failed parse. */
     PARTIAL
 }

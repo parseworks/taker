@@ -31,30 +31,64 @@ package io.github.parseworks.taker;
  * character offsets into {@link #data()}.
  */
 public interface Input {
-    /** Creates an {@code Input} from a {@link CharSequence}. */
+    /**
+     * Creates an {@code Input} from a {@link CharSequence}.
+     *
+     * @param s source text
+     * @return an input cursor at the start of {@code s}
+     */
     static Input of(CharSequence s) {
         return Inputs.of(s);
     }
 
-    /** Returns the complete backing character data. */
+    /**
+     * Returns the complete backing character data.
+     *
+     * @return backing data
+     */
     CharSequence data();
 
-    /** Returns true if at the end of input. */
+    /**
+     * Returns true if at the end of input.
+     *
+     * @return whether this cursor is at EOF
+     */
     boolean isEof();
 
-    /** Returns the current character. Throws if {@link #isEof()} is true. */
+    /**
+     * Returns the current character. Throws if {@link #isEof()} is true.
+     *
+     * @return current character
+     */
     char current();
 
-    /** Returns a cursor advanced by one character. Throws if {@link #isEof()} is true. */
+    /**
+     * Returns a cursor advanced by one character. Throws if {@link #isEof()} is true.
+     *
+     * @return advanced cursor
+     */
     Input next();
 
-    /** Returns the current zero-based character offset. */
+    /**
+     * Returns the current zero-based character offset.
+     *
+     * @return current offset
+     */
     int position();
 
-    /** Returns a cursor advanced by {@code offset} characters. */
+    /**
+     * Returns a cursor advanced by {@code offset} characters.
+     *
+     * @param offset number of characters to advance
+     * @return advanced cursor
+     */
     Input skip(int offset);
 
-    /** Returns {@code true} when this cursor has at least one current character. */
+    /**
+     * Returns {@code true} when this cursor has at least one current character.
+     *
+     * @return whether input remains
+     */
     default boolean hasMore(){
         return !isEof();
     }

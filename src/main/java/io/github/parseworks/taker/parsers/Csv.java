@@ -39,7 +39,12 @@ import static io.github.parseworks.taker.parsers.Combinators.oneOf;
 import static io.github.parseworks.taker.parsers.Lexical.escapedString;
 import static io.github.parseworks.taker.parsers.Lexical.string;
 
+/** CSV parser collection. */
 public class Csv {
+
+    /** Creates a CSV parser helper. */
+    public Csv() {
+    }
 
     private static final Taker<String> quotedField = escapedString('"', '"', Map.of('"', '"'));
 
@@ -62,6 +67,7 @@ public class Csv {
 
     private static final Taker<String> lineEnd = oneOf(string("\r\n"), string("\n"), string("\r"));
 
+    /** Parses a single CSV row. */
     public static final Taker<List<String>> row = new Taker<>(in -> {
         if (in.isEof()) {
             return new NoMatch<>(in, "CSV row");
@@ -86,6 +92,7 @@ public class Csv {
         }
     });
 
+    /** Parses a CSV document. */
     public static final Taker<List<List<String>>> csv = new Taker<>(in -> {
         Result<List<String>> first = row.apply(in);
         if (!first.matches()) {

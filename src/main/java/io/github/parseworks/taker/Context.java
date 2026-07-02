@@ -38,8 +38,13 @@ public final class Context {
 
     /** Result of {@link Context#find} — memo hit, recursion, or proceed. */
     public abstract static class Find {
+        /** Creates a lookup result marker. */
+        protected Find() {
+        }
+
         /** A cached result was found in the memo table. */
         public static final class Memo extends Find {
+            /** Cached parser result. */
             public final Result<?> result;
             Memo(Result<?> result) { this.result = result; }
         }
@@ -71,7 +76,11 @@ public final class Context {
         this.memo = memo;
     }
 
-    /** Returns an empty context. */
+    /**
+     * Returns an empty context.
+     *
+     * @return an empty context
+     */
     public static Context empty() {
         return null;
     }
@@ -79,6 +88,11 @@ public final class Context {
     /**
      * Pushes a new frame onto the context, inheriting the memo from the head frame.
      * Each frame caches the memo reference so subsequent pushes are O(1).
+     *
+     * @param context current context
+     * @param pos input position
+     * @param taker parser for the new frame
+     * @return context with the new frame
      */
     public static Context push(Context context, int pos, Taker<?> taker) {
         Memo memo = (context != null) ? context.memo : null;
@@ -87,6 +101,10 @@ public final class Context {
 
     /**
      * Attaches a memo table as the chain root.
+     *
+     * @param context current context
+     * @param memo memo table to attach
+     * @return context with memo support
      */
     public static Context withMemo(Context context, Memo memo) {
         return new Context(-1, null, context, memo);
@@ -97,6 +115,12 @@ public final class Context {
      * <p>
      * Memo is O(1) on the head frame. Recursion guard walks the stack.
      * Returns a {@link Find} indicating the outcome.
+     *
+     * @param context current context
+     * @param pos input position
+     * @param taker parser to find
+     * @param <A> parser result type
+     * @return lookup result
      */
     public static <A> Find find(Context context, int pos, Taker<A> taker) {
         // Memo is cached on every frame — O(1) head lookup
@@ -126,6 +150,10 @@ public final class Context {
     /**
      * Stores a result in the memo table if one is attached to the chain.
      * No-op when no memo is active.
+     *
+     * @param context current context
+     * @param pos input position
+     * @param result result to cache
      */
     public static void store(Context context, int pos, Result<?> result) {
         Memo memo = memo(context);

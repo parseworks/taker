@@ -43,6 +43,10 @@ import java.util.regex.Pattern;
  */
 public class Lexical {
 
+    /** Creates a lexical parser helper. */
+    public Lexical() {
+    }
+
     /**
      * Trims ASCII spaces around the given parser.
      * <p>
@@ -50,6 +54,10 @@ public class Lexical {
      * not skip tabs, newlines, or other Unicode whitespace. Use
      * {@link #trimWhitespace(Taker)} when line-breaking whitespace should be
      * ignored too.
+     *
+     * @param parser parser to trim
+     * @param <A> parser result type
+     * @return a trimmed parser
      */
     public static <A> Taker<A> trim(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
@@ -62,6 +70,10 @@ public class Lexical {
      * This is an explicit alias for {@link #trim(Taker)}. It is useful in
      * grammars where newlines are meaningful and should not be skipped by token
      * parsing.
+     *
+     * @param parser parser to trim
+     * @param <A> parser result type
+     * @return a trimmed parser
      */
     public static <A> Taker<A> trimSpaces(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
@@ -82,6 +94,10 @@ public class Lexical {
      * This skips every character accepted by {@link Character#isWhitespace(char)},
      * including tabs and line separators. Prefer {@link #trim(Taker)} or
      * {@link #trimSpaces(Taker)} when newlines have grammatical meaning.
+     *
+     * @param parser parser to trim
+     * @param <A> parser result type
+     * @return a trimmed parser
      */
     public static <A> Taker<A> trimWhitespace(Taker<A> parser) {
         Objects.requireNonNull(parser, "parser");
@@ -103,6 +119,11 @@ public class Lexical {
      * {@code parser}. It should consume at least one character when it succeeds.
      * If it succeeds without advancing, trimming stops to avoid an infinite
      * loop.
+     *
+     * @param parser parser to wrap
+     * @param ignored parser for ignored input
+     * @param <A> parser result type
+     * @return a token-aware parser
      */
     public static <A> Taker<A> lexeme(Taker<A> parser, Taker<?> ignored) {
         Objects.requireNonNull(parser, "parser");
@@ -143,7 +164,12 @@ public class Lexical {
         }
     }
 
-    /** Collects characters until the first occurrence of {@code needle}. */
+    /**
+     * Collects characters until the first occurrence of {@code needle}.
+     *
+     * @param needle delimiter to search for
+     * @return a parser returning text before the delimiter
+     */
     public static Taker<String> takeUntil(String needle) {
         Objects.requireNonNull(needle, "needle");
         if (needle.isEmpty()) {
@@ -195,7 +221,12 @@ public class Lexical {
 
 
 
-    /** Matches {@code str} exactly at the current input position. */
+    /**
+     * Matches {@code str} exactly at the current input position.
+     *
+     * @param str string to match
+     * @return a parser returning {@code str}
+     */
     public static Taker<String> string(String str) {
         Objects.requireNonNull(str, "str");
         String[] expectedChars = expectedChars(str);
@@ -227,7 +258,12 @@ public class Lexical {
         });
     }
 
-    /** Matches {@code str} at the current input position, ignoring case. */
+    /**
+     * Matches {@code str} at the current input position, ignoring case.
+     *
+     * @param str string to match
+     * @return a parser returning {@code str}
+     */
     public static Taker<String> stringIgnoreCase(String str) {
         Objects.requireNonNull(str, "str");
         String[] expectedChars = expectedChars(str);
@@ -259,7 +295,13 @@ public class Lexical {
         });
     }
 
-    /** Matches a regular expression at the current input position. */
+    /**
+     * Matches a regular expression at the current input position.
+     *
+     * @param regex regular expression
+     * @param flags pattern flags
+     * @return a parser returning the matched text
+     */
     public static Taker<String> regex(String regex, int flags) {
         Objects.requireNonNull(regex, "regex");
         Pattern pattern = Pattern.compile(regex, flags);
@@ -279,7 +321,12 @@ public class Lexical {
         });
     }
 
-    /** Matches a regular expression at the current input position using default flags. */
+    /**
+     * Matches a regular expression at the current input position using default flags.
+     *
+     * @param regex regular expression
+     * @return a parser returning the matched text
+     */
     public static Taker<String> regex(String regex) {
         return regex(regex, 0);
     }
@@ -338,7 +385,14 @@ public class Lexical {
         });
     }
 
-    /** Parses a quoted string with caller-supplied escape replacements. */
+    /**
+     * Parses a quoted string with caller-supplied escape replacements.
+     *
+     * @param quote quote character
+     * @param escape escape character
+     * @param escapes escape replacements
+     * @return a parser returning the unescaped string
+     */
     public static Taker<String> escapedString(char quote, char escape, Map<Character, Character> escapes) {
         Objects.requireNonNull(escapes, "escapes");
         return escapedStringImpl(quote, escape, new HashMap<>(escapes));

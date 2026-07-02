@@ -55,6 +55,9 @@ public record NoMatch<A>(
 
     /**
      * Constructs a recoverable failure at {@code input}.
+     *
+     * @param input input cursor where the failure is reported
+     * @param expected expected label
      */
     public NoMatch(Input input, String expected) {
         this(input, expected, null, null, false);
@@ -62,6 +65,10 @@ public record NoMatch<A>(
 
     /**
      * Constructs a recoverable failure with an underlying cause.
+     *
+     * @param input input cursor where the failure is reported
+     * @param expected expected label
+     * @param cause underlying cause
      */
     public NoMatch(Input input, String expected, Failure<?> cause) {
         this(input, expected, cause, null, false);
@@ -70,6 +77,11 @@ public record NoMatch<A>(
     /**
      * Constructs a recoverable failure with an underlying cause and optional
      * grammar context semantics.
+     *
+     * @param input input cursor where the failure is reported
+     * @param expected expected label
+     * @param cause underlying cause
+     * @param context whether {@code expected} is a grammar context label
      */
     public NoMatch(Input input, String expected, Failure<?> cause, boolean context) {
         this(input, expected, cause, null, context);
@@ -77,6 +89,8 @@ public record NoMatch<A>(
 
     /**
      * Constructs a recoverable failure from tied alternative failures.
+     *
+     * @param failures tied failures
      */
     public NoMatch(List<Failure<A>> failures) {
         this(failures.isEmpty() ? null : failures.getFirst().input(), null, null, failures, false);

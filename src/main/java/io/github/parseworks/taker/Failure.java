@@ -34,21 +34,35 @@ import java.util.Objects;
  * @param <A> result type
  */
 public interface Failure<A> extends Result<A> {
-    /** Returns the underlying failure cause, or {@code null}. */
+    /**
+     * Returns the underlying failure cause, or {@code null}.
+     *
+     * @return failure cause, or {@code null}
+     */
     Failure<?> cause();
 
-    /** Returns what was expected by the failed parser. */
+    /**
+     * Returns what was expected by the failed parser.
+     *
+     * @return expected label
+     */
     String expected();
 
     /**
      * Returns {@code true} when {@link #expected()} names grammar context rather
      * than an expected token or value.
+     *
+     * @return whether this failure is a context label
      */
     default boolean context() {
         return false;
     }
 
-    /** Returns failures from tied alternatives, or {@code null}. */
+    /**
+     * Returns failures from tied alternatives, or {@code null}.
+     *
+     * @return combined failures, or {@code null}
+     */
     List<Failure<A>> combinedFailures();
 
     /** Returns a formatted error message. */

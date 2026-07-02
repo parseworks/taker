@@ -33,7 +33,12 @@ import java.time.*;
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 
+/** ISO date and time parser collection. */
 public class IsoDates {
+
+    /** Creates an ISO date parser helper. */
+    public IsoDates() {
+    }
 
     private static final Taker<Integer> d1 = numeric.map(Character::getNumericValue);
     private static final Taker<Integer> d2 = d1.then(d1).map((a, b) -> a * 10 + b);
@@ -102,6 +107,7 @@ public class IsoDates {
             .then(zonePart)
             .map((d, t, ns, z) -> OffsetDateTime.of(d, t.withNano(ns), z));
 
+    /** Matches YYYY-MM-DDTHH:mm:ss[.SSS]. */
     public static final Taker<LocalDateTime> localDateTime = date
             .thenSkip(chr('T').or(chr(' ')))
             .then(timePart)

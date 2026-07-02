@@ -74,13 +74,23 @@ public final class Chars {
     /** Matches characters until a newline without consuming the newline. */
     public static final Taker<String> line = takeUntil(CharPredicate.is('\n'));
 
-    /** Matches a character satisfying the given predicate. */
+    /**
+     * Matches a character satisfying the given predicate.
+     *
+     * @param condition predicate to satisfy
+     * @return a parser for one matching character
+     */
     public static Taker<Character> take(CharPredicate condition) {
         Objects.requireNonNull(condition, "condition");
         return chr(condition);
     }
 
-    /** Matches one or more consecutive characters while {@code condition} is true. */
+    /**
+     * Matches one or more consecutive characters while {@code condition} is true.
+     *
+     * @param condition predicate to satisfy
+     * @return a parser returning the matched text
+     */
     public static Taker<String> takeWhile(CharPredicate condition) {
         Objects.requireNonNull(condition, "condition");
 
@@ -101,12 +111,22 @@ public final class Chars {
         });
     }
 
-    /** Alias for {@link #takeWhile(CharPredicate)} with collection-oriented naming. */
+    /**
+     * Alias for {@link #takeWhile(CharPredicate)} with collection-oriented naming.
+     *
+     * @param condition predicate to satisfy
+     * @return a parser returning the matched text
+     */
     public static Taker<String> collectChars(CharPredicate condition) {
         return takeWhile(condition);
     }
 
-    /** Skips zero or more matching input characters without materializing text. */
+    /**
+     * Skips zero or more matching input characters without materializing text.
+     *
+     * @param condition predicate to satisfy
+     * @return a parser that consumes matching characters
+     */
     public static Taker<Void> skipWhile(CharPredicate condition) {
         Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
@@ -115,7 +135,12 @@ public final class Chars {
         });
     }
 
-    /** Counts and consumes zero or more matching input characters. */
+    /**
+     * Counts and consumes zero or more matching input characters.
+     *
+     * @param condition predicate to satisfy
+     * @return a parser returning the consumed character count
+     */
     public static Taker<Integer> countWhile(CharPredicate condition) {
         Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
@@ -124,7 +149,12 @@ public final class Chars {
         });
     }
 
-    /** Collects characters until {@code condition} succeeds. */
+    /**
+     * Collects characters until {@code condition} succeeds.
+     *
+     * @param condition terminator predicate
+     * @return a parser returning text before the terminator
+     */
     public static Taker<String> takeUntil(CharPredicate condition) {
         Objects.requireNonNull(condition, "condition");
         return new Taker<>(in -> {
@@ -144,7 +174,12 @@ public final class Chars {
         });
     }
 
-    /** Matches any single character from {@code chars}. */
+    /**
+     * Matches any single character from {@code chars}.
+     *
+     * @param chars accepted characters
+     * @return a parser for one matching character
+     */
     public static Taker<Character> oneOf(String chars) {
         Objects.requireNonNull(chars, "chars");
         if (chars.isEmpty()) {
@@ -153,7 +188,12 @@ public final class Chars {
         return chr(CharPredicate.anyOf(chars));
     }
 
-    /** Matches any single character from {@code chars}, ignoring case. */
+    /**
+     * Matches any single character from {@code chars}, ignoring case.
+     *
+     * @param chars accepted characters
+     * @return a parser for one matching character
+     */
     public static Taker<Character> oneOfIgnoreCase(String chars) {
         Objects.requireNonNull(chars, "chars");
         if (chars.isEmpty()) {
@@ -162,17 +202,32 @@ public final class Chars {
         return chr(CharPredicate.anyOfIgnoreCase(chars));
     }
 
-    /** Matches a specific character. */
+    /**
+     * Matches a specific character.
+     *
+     * @param c character to match
+     * @return a parser for the character
+     */
     public static Taker<Character> chr(char c) {
         return Combinators.is(c);
     }
 
-    /** Matches a specific character, ignoring case. */
+    /**
+     * Matches a specific character, ignoring case.
+     *
+     * @param c character to match
+     * @return a parser for the character
+     */
     public static Taker<Character> chrIgnoreCase(char c) {
         return chr(CharPredicate.isIgnoreCase(c));
     }
 
-    /** Matches a single character matching the given predicate. */
+    /**
+     * Matches a single character matching the given predicate.
+     *
+     * @param predicate predicate to satisfy
+     * @return a parser for one matching character
+     */
     public static Taker<Character> chr(CharPredicate predicate) {
         Objects.requireNonNull(predicate, "predicate");
         return satisfy(predicate.expected(), predicate);
