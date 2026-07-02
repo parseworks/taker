@@ -96,7 +96,6 @@ public interface Failure<A> extends Result<A> {
         sb.append("Reasons at this location:\n");
         failures.stream()
             .map(f -> f.error(0))
-            .distinct()
             .forEach(sb::append);
 
         return sb.toString();

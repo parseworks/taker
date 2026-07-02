@@ -40,11 +40,13 @@ public final class Memo {
 
     private static final int EMPTY = -1;
     private static final double LOAD_FACTOR = 0.5;
+    private static final int MAX_CAPACITY = 1 << 20; // ~1M entries, ~16MB total
 
     private int[] positions;
     private Result<?>[] results;
     private int count;
     private int threshold;
+    private boolean atLimit;
 
     public Memo() {
         this.positions = new int[16];
@@ -80,6 +82,7 @@ public final class Memo {
 
     /**
      * Stores a result for {@code position}. Silently ignores if already present.
+     * When at capacity limit, overwrites the probed slot (effectively evicts).
      */
     public void put(int position, Result<?> result) {
         int len = positions.length;
@@ -96,9 +99,11 @@ public final class Memo {
         }
         p[i] = position;
         r[i] = result;
-        count++;
-        if (count > threshold) {
-            resize();
+        if (!atLimit) {
+            count++;
+            if (count > threshold) {
+                resize();
+            }
         }
     }
 
@@ -108,8 +113,12 @@ public final class Memo {
         return h & Integer.MAX_VALUE;
     }
 
-    /** Double the table size and rehash all entries. */
+    /** Double the table size and rehash all entries. Stops at MAX_CAPACITY. */
     private void resize() {
+        if (positions.length >= MAX_CAPACITY) {
+            atLimit = true;
+            return;
+        }
         int oldLen = positions.length;
         int newLen = oldLen << 1;
         int[] newPos = new int[newLen];

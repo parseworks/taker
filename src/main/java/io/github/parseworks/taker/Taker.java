@@ -48,7 +48,7 @@ import java.util.stream.StreamSupport;
  *
  * @param <A> result type
  */
-public class Taker<A> implements Function<Input, Result<A>>{
+public class Taker<A> implements Function<Input, Result<A>> {
 
 
 

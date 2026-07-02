@@ -23,6 +23,7 @@
 package io.github.parseworks.taker.internal;
 
 import io.github.parseworks.taker.CharPredicate;
+import io.github.parseworks.taker.Failure;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.NoMatch;
@@ -102,7 +103,7 @@ public final class Lookahead {
             }
             Result<B> peek = lookahead.apply(result.input());
             if (!peek.matches()) {
-                return new NoMatch<>(input, "Expected 'peek' to succeed", (NoMatch<?>) peek);
+                return new NoMatch<>(input, "Expected 'peek' to succeed", (Failure<?>) peek);
             }
             return result;
         });

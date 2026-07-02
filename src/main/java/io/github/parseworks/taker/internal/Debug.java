@@ -70,7 +70,11 @@ public final class Debug {
                 }
                 return result;
             } finally {
-                depth.set(currentDepth);
+                if (currentDepth == 0) {
+                    depth.remove();
+                } else {
+                    depth.set(currentDepth);
+                }
             }
         });
     }
