@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 
+
+
 /**
  * Parser that consumes {@link Input} and produces a {@link Result}.
  * <p>
@@ -806,10 +808,15 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Initializes a parser reference with another parser's behavior.
+     * <p>
+     * Must be called exactly once, during grammar construction, before any
+     * parse begins. Calling a second time throws {@link IllegalStateException}.
+     * Not thread-safe — callers must ensure construction is complete before
+     * sharing the grammar across threads.
      *
      * @param parser parser used by this reference
      */
-    public synchronized void set(Taker<A> parser) {
+    public void set(Taker<A> parser) {
         if (parser == null) {
             throw new IllegalArgumentException("parser cannot be null");
         }
@@ -821,10 +828,15 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Initializes a parser reference with a custom apply handler.
+     * <p>
+     * Must be called exactly once, during grammar construction, before any
+     * parse begins. Calling a second time throws {@link IllegalStateException}.
+     * Not thread-safe — callers must ensure construction is complete before
+     * sharing the grammar across threads.
      *
      * @param applyHandler parser implementation used by this reference
      */
-    public synchronized void set(Function<Input, Result<A>> applyHandler) {
+    public void set(Function<Input, Result<A>> applyHandler) {
         if (applyHandler == null) {
             throw new IllegalArgumentException("applyHandler cannot be null");
         }
@@ -888,12 +900,36 @@ public class Taker<A> implements Function<Input, Result<A>>{
 
     /**
      * Creates an uninitialized parser reference for recursive grammar definitions.
+     * <p>
+     * The returned parser checks for infinite recursion and caches results
+     * per input position (packrat memoization) when a memo table is attached.
+     * Use {@link #memoize()} to activate memoization; plain {@link #parse(Input)}
+     * skips the cache with negligible overhead.
      *
      * @param <A> parser result type
      * @return a parser reference to initialize with {@link #set(Taker)}
      */
     public static <A> Taker<A> ref() {
         return new CheckParser<>();
+    }
+
+    /**
+     * Wraps this parser with packrat memoization.
+     * <p>
+     * The returned parser attaches a fresh memo table at the start of each
+     * parse, so that {@link #ref()} parsers cache results per input position.
+     * Turns exponential recursive grammars into linear-time parses.
+     * <p>
+     * For inputs that never re-enter the same {@code ref()} at the same
+     * position, the null-check overhead is negligible — no need to wrap.
+     *
+     * @return a memoized version of this parser
+     */
+    public Taker<A> memoize() {
+        Taker<A> self = this;
+        return new Taker<>(in -> self.apply(
+            in.withContext(Context.withMemo(in.context(), new Memo()))
+        ));
     }
 
     /**

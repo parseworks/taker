@@ -157,8 +157,9 @@ public final class Repetition {
                     if (next.type() == ResultType.PARTIAL) {
                         return next.cast();
                     }
-                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
-                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
+                    int nextPos = next.input() != null ? next.input().position() : current.position();
+                    if (nextPos > current.position() || sepResult.input().position() > current.position()) {
+                        return new PartialMatch<>(next.input() != null ? next.input() : current, (Failure<A>) next).cast();
                     }
                     return new Match<>(Collections.unmodifiableList(values), current);
                 }
@@ -272,8 +273,9 @@ public final class Repetition {
                     if (next.type() == ResultType.PARTIAL) {
                         return next.cast();
                     }
-                    if (next.input().position() > current.position() || sepResult.input().position() > current.position()) {
-                        return new PartialMatch<>(next.input(), (Failure<A>) next).cast();
+                    int nextPos = next.input() != null ? next.input().position() : current.position();
+                    if (nextPos > current.position() || sepResult.input().position() > current.position()) {
+                        return new PartialMatch<>(next.input() != null ? next.input() : current, (Failure<A>) next).cast();
                     }
                     return new Match<>(accumulated, current);
                 }

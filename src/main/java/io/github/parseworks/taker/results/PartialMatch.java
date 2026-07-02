@@ -47,11 +47,6 @@ public record PartialMatch<A>(
 ) implements Failure<A> {
 
     @Override
-    public Input input() {
-        return cause.input();
-    }
-
-    @Override
     public Failure<A> cause() {
         return cause;
     }

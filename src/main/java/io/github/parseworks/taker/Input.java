@@ -21,7 +21,7 @@
  */
 
 package io.github.parseworks.taker;
-import io.github.parseworks.taker.internal.LinearMap;
+
 
 /**
  * Immutable cursor over a character input.
@@ -66,8 +66,8 @@ public interface Input {
      *
      * @return the current parsing context
      */
-    default LinearMap context() {
-        return LinearMap.empty();
+    default Context context() {
+        return Context.empty();
     }
 
     /**
@@ -78,7 +78,7 @@ public interface Input {
      * @param context the new parsing context
      * @return a new cursor with the updated context
      */
-    default Input withContext(LinearMap context) {
+    default Input withContext(Context context) {
         return this;
     }
 

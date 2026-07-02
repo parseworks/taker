@@ -22,7 +22,7 @@
 
 package io.github.parseworks.taker;
 
-import io.github.parseworks.taker.internal.LinearMap;
+
 import java.util.Arrays;
 
 final class Inputs {
@@ -38,16 +38,16 @@ final class Inputs {
 
         private final int position;
         private final CharSequence data;
-        private final LinearMap context;
+        private final Context context;
         private volatile int[] lineOffsets;
 
-        private CharSequenceInput(int position, CharSequence data, LinearMap context) {
+        private CharSequenceInput(int position, CharSequence data, Context context) {
             this.position = position;
             this.data = data;
             this.context = context;
         }
 
-        private CharSequenceInput(int position, CharSequence data, LinearMap context, int[] lineOffsets) {
+        private CharSequenceInput(int position, CharSequence data, Context context, int[] lineOffsets) {
             this.position = position;
             this.data = data;
             this.context = context;
@@ -55,7 +55,7 @@ final class Inputs {
         }
 
         private CharSequenceInput(CharSequence data) {
-            this(0, data, LinearMap.empty());
+            this(0, data, Context.empty());
         }
 
         private int[] getLineOffsets() {
@@ -152,12 +152,12 @@ final class Inputs {
         }
 
         @Override
-        public LinearMap context() {
+        public Context context() {
             return context;
         }
 
         @Override
-        public Input withContext(LinearMap context) {
+        public Input withContext(Context context) {
             return new CharSequenceInput(position, data, context, lineOffsets);
         }
 

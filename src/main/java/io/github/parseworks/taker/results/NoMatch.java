@@ -36,7 +36,9 @@ import java.util.function.Function;
  * Choice combinators may try later alternatives after a {@code NoMatch}. Use
  * {@link PartialMatch} when a branch should be treated as committed.
  *
- * @param input input cursor where the failure should be reported
+ * @param input input cursor where the failure should be reported, or {@code null}
+ *              when no input position is available (e.g., empty combined failures).
+ *              Callers that render diagnostics should handle null gracefully.
  * @param expected human-readable expectation
  * @param cause optional underlying cause
  * @param combinedFailures tied failures from alternative parsers
