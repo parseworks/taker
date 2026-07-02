@@ -94,7 +94,7 @@ class ErrorDisplayTest {
         // Expected: "no infinite recursion" message
         // Direct left recursion: ref calls itself without consuming input
         Taker<Character> ref = Taker.ref();
-        ref.set(in -> ref.apply(in));  // infinite recursion
+        ref.set(ref);  // infinite recursion
         printResult(ref.parse(Inputs.of("xxx")));
     }
 

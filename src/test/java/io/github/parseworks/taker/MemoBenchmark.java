@@ -24,12 +24,12 @@ public class MemoBenchmark {
             .collectString().map(Double::parseDouble);
 
     static Taker<BinaryOperator<Double>> addOrSub = Chars.oneOf("+-").map(c ->
-            c == '+' ? (BinaryOperator<Double>) (a, b) -> a + b
-                     : (BinaryOperator<Double>) (a, b) -> a - b);
+            c == '+' ? Double::sum
+                     :  (a, b) -> a - b);
 
     static Taker<BinaryOperator<Double>> mulOrDiv = Chars.oneOf("*/").map(c ->
-            c == '*' ? (BinaryOperator<Double>) (a, b) -> a * b
-                     : (BinaryOperator<Double>) (a, b) -> a / b);
+            c == '*' ?  (a, b) -> a * b
+                     :  (a, b) -> a / b);
 
     static Taker<Double> buildGrammar() {
         Taker<Double> e = Taker.ref();
@@ -83,12 +83,12 @@ public class MemoBenchmark {
         // 1: Right-deep nesting
         System.out.println("--- Right-deep: 1+(1+(1+...)) ---");
         for (int d = 4; d <= 14; d++) {
-            String input = "1+";
-            for (int i = 1; i < d; i++) input = "1+(" + input;
-            for (int i = 1; i < d; i++) input += ")";
-            input += String.valueOf(d);
-            runNoMemo(buildGrammar(), input, 5);
-            runMemoized(buildGrammar(), input, 5);
+            StringBuilder input = new StringBuilder("1+");
+            for (int i = 1; i < d; i++) input.insert(0, "1+(");
+            for (int i = 1; i < d; i++) input.append(")");
+            input.append(d);
+            runNoMemo(buildGrammar(), input.toString(), 5);
+            runMemoized(buildGrammar(), input.toString(), 5);
             System.out.println();
         }
 
