@@ -863,8 +863,20 @@ public class Taker<A> implements Function<Input, Result<A>> {
      * This function is the core of the parser, defining how it processes input and produces results.
      * It takes an {@link Input} object representing the current parsing state and returns a {@link Result}
      * object containing either a successful parse result or an error.
+     * <p>
+     * Mutable only for parser references created by {@link #ref()} and initialized
+     * via {@link #set(Taker)} or {@link #set(Function)}.
      */
-    protected Function<Input, Result<A>> applyHandler;
+    private Function<Input, Result<A>> applyHandler;
+
+    /**
+     * Invokes the underlying apply handler. Used by {@code CheckParser}
+     * (the only subclass) to bypass its own {@link #apply} override.
+     * Do not call from external subclasses.
+     */
+    protected final Result<A> applyHandlerApply(Input in) {
+        return applyHandler.apply(in);
+    }
     /**
      * A default apply handler that throws an exception if the parser is not initialized.
      * <p>

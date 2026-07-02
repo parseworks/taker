@@ -56,7 +56,7 @@ public class CheckParser<A> extends Taker<A> {
 
         Context ctx = in.context();
         Input inWithCtx = in.withContext(Context.push(ctx, pos, this));
-        Result<A> result = applyHandler.apply(inWithCtx);
+        Result<A> result = applyHandlerApply(inWithCtx);
         Context.store(ctx, pos, result);
         return result;
     }
