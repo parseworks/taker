@@ -117,7 +117,7 @@ public final class ContextState extends Context {
         ContextState current = asState(context);
         Memo memo = current.memo;
         if (memo != null) {
-            Result<A> cached = memo.get(pos);
+            Result<A> cached = memo.get(pos, taker);
             if (cached != null) return new Find.Memo(cached);
         }
 
@@ -136,11 +136,12 @@ public final class ContextState extends Context {
      *
      * @param context current context
      * @param pos input position
+     * @param taker parser identity
      * @param result result to cache
      */
-    public static void store(Context context, int pos, Result<?> result) {
+    public static void store(Context context, int pos, Taker<?> taker, Result<?> result) {
         Memo memo = asState(context).memo;
-        if (memo != null) memo.put(pos, result);
+        if (memo != null) memo.put(pos, taker, result);
     }
 
     private static ContextState asState(Context context) {

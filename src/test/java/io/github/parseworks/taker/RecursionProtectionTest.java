@@ -31,6 +31,7 @@ import java.util.function.BinaryOperator;
 
 import static io.github.parseworks.taker.parsers.Chars.chr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * CalculatorParserTest
@@ -66,6 +67,19 @@ public class RecursionProtectionTest {
         Input input = Input.of("3+(2*4)-5");
         Result<Integer> result = expression.parse(input);
         assertEquals(6, result.value());
+    }
+
+    @Test
+    void memoizeKeepsDifferentRefsSeparateAtSamePosition() {
+        Taker<String> a = Taker.ref();
+        Taker<String> b = Taker.ref();
+        a.set(chr('a').as("A"));
+        b.set(chr('b').as("B"));
+
+        Result<String> result = a.or(b).memoize().parseAll("b");
+
+        assertTrue(result.matches(), result::error);
+        assertEquals("B", result.value());
     }
 
 }

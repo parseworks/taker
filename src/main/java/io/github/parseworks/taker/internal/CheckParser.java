@@ -30,7 +30,7 @@ import io.github.parseworks.taker.results.NoMatch;
 
 /**
  * A parser wrapper that checks for infinite recursion and caches results
- * per input position (packrat memoization).
+ * per parser and input position (packrat memoization).
  * <p>
  * Created by {@link Taker#ref()}. Memoization is opt-in at the parse call
  * site: use {@link Taker#memoize()} to activate the cache.
@@ -57,7 +57,7 @@ public class CheckParser<A> extends Taker<A> {
         Context ctx = in.context();
         Input inWithCtx = in.withContext(ContextState.push(ctx, pos, this));
         Result<A> result = applyHandlerApply(inWithCtx);
-        ContextState.store(ctx, pos, result);
+        ContextState.store(ctx, pos, this, result);
         return result;
     }
 }

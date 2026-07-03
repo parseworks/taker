@@ -923,7 +923,7 @@ public class Taker<A> implements Function<Input, Result<A>> {
      * Creates an uninitialized parser reference for recursive grammar definitions.
      * <p>
      * The returned parser checks for infinite recursion and caches results
-     * per input position (packrat memoization) when a memo table is attached.
+     * per parser and input position when a memo table is attached.
      * Use {@link #memoize()} to activate memoization; plain {@link #parse(Input)}
      * skips the cache with negligible overhead.
      *
@@ -938,7 +938,7 @@ public class Taker<A> implements Function<Input, Result<A>> {
      * Wraps this parser with packrat memoization.
      * <p>
      * The returned parser attaches a fresh memo table at the start of each
-     * parse, so that {@link #ref()} parsers cache results per input position.
+     * parse, so that {@link #ref()} parsers cache results per parser and input position.
      * Turns exponential recursive grammars into linear-time parses.
      * <p>
      * For inputs that never re-enter the same {@code ref()} at the same

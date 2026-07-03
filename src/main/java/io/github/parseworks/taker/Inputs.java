@@ -31,31 +31,25 @@ final class Inputs {
     }
 
     static Input of(CharSequence data) {
-        return new CharSequenceInput(data);
+        return new PlainCharSequenceInput(data);
     }
 
-    private static final class CharSequenceInput implements TextInput {
+    private abstract static class BaseCharSequenceInput implements TextInput {
 
         private final int position;
         private final CharSequence data;
-        private final Context context;
         private volatile int[] lineOffsets;
 
-        private CharSequenceInput(int position, CharSequence data, Context context) {
+        private BaseCharSequenceInput(int position, CharSequence data, int[] lineOffsets) {
             this.position = position;
             this.data = data;
-            this.context = context;
-        }
-
-        private CharSequenceInput(int position, CharSequence data, Context context, int[] lineOffsets) {
-            this.position = position;
-            this.data = data;
-            this.context = context;
             this.lineOffsets = lineOffsets;
         }
 
-        private CharSequenceInput(CharSequence data) {
-            this(0, data, Context.empty());
+        abstract Input at(int position, int[] lineOffsets);
+
+        final int[] lineOffsets() {
+            return lineOffsets;
         }
 
         private int[] getLineOffsets() {
@@ -133,7 +127,7 @@ final class Inputs {
             if (isEof()) {
                 throw new IllegalStateException("End of input");
             }
-            return new CharSequenceInput(position + 1, data, context, lineOffsets);
+            return at(position + 1, lineOffsets);
         }
 
         @Override
@@ -148,17 +142,7 @@ final class Inputs {
             if (newPosition < 0) {
                 newPosition = 0;
             }
-            return new CharSequenceInput(newPosition, data, context, lineOffsets);
-        }
-
-        @Override
-        public Context context() {
-            return context;
-        }
-
-        @Override
-        public Input withContext(Context context) {
-            return new CharSequenceInput(position, data, context, lineOffsets);
+            return at(newPosition, lineOffsets);
         }
 
         @Override
@@ -224,6 +208,61 @@ final class Inputs {
             final String dataStr = isEof() ? "EOF" : String.valueOf(data.charAt(position));
             return "CharSequenceInput{position=" + position + ", line=" + line()
                     + ", column=" + column() + ", data=\"" + dataStr + "\"}";
+        }
+    }
+
+    private static final class PlainCharSequenceInput extends BaseCharSequenceInput {
+
+        private PlainCharSequenceInput(CharSequence data) {
+            super(0, data, null);
+        }
+
+        private PlainCharSequenceInput(int position, CharSequence data, int[] lineOffsets) {
+            super(position, data, lineOffsets);
+        }
+
+        @Override
+        Input at(int position, int[] lineOffsets) {
+            return new PlainCharSequenceInput(position, data(), lineOffsets);
+        }
+
+        @Override
+        public Input withContext(Context context) {
+            if (context == Context.empty()) {
+                return this;
+            }
+            return new ContextualCharSequenceInput(position(), data(), context, lineOffsets());
+        }
+    }
+
+    private static final class ContextualCharSequenceInput extends BaseCharSequenceInput {
+
+        private final Context context;
+
+        private ContextualCharSequenceInput(int position, CharSequence data, Context context, int[] lineOffsets) {
+            super(position, data, lineOffsets);
+            this.context = context;
+        }
+
+        @Override
+        Input at(int position, int[] lineOffsets) {
+            return new ContextualCharSequenceInput(position, data(), context, lineOffsets);
+        }
+
+        @Override
+        public Context context() {
+            return context;
+        }
+
+        @Override
+        public Input withContext(Context context) {
+            if (context == this.context) {
+                return this;
+            }
+            if (context == Context.empty()) {
+                return new PlainCharSequenceInput(position(), data(), lineOffsets());
+            }
+            return new ContextualCharSequenceInput(position(), data(), context, lineOffsets());
         }
     }
 
