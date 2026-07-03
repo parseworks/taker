@@ -64,10 +64,86 @@ public class Combinators {
         Objects.requireNonNull(parser, "parser");
         return new Taker<>(in -> {
             Result<A> result = parser.apply(in);
-            if (!result.matches() && result.input().position() > in.position()) {
-                return new PartialMatch<>(result.input(), (Failure<A>) result);
+            Input failureInput = result.input();
+            if (!result.matches() && failureInput != null && failureInput.position() > in.position()) {
+                return new PartialMatch<>(failureInput, (Failure<A>) result);
             }
             return result;
+        });
+    }
+
+    /**
+     * Wraps a parser to catch a specific exception type and convert it
+     * into a {@link NoMatch} with the given expectation message.
+     * <p>
+     * Only the specified exception type is caught. All other exceptions
+     * (NullPointerException, AssertionError, etc.) propagate unchanged
+     * so real bugs are never silently swallowed.
+     * <p>
+     * The failure is reported at the input position where the parser was
+     * invoked, not wherever the inner parser advanced to. This means
+     * {@code attempt()} plays nicely with {@link #oneOf(Taker...)} because
+     * alternatives retry from the correct position.
+     *
+     * @param <A>             result type
+     * @param <E>             exception type (must extend {@link Exception})
+     * @param parser          parser that may throw
+     * @param exceptionType   the specific exception class to catch
+     * @param expecting       error message for the resulting NoMatch
+     * @return a parser that converts the expected exception into a NoMatch
+     * @throws NullPointerException if {@code parser}, {@code exceptionType}, or {@code expecting} is null
+     */
+    public static <A, E extends Exception> Taker<A> attempt(
+            Taker<A> parser, Class<E> exceptionType, String expecting) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(exceptionType, "exceptionType");
+        Objects.requireNonNull(expecting, "expecting");
+        return new Taker<>(in -> {
+            try {
+                return parser.apply(in);
+            } catch (Exception e) {
+                if (exceptionType.isInstance(e)) {
+                    return new NoMatch<>(in, expecting);
+                }
+                throw e;
+            }
+        });
+    }
+
+    /**
+     * Wraps a parser to catch a specific exception type and delegate
+     * result production to a custom handler.
+     * <p>
+     * The handler receives the caught exception and can decide whether
+     * to return a {@link NoMatch}, {@link PartialMatch}, or even a
+     * {@link Match} (e.g., for recovery scenarios).
+     * <p>
+     * Only the specified exception type is caught. All other exceptions
+     * propagate unchanged.
+     *
+     * @param <A>             result type
+     * @param <E>             exception type (must extend {@link Exception})
+     * @param parser          parser that may throw
+     * @param exceptionType   the specific exception class to catch
+     * @param handler         function that maps the exception to a Result
+     * @return a parser that delegates failure handling to the handler
+     * @throws NullPointerException if {@code parser}, {@code exceptionType}, or {@code handler} is null
+     */
+    public static <A, E extends Exception> Taker<A> attempt(
+            Taker<A> parser, Class<E> exceptionType,
+            java.util.function.Function<E, Result<A>> handler) {
+        Objects.requireNonNull(parser, "parser");
+        Objects.requireNonNull(exceptionType, "exceptionType");
+        Objects.requireNonNull(handler, "handler");
+        return new Taker<>(in -> {
+            try {
+                return parser.apply(in);
+            } catch (Exception e) {
+                if (exceptionType.isInstance(e)) {
+                    return handler.apply(exceptionType.cast(e));
+                }
+                throw e;
+            }
         });
     }
 

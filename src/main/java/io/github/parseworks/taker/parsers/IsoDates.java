@@ -31,6 +31,7 @@ import io.github.parseworks.taker.results.NoMatch;
 import java.time.*;
 
 import static io.github.parseworks.taker.parsers.Chars.chr;
+import static io.github.parseworks.taker.parsers.Combinators.attempt;
 import static io.github.parseworks.taker.parsers.Numeric.numeric;
 
 /** ISO date and time parser collection. */
@@ -45,16 +46,16 @@ public class IsoDates {
     private static final Taker<Integer> d4 = d2.then(d2).map((a, b) -> a * 100 + b);
 
     /** Matches YYYY-MM-DD */
-    public static final Taker<LocalDate> date = d4
+    public static final Taker<LocalDate> date = attempt(d4
             .thenSkip(chr('-')).then(d2)
             .thenSkip(chr('-')).then(d2)
-            .map(LocalDate::of);
+            .map(LocalDate::of), DateTimeException.class, "valid ISO date");
 
     /** Matches HH:mm:ss */
-    private static final Taker<LocalTime> timePart = d2
+    private static final Taker<LocalTime> timePart = attempt(d2
             .thenSkip(chr(':')).then(d2)
             .thenSkip(chr(':')).then(d2)
-            .map(LocalTime::of);
+            .map(LocalTime::of), DateTimeException.class, "valid ISO time");
 
     /** Matches .SSS (optional), returns nanos */
     private static final Taker<Integer> nanosPart = new Taker<>(in -> {
@@ -89,7 +90,7 @@ public class IsoDates {
     });
 
     /** Matches Z or +HH:mm or -HH:mm */
-    private static final Taker<ZoneOffset> zonePart = chr('Z').as(ZoneOffset.UTC)
+    private static final Taker<ZoneOffset> zonePart = attempt(chr('Z').as(ZoneOffset.UTC)
             .or(chr('+').or(chr('-'))
                     .then(d2)
                     .thenSkip(chr(':').optional())
@@ -97,20 +98,22 @@ public class IsoDates {
                     .map((sign, h, m) -> {
                         int totalSeconds = (h * 3600 + m * 60) * (sign == '+' ? 1 : -1);
                         return ZoneOffset.ofTotalSeconds(totalSeconds);
-                    }));
+                    })), DateTimeException.class, "valid ISO offset");
 
     /** Matches YYYY-MM-DDTHH:mm:ss[.SSS][Z|[+-]HH:mm] */
-    public static final Taker<OffsetDateTime> offsetDateTime = date
+    public static final Taker<OffsetDateTime> offsetDateTime = attempt(date
             .thenSkip(chr('T').or(chr(' ')))
             .then(timePart)
             .then(nanosPart)
             .then(zonePart)
-            .map((d, t, ns, z) -> OffsetDateTime.of(d, t.withNano(ns), z));
+            .map((d, t, ns, z) -> OffsetDateTime.of(d, t.withNano(ns), z)),
+            DateTimeException.class, "valid ISO offset date-time");
 
     /** Matches YYYY-MM-DDTHH:mm:ss[.SSS]. */
-    public static final Taker<LocalDateTime> localDateTime = date
+    public static final Taker<LocalDateTime> localDateTime = attempt(date
             .thenSkip(chr('T').or(chr(' ')))
             .then(timePart)
             .then(nanosPart)
-            .map((d, t, ns) -> LocalDateTime.of(d, t.withNano(ns)));
+            .map((d, t, ns) -> LocalDateTime.of(d, t.withNano(ns))),
+            DateTimeException.class, "valid ISO local date-time");
 }

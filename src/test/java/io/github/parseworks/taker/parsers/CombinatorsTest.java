@@ -24,8 +24,10 @@ package io.github.parseworks.taker.parsers;
 
 import io.github.parseworks.taker.CharPredicate;
 import io.github.parseworks.taker.Failure;
+import io.github.parseworks.taker.Input;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
+import io.github.parseworks.taker.results.NoMatch;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -241,5 +243,54 @@ public class CombinatorsTest {
         assertTrue(firstResult.matches());
         assertFalse(secondResult.matches());
         assertTrue(thirdResult.matches());
+    }
+
+    @Test
+    public void attemptCatchesExpectedExceptionAtStartPosition() {
+        Taker<String> parser = sequence(Chars.chr('a'), Chars.chr('b'))
+                .map((a, b) -> {
+                    throw new NumberFormatException("invalid");
+                });
+        Taker<String> attempted = attempt(parser, NumberFormatException.class, "valid number");
+
+        Result<String> result = attempted.parse("ab");
+
+        assertFalse(result.matches());
+        assertEquals(0, result.input().position());
+        assertEquals("valid number", ((Failure<?>) result).expected());
+    }
+
+    @Test
+    public void attemptHandlerReceivesExpectedException() {
+        Taker<String> parser = Chars.chr('a').map(ignored -> {
+            throw new IllegalArgumentException("invalid");
+        });
+        Taker<String> attempted = attempt(parser, IllegalArgumentException.class,
+                e -> new NoMatch<>(Input.of(e.getMessage()), "handled exception"));
+
+        Result<String> result = attempted.parse("a");
+
+        assertFalse(result.matches());
+        assertEquals("handled exception", ((Failure<?>) result).expected());
+    }
+
+    @Test
+    public void attemptDoesNotCatchDifferentExceptionType() {
+        Taker<String> parser = Chars.chr('a').map(ignored -> {
+            throw new IllegalStateException("bug");
+        });
+        Taker<String> attempted = attempt(parser, NumberFormatException.class, "valid number");
+
+        assertThrows(IllegalStateException.class, () -> attempted.parse("a"));
+    }
+
+    @Test
+    public void attemptDoesNotCatchErrors() {
+        Taker<String> parser = Chars.chr('a').map(ignored -> {
+            throw new AssertionError("bug");
+        });
+        Taker<String> attempted = attempt(parser, Exception.class, "recoverable exception");
+
+        assertThrows(AssertionError.class, () -> attempted.parse("a"));
     }
 }

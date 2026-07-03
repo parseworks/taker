@@ -369,6 +369,29 @@ parser is applied at the original input position.
 `parser.onlyIf(CharPredicate)` checks the current character before applying the
 main parser.
 
+### `attempt`
+
+`Combinators.attempt(parser, exceptionType, expecting)` wraps a parser to catch
+a specific exception type and convert it into a `NO_MATCH` failure with the
+given expectation message.
+
+`Combinators.attempt(parser, exceptionType, handler)` wraps a parser to catch
+a specific exception type and delegate result production to a custom handler.
+The handler receives the caught exception and can return a `Match`, `NoMatch`,
+or `PartialMatch`.
+
+Both forms only catch the specified exception type. All other exceptions
+(NullPointerException, AssertionError, etc.) propagate unchanged so real bugs
+are never silently swallowed.
+
+The failure is reported at the input position where the parser was invoked,
+not wherever the inner parser advanced to. This means `attempt()` plays nicely
+with `oneOf()` because alternatives retry from the correct position.
+
+Use `attempt()` when a parser performs fallible operations (e.g.,
+`Integer.parseInt`, `Double.parseDouble`, custom validation) that may throw
+checked or unchecked exceptions on invalid input.
+
 ### `peek`
 
 `parser.peek(lookahead)` first applies `parser`. If it succeeds, `lookahead` must
@@ -465,8 +488,8 @@ code paths that require quiet output.
 
 `Combinators` exposes static forms of common parser operations:
 
-- `any`, `eof`, `fail`, `not`, `isNot`, `oneOf`, `sequence`, `between`,
-  `satisfy`, `is`, `chainLeft`, and `chainRight`.
+- `any`, `attempt`, `eof`, `fail`, `not`, `isNot`, `oneOf`, `sequence`,
+  `between`, `satisfy`, `is`, `chainLeft`, and `chainRight`.
 - `throwError` deliberately throws and is primarily a test/debugging helper.
 
 ### `TokensParser`
@@ -493,6 +516,8 @@ before and after a raw parser.
 
 `Csv` and `IsoDates` are convenience parser collections. Their documented edge
 cases are covered by focused tests under `src/test/java/.../parsers`.
+Calendar-validity failures in `IsoDates` return parser failures rather than
+escaping `DateTimeException`.
 
 ## Compatibility Rules
 

@@ -24,6 +24,7 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Chars;
 import io.github.parseworks.taker.parsers.Lexical;
+import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.results.PartialMatch;
 import org.junit.jupiter.api.Test;
 
@@ -109,6 +110,17 @@ public class CommitAndPartialMatchTest {
         Result<List<Character>> result = parser.apply(Input.of("aab"));
 
         assertEquals(ResultType.PARTIAL, result.type());
+    }
+
+    @Test
+    void commitPreservesFailureWithoutInput() {
+        Taker<String> parser = commit(new Taker<>(in -> new NoMatch<>(List.of())));
+
+        Result<String> result = parser.parse("abc");
+
+        assertFalse(result.matches());
+        assertEquals(ResultType.NO_MATCH, result.type());
+        assertNull(result.input());
     }
 
     @Test

@@ -25,7 +25,6 @@ package io.github.parseworks.taker.parsers;
 import io.github.parseworks.taker.Result;
 import org.junit.jupiter.api.Test;
 
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -90,9 +89,9 @@ public class IsoDatesTest {
     }
 
     @Test
-    void invalidCalendarValuesThrowDateTimeException() {
-        assertThrows(DateTimeException.class, () -> IsoDates.date.parseAll("2023-02-30"));
-        assertThrows(DateTimeException.class, () -> IsoDates.localDateTime.parseAll("2023-04-23T25:20:30"));
-        assertThrows(DateTimeException.class, () -> IsoDates.offsetDateTime.parseAll("2023-04-23T10:20:30+25:00"));
+    void invalidCalendarValuesFailWithoutThrowing() {
+        assertFalse(IsoDates.date.parseAll("2023-02-30").matches());
+        assertFalse(IsoDates.localDateTime.parseAll("2023-04-23T25:20:30").matches());
+        assertFalse(IsoDates.offsetDateTime.parseAll("2023-04-23T10:20:30+25:00").matches());
     }
 }

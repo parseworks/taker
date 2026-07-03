@@ -2,6 +2,7 @@ package io.github.parseworks.taker;
 
 import io.github.parseworks.taker.parsers.Chars;
 import io.github.parseworks.taker.parsers.Combinators;
+import io.github.parseworks.taker.results.NoMatch;
 import io.github.parseworks.taker.parsers.Lexical;
 import io.github.parseworks.taker.parsers.Numeric;
 import org.junit.jupiter.api.Tag;
@@ -117,6 +118,59 @@ class ErrorDisplayTest {
     void calculatorBadToken() {
         Taker<Double> expr = buildCalculator();
         printResult(expr.parse(Inputs.of("3 @ 5")));
+    }
+
+    /* ── attempt (exception handling) ──────────────────────────────── */
+
+    @Test
+    void attemptCatchesExpectedException() {
+        // parseInt throws NumberFormatException on non-digit input
+        Taker<Integer> safeInt = Combinators.attempt(
+            Chars.takeWhile(c -> Character.isDigit(c)).collectString()
+                .map(s -> {
+                    if (s.length() > 10) throw new ArithmeticException("too long");
+                    return Integer.parseInt(s);
+                }),
+            ArithmeticException.class,
+            "expected integer <= 10 digits"
+        );
+
+        // Normal input works
+        System.out.println("Normal: " + safeInt.parse(Inputs.of("42")));
+
+        // Too-long input catches the exception
+        printResult(safeInt.parse(Inputs.of("123456789012345")));
+    }
+
+    @Test
+    void attemptWithCustomHandler() {
+        Taker<Double> safeDouble = Combinators.attempt(
+            Chars.oneOf("0123456789.").collectString().map(Double::parseDouble),
+            NumberFormatException.class,
+            e -> new NoMatch<>(Inputs.of(""), "expected valid double, got: '" + e.getMessage() + "'")
+        );
+
+        printResult(safeDouble.parse(Inputs.of("abc")));
+    }
+
+    @Test
+    void attemptDoesNotSwallowUnexpectedExceptions() {
+        // This parser will throw NPE
+        Taker<String> broken = Chars.oneOf("a").map(s -> {
+            throw new NullPointerException("real bug");
+        });
+
+        // Only catching NumberFormatException — NPE should propagate
+        Taker<String> wrapped = Combinators.attempt(
+            broken, NumberFormatException.class, "expected number"
+        );
+
+        try {
+            wrapped.parse(Inputs.of("a"));
+            System.out.println("ERROR: NPE was swallowed!");
+        } catch (NullPointerException e) {
+            System.out.println("Correct: NPE propagated — " + e.getMessage());
+        }
     }
 
     /* ── deeply nested failures ────────────────────────────────────── */
