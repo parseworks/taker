@@ -29,6 +29,7 @@ The following types are intended to be stable public API:
 
 - `Taker<A>`: the core parser type.
 - `Input`: immutable input cursor abstraction.
+- `Context`: opaque parse state carried by custom `Input` implementations.
 - `TextInput`: input extension that can report line, column, and snippets.
 - `Result<A>`: parser result abstraction.
 - `Failure<A>`: result subtype for failures.

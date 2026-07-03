@@ -95,7 +95,7 @@ class ErrorDisplayTest {
         // Expected: "no infinite recursion" message
         // Direct left recursion: ref calls itself without consuming input
         Taker<Character> ref = Taker.ref();
-        ref.set(ref);  // infinite recursion
+        ref.set(ref::apply);  // infinite recursion
         printResult(ref.parse(Inputs.of("xxx")));
     }
 
@@ -126,7 +126,7 @@ class ErrorDisplayTest {
         // Grammar: outer1 -> outer2 -> outer3 -> inner (map -> map -> between -> or -> string)
         // Failure deep inside should bubble up with context
         Taker<String> inner = Lexical.string("xyz")
-                .map(s -> s.toUpperCase())
+                .map(String::toUpperCase)
                 .map(s -> "[" + s + "]")
                 .map(s -> "prefix:" + s);
 

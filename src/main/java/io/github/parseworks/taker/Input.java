@@ -96,7 +96,8 @@ public interface Input {
     /**
      * Returns the current parsing context.
      * <p>
-     * Internal use only. Used for features like recursion detection.
+     * Custom input implementations should preserve this value when returning
+     * advanced cursors so recursive and memoized parsers can share parse state.
      *
      * @return the current parsing context
      */
@@ -106,8 +107,6 @@ public interface Input {
 
     /**
      * Returns a new cursor with the specified parsing context.
-     * <p>
-     * Internal use only.
      *
      * @param context the new parsing context
      * @return a new cursor with the updated context

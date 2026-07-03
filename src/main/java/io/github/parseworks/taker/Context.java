@@ -22,141 +22,27 @@
 
 package io.github.parseworks.taker;
 
+import io.github.parseworks.taker.internal.ContextState;
+
 /**
- * Immutable parse context: a linked chain of (position, parser) frames
- * used for infinite-recursion detection and packrat memoization.
+ * Opaque parsing context carried by {@link Input} cursors.
  * <p>
- * The chain root carries a shared {@link Memo} reference. Each frame
- * caches the memo so {@link #push} and {@link #find} are O(1) for
- * memo access, with only the recursion guard requiring an O(depth) walk.
- * <p>
- * {@code null} represents an empty context.
+ * Custom {@code Input} implementations should preserve this value when
+ * advancing and return it from {@link Input#context()} so recursive and
+ * memoized parsers can share parse-scoped state.
  */
-public final class Context {
+public abstract sealed class Context permits ContextState {
 
-    // Lookup outcome hierarchy.
-
-    /** Result of {@link Context#find}: memo hit, recursion, or proceed. */
-    public abstract static class Find {
-        /** Creates a lookup result marker. */
-        protected Find() {
-        }
-
-        /** A cached result was found in the memo table. */
-        public static final class Memo extends Find {
-            /** Cached parser result. */
-            public final Result<?> result;
-            Memo(Result<?> result) { this.result = result; }
-        }
-        /** The same (parser, position) is already on the recursion stack. */
-        public static final class Recursion extends Find {
-            static final Recursion INSTANCE = new Recursion();
-            private Recursion() {}
-        }
-
-        /** No cache hit, no recursion; proceed with normal parsing. */
-        public static final class Proceed extends Find {
-            static final Proceed INSTANCE = new Proceed();
-            private Proceed() {}
-        }
-    }
-
-    // Chain node.
-
-    private final int pos;
-    private final Taker<?> taker;
-    private final Context next;
-    /** Shared memo table; set on the root and inherited by pushes. */
-    private final Memo memo;
-
-    private Context(int pos, Taker<?> taker, Context next, Memo memo) {
-        this.pos = pos;
-        this.taker = taker;
-        this.next = next;
-        this.memo = memo;
+    /** Creates a context. */
+    protected Context() {
     }
 
     /**
-     * Returns an empty context.
+     * Returns an empty parsing context.
      *
-     * @return an empty context
+     * @return empty parsing context
      */
     public static Context empty() {
-        return null;
-    }
-
-    /**
-     * Pushes a new frame onto the context, inheriting the memo from the head frame.
-     * Each frame caches the memo reference so subsequent pushes are O(1).
-     *
-     * @param context current context
-     * @param pos input position
-     * @param taker parser for the new frame
-     * @return context with the new frame
-     */
-    public static Context push(Context context, int pos, Taker<?> taker) {
-        Memo memo = (context != null) ? context.memo : null;
-        return new Context(pos, taker, context, memo);
-    }
-
-    /**
-     * Attaches a memo table as the chain root.
-     *
-     * @param context current context
-     * @param memo memo table to attach
-     * @return context with memo support
-     */
-    public static Context withMemo(Context context, Memo memo) {
-        return new Context(-1, null, context, memo);
-    }
-
-    /**
-     * Memo lookup and recursion guard.
-     * <p>
-     * Memo is O(1) on the head frame. Recursion guard walks the stack.
-     * Returns a {@link Find} indicating the outcome.
-     *
-     * @param context current context
-     * @param pos input position
-     * @param taker parser to find
-     * @param <A> parser result type
-     * @return lookup result
-     */
-    public static <A> Find find(Context context, int pos, Taker<A> taker) {
-        // Memo is cached on every frame; O(1) head lookup.
-        Memo memo = (context != null) ? context.memo : null;
-        if (memo != null) {
-            Result<A> cached = memo.get(pos);
-            if (cached != null) return new Find.Memo(cached);
-        }
-
-        // Walk the recursion stack.
-        Context current = context;
-        while (current != null) {
-            if (current.pos == pos && current.taker == taker) {
-                return Find.Recursion.INSTANCE;
-            }
-            current = current.next;
-        }
-
-        return Find.Proceed.INSTANCE;
-    }
-
-    /** Returns the memo table cached on this frame, or {@code null}. */
-    static Memo memo(Context context) {
-        return (context != null) ? context.memo : null;
-    }
-
-    /**
-     * Stores a result in the memo table if one is attached to the chain.
-     * No-op when no memo is active.
-     *
-     * @param context current context
-     * @param pos input position
-     * @param result result to cache
-     */
-    public static void store(Context context, int pos, Result<?> result) {
-        Memo memo = memo(context);
-        if (memo != null) memo.put(pos, result);
+        return ContextState.empty();
     }
 }

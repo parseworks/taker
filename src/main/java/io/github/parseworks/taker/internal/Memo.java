@@ -20,27 +20,20 @@
  * SOFTWARE.
  */
 
-package io.github.parseworks.taker;
+package io.github.parseworks.taker.internal;
+
+import io.github.parseworks.taker.Result;
 
 import java.util.Arrays;
 
 /**
- * Packrat memo table using open-addressing hash table.
- * <p>
- * Parallel {@code int[]} and {@code Result<?>[]} arrays with linear probing.
- * {@code -1} is the empty sentinel (input positions are always &ge; 0).
- * No boxing, no allocation on cache hits, load factor &le; 0.5.
- * <p>
- * Created once per parse by {@link io.github.parseworks.taker.Taker#memoize()}.
- * All cursors in that parse share the same instance via the {@link Context}
- * chain, so the memo is scoped to a single parse and cleared naturally
- * when the wrapper is discarded.
+ * Internal packrat memo table using an open-addressing hash table.
  */
 public final class Memo {
 
     private static final int EMPTY = -1;
     private static final double LOAD_FACTOR = 0.5;
-    private static final int MAX_CAPACITY = 1 << 20; // ~1M entries, ~16MB total
+    private static final int MAX_CAPACITY = 1 << 20;
 
     private int[] positions;
     private Result<?>[] results;
@@ -56,7 +49,6 @@ public final class Memo {
         fillEmpty();
     }
 
-    /** Fill the positions array with EMPTY sentinel. */
     private void fillEmpty() {
         Arrays.fill(positions, EMPTY);
     }
@@ -86,8 +78,7 @@ public final class Memo {
     }
 
     /**
-     * Stores a result for {@code position}. Silently ignores if already present.
-     * When at capacity limit, overwrites the probed slot (effectively evicts).
+     * Stores a result for {@code position}.
      *
      * @param position input position
      * @param result result to store
@@ -115,45 +106,42 @@ public final class Memo {
         }
     }
 
-    /** Fast hash: good enough distribution for sequential parser positions. */
     private static int hash(int value) {
         int h = value * 0x9E3779B9;
         return h & Integer.MAX_VALUE;
     }
 
-    /** Double the table size and rehash all entries. Stops at MAX_CAPACITY. */
     private void resize() {
         if (positions.length >= MAX_CAPACITY) {
             atLimit = true;
             return;
         }
+
         int oldLen = positions.length;
         int newLen = oldLen << 1;
-        int[] newPos = new int[newLen];
-        Result<?>[] newRes = new Result<?>[newLen];
-        fillEmptyImpl(newPos);
+        int[] oldPositions = positions;
+        Result<?>[] oldResults = results;
 
-        int[] oldPos = positions;
-        Result<?>[] oldRes = results;
+        positions = new int[newLen];
+        results = new Result<?>[newLen];
+        threshold = (int) (newLen * LOAD_FACTOR);
+        fillEmpty();
 
         for (int i = 0; i < oldLen; i++) {
-            int key = oldPos[i];
-            if (key != EMPTY) {
-                int j = hash(key) & (newLen - 1);
-                while (newPos[j] != EMPTY) {
-                    j = (j + 1) & (newLen - 1);
-                }
-                newPos[j] = key;
-                newRes[j] = oldRes[i];
+            int pos = oldPositions[i];
+            if (pos != EMPTY) {
+                insertRehash(pos, oldResults[i]);
             }
         }
-
-        positions = newPos;
-        results = newRes;
-        threshold = (int) (newLen * LOAD_FACTOR);
     }
 
-    private void fillEmptyImpl(int[] arr) {
-        Arrays.fill(arr, EMPTY);
+    private void insertRehash(int position, Result<?> result) {
+        int len = positions.length;
+        int i = hash(position) & (len - 1);
+        while (positions[i] != EMPTY) {
+            i = (i + 1) & (len - 1);
+        }
+        positions[i] = position;
+        results[i] = result;
     }
 }

@@ -949,7 +949,7 @@ public class Taker<A> implements Function<Input, Result<A>> {
     public Taker<A> memoize() {
         Taker<A> self = this;
         return new Taker<>(in -> self.apply(
-            in.withContext(Context.withMemo(in.context(), new Memo()))
+            in.withContext(ContextState.withMemo(in.context(), new Memo()))
         ));
     }
 

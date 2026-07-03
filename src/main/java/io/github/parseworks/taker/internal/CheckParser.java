@@ -22,8 +22,8 @@
 
 package io.github.parseworks.taker.internal;
 
-import io.github.parseworks.taker.Context;
 import io.github.parseworks.taker.Input;
+import io.github.parseworks.taker.Context;
 import io.github.parseworks.taker.Result;
 import io.github.parseworks.taker.Taker;
 import io.github.parseworks.taker.results.NoMatch;
@@ -45,19 +45,19 @@ public class CheckParser<A> extends Taker<A> {
         int pos = in.position();
 
         // Single walk: memo hit, recursion guard, or proceed
-        Context.Find f = Context.find(in.context(), pos, this);
-        if (f instanceof Context.Find.Memo mf) {
+        ContextState.Find f = ContextState.find(in.context(), pos, this);
+        if (f instanceof ContextState.Find.Memo mf) {
             @SuppressWarnings("unchecked") Result<A> cached = (Result<A>) mf.result;
             return cached;
         }
-        if (f instanceof Context.Find.Recursion) {
+        if (f instanceof ContextState.Find.Recursion) {
             return new NoMatch<>(in, "no infinite recursion");
         }
 
         Context ctx = in.context();
-        Input inWithCtx = in.withContext(Context.push(ctx, pos, this));
+        Input inWithCtx = in.withContext(ContextState.push(ctx, pos, this));
         Result<A> result = applyHandlerApply(inWithCtx);
-        Context.store(ctx, pos, result);
+        ContextState.store(ctx, pos, result);
         return result;
     }
 }

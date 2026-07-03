@@ -26,8 +26,8 @@
  * The main entry point is {@link io.github.parseworks.taker.Taker}, a parser
  * value with fluent instance combinators such as {@code then}, {@code or},
  * {@code map}, {@code oneOrMore}, {@code located}, and {@code expecting}.
- * Supporting types model immutable input cursors, parser results, failures, and
- * source spans. Failed results expose lazy structured diagnostics through
+ * Supporting types model immutable input cursors, opaque parse context, parser
+ * results, failures, and source spans. Failed results expose lazy structured diagnostics through
  * {@link io.github.parseworks.taker.Result#diagnostics()} and
  * {@link io.github.parseworks.taker.Result#diagnosticsOptional()}. Inputs represent the original source text; case-insensitive
  * matching is handled by parser and predicate helpers rather than transformed
