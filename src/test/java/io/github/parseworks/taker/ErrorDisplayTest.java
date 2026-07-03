@@ -11,11 +11,12 @@ import java.util.List;
 import java.util.function.BinaryOperator;
 
 /**
- * Manual-only error display tests. All tests are {@code @Disabled} so they
- * won't run in CI. Execute individually to inspect error messages and diagnostics.
+ * Manual-only error display tests. These tests are tagged {@code manual} so
+ * standard Maven test runs exclude them. Execute individually to inspect error
+ * messages and diagnostics.
  *
  * <pre>
- *   mvn test -Dtest=ErrorDisplayTest#simpleMismatch
+ *   mvn test "-Dtest=ErrorDisplayTest#simpleMismatch" "-Dtaker.excludedTestGroups="
  * </pre>
  */
 @Tag("manual")

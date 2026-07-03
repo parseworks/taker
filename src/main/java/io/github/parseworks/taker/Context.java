@@ -34,9 +34,9 @@ package io.github.parseworks.taker;
  */
 public final class Context {
 
-    // ── lookup outcome hierarchy ──────────────────────────────────
+    // Lookup outcome hierarchy.
 
-    /** Result of {@link Context#find} — memo hit, recursion, or proceed. */
+    /** Result of {@link Context#find}: memo hit, recursion, or proceed. */
     public abstract static class Find {
         /** Creates a lookup result marker. */
         protected Find() {
@@ -54,19 +54,19 @@ public final class Context {
             private Recursion() {}
         }
 
-        /** No cache hit, no recursion — proceed with normal parsing. */
+        /** No cache hit, no recursion; proceed with normal parsing. */
         public static final class Proceed extends Find {
             static final Proceed INSTANCE = new Proceed();
             private Proceed() {}
         }
     }
 
-    // ── chain node ────────────────────────────────────────────────
+    // Chain node.
 
     private final int pos;
     private final Taker<?> taker;
     private final Context next;
-    /** Shared memo table — set on the root, inherited by pushes. */
+    /** Shared memo table; set on the root and inherited by pushes. */
     private final Memo memo;
 
     private Context(int pos, Taker<?> taker, Context next, Memo memo) {
@@ -123,14 +123,14 @@ public final class Context {
      * @return lookup result
      */
     public static <A> Find find(Context context, int pos, Taker<A> taker) {
-        // Memo is cached on every frame — O(1) head lookup
+        // Memo is cached on every frame; O(1) head lookup.
         Memo memo = (context != null) ? context.memo : null;
         if (memo != null) {
             Result<A> cached = memo.get(pos);
             if (cached != null) return new Find.Memo(cached);
         }
 
-        // Walk the recursion stack
+        // Walk the recursion stack.
         Context current = context;
         while (current != null) {
             if (current.pos == pos && current.taker == taker) {

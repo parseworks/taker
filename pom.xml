@@ -47,6 +47,7 @@
         <jmh.forks>1</jmh.forks>
         <jmh.warmupTime>1s</jmh.warmupTime>
         <jmh.measurementTime>1s</jmh.measurementTime>
+        <taker.excludedTestGroups>manual</taker.excludedTestGroups>
     </properties>
 
     <dependencies>
@@ -65,7 +66,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <excludedGroups>manual</excludedGroups>
+                    <excludedGroups>${taker.excludedTestGroups}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
