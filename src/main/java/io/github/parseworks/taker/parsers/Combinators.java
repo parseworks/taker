@@ -305,6 +305,9 @@ public class Combinators {
                 
                 // If it's a hard failure (consumed input), stop and return it
                 if (result.type() == ResultType.PARTIAL) {
+                    if (failures != null) {
+                        return new PartialMatch<>(result.input(), new io.github.parseworks.taker.results.NoMatch<>(failures));
+                    }
                     return result;
                 }
 
@@ -593,7 +596,8 @@ public class Combinators {
             if (!first.matches()) return new Match<>(identity, in);
 
             // Collect operator+value pairs left-to-right without recursion
-            List<java.util.AbstractMap.SimpleEntry<java.util.function.BinaryOperator<A>, A>> opsAndValues = null;
+            List<java.util.function.BinaryOperator<A>> ops = null;
+            List<A> values = null;
             Input current = first.input();
             while (true) {
                 Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
@@ -602,25 +606,25 @@ public class Combinators {
                 Result<A> next = elem.apply(opResult.input());
                 if (!next.matches()) break;
 
-                if (opsAndValues == null) {
-                    opsAndValues = new ArrayList<>();
+                if (ops == null) {
+                    ops = new ArrayList<>();
+                    values = new ArrayList<>();
                 }
-                opsAndValues.add(new java.util.AbstractMap.SimpleEntry<>(opResult.value(), next.value()));
+                ops.add(opResult.value());
+                values.add(next.value());
                 current = next.input();
             }
 
             // Fold right-to-left to preserve right-associativity.
-            if (opsAndValues == null) {
+            if (ops == null) {
                 return new Match<>(first.value(), current);
             }
 
-            A acc = opsAndValues.getLast().getValue();
-            for (int i = opsAndValues.size() - 1; i > 0; i--) {
-                var pair = opsAndValues.get(i);
-                acc = pair.getKey().apply(opsAndValues.get(i - 1).getValue(), acc);
+            A acc = values.getLast();
+            for (int i = ops.size() - 1; i > 0; i--) {
+                acc = ops.get(i).apply(values.get(i - 1), acc);
             }
-            var firstPair = opsAndValues.getFirst();
-            acc = firstPair.getKey().apply(first.value(), acc);
+            acc = ops.getFirst().apply(first.value(), acc);
             return new Match<>(acc, current);
         });
     }
@@ -641,7 +645,8 @@ public class Combinators {
             if (!first.matches()) return first;
 
             // Collect operator+value pairs left-to-right without recursion
-            List<java.util.AbstractMap.SimpleEntry<java.util.function.BinaryOperator<A>, A>> opsAndValues = null;
+            List<java.util.function.BinaryOperator<A>> ops = null;
+            List<A> values = null;
             Input current = first.input();
             while (true) {
                 Result<java.util.function.BinaryOperator<A>> opResult = op.apply(current);
@@ -650,23 +655,23 @@ public class Combinators {
                 Result<A> next = elem.apply(opResult.input());
                 if (!next.matches()) break;
 
-                if (opsAndValues == null) {
-                    opsAndValues = new ArrayList<>();
+                if (ops == null) {
+                    ops = new ArrayList<>();
+                    values = new ArrayList<>();
                 }
-                opsAndValues.add(new java.util.AbstractMap.SimpleEntry<>(opResult.value(), next.value()));
+                ops.add(opResult.value());
+                values.add(next.value());
                 current = next.input();
             }
 
             // Fold right-to-left to preserve right-associativity.
             A acc = first.value();
-            if (opsAndValues != null) {
-                acc = opsAndValues.getLast().getValue();
-                for (int i = opsAndValues.size() - 1; i > 0; i--) {
-                    var pair = opsAndValues.get(i);
-                    acc = pair.getKey().apply(opsAndValues.get(i - 1).getValue(), acc);
+            if (ops != null) {
+                acc = values.getLast();
+                for (int i = ops.size() - 1; i > 0; i--) {
+                    acc = ops.get(i).apply(values.get(i - 1), acc);
                 }
-                var firstPair = opsAndValues.getFirst();
-                acc = firstPair.getKey().apply(first.value(), acc);
+                acc = ops.getFirst().apply(first.value(), acc);
             }
             return new Match<>(acc, current);
         });
