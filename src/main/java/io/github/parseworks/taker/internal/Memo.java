@@ -34,8 +34,10 @@ public final class Memo {
 
     private static final int EMPTY = -1;
     private static final double LOAD_FACTOR = 0.5;
-    private static final int MAX_CAPACITY = 1 << 20;
+    private static final int INITIAL_CAPACITY = 16;
+    private static final int DEFAULT_MAX_CAPACITY = 1 << 20;
 
+    private final int maxCapacity;
     private int[] positions;
     private Taker<?>[] takers;
     private Result<?>[] results;
@@ -45,10 +47,19 @@ public final class Memo {
 
     /** Creates an empty memo table. */
     public Memo() {
-        this.positions = new int[16];
-        this.takers = new Taker<?>[16];
-        this.results = new Result<?>[16];
-        this.threshold = (int) (16 * LOAD_FACTOR);
+        this(DEFAULT_MAX_CAPACITY);
+    }
+
+    Memo(int maxCapacity) {
+        if (maxCapacity < 2 || Integer.bitCount(maxCapacity) != 1) {
+            throw new IllegalArgumentException("Maximum capacity must be a power of two greater than one");
+        }
+        this.maxCapacity = maxCapacity;
+        int initialCapacity = Math.min(INITIAL_CAPACITY, maxCapacity);
+        this.positions = new int[initialCapacity];
+        this.takers = new Taker<?>[initialCapacity];
+        this.results = new Result<?>[initialCapacity];
+        this.threshold = (int) (initialCapacity * LOAD_FACTOR);
         fillEmpty();
     }
 
@@ -103,14 +114,18 @@ public final class Memo {
             }
             i = (i + 1) & (len - 1);
         }
+
+        if (atLimit || (len >= maxCapacity && count >= threshold)) {
+            atLimit = true;
+            return;
+        }
+
         p[i] = position;
         t[i] = taker;
         r[i] = result;
-        if (!atLimit) {
-            count++;
-            if (count > threshold) {
-                resize();
-            }
+        count++;
+        if (count > threshold) {
+            resize();
         }
     }
 
@@ -121,13 +136,13 @@ public final class Memo {
     }
 
     private void resize() {
-        if (positions.length >= MAX_CAPACITY) {
+        if (positions.length >= maxCapacity) {
             atLimit = true;
             return;
         }
 
         int oldLen = positions.length;
-        int newLen = oldLen << 1;
+        int newLen = Math.min(oldLen << 1, maxCapacity);
         int[] oldPositions = positions;
         Taker<?>[] oldTakers = takers;
         Result<?>[] oldResults = results;
