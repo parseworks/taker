@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
 
 import static io.github.parseworks.taker.parsers.Chars.alpha;
@@ -160,6 +161,13 @@ public class IterativeParsingTest {
 
         IllegalStateException error = assertThrows(IllegalStateException.class, iterator::hasNext);
         assertEquals("Parser must consume input during iterative parsing", error.getMessage());
+    }
+
+    @Test
+    public void testStreamDoesNotClaimValuesAreNonNull() {
+        Spliterator<Character> spliterator = alpha.stream(Input.of("abc")).spliterator();
+
+        assertFalse(spliterator.hasCharacteristics(Spliterator.NONNULL));
     }
 
     @Test

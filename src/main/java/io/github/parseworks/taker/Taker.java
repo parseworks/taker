@@ -274,7 +274,8 @@ public class Taker<A> implements Function<Input, Result<A>> {
      * succeeds. The parsing process works as follows:
      * <ol>
      *   <li>First attempts to apply this parser to the input</li>
-     *   <li>If this parser succeeds, its result is wrapped in a non-empty {@link Optional}</li>
+     *   <li>If this parser succeeds with a non-null value, its result is wrapped in a non-empty {@link Optional}</li>
+     *   <li>If this parser succeeds with {@code null}, an empty {@link Optional} is returned at the resulting input position</li>
      *   <li>If this parser fails, an empty {@link Optional} is returned without consuming any input</li>
      * </ol>
      * <p>
@@ -420,7 +421,7 @@ public class Taker<A> implements Function<Input, Result<A>> {
         return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(
                 iterateParse(input),
-                Spliterator.ORDERED | Spliterator.NONNULL
+                Spliterator.ORDERED
             ),
             false
         );

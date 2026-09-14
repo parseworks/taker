@@ -63,9 +63,9 @@ public final class Transforms {
     }
 
     /**
-     * Creates a parser that returns an {@link Optional} containing the result
-     * if the underlying parser succeeds, or {@link Optional#empty()} if it
-     * fails.
+     * Creates a parser that returns an {@link Optional} containing a non-null
+     * result if the underlying parser succeeds, or {@link Optional#empty()} if
+     * it fails or succeeds with {@code null}.
      *
      * @param <A> result type
      * @param parser the underlying parser
@@ -78,7 +78,7 @@ public final class Transforms {
             if (!result.matches()) {
                 return new Match<>(Optional.empty(), in);
             }
-            return new Match<>(Optional.of(result.value()), result.input());
+            return new Match<>(Optional.ofNullable(result.value()), result.input());
         });
     }
 

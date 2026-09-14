@@ -78,7 +78,6 @@ A parser returns a `Result<A>`.
 - `cast` is a type-level convenience for preserving failures across generic
   parser boundaries.
 - `handle(success, failure)` dispatches according to `matches()`.
-- `toOptional()` returns the successful value or `Optional.empty()`.
 - `errorOptional()` returns the formatted error for failures or
   `Optional.empty()` for success.
 - `diagnosticsOptional()` returns structured diagnostics for failures or
@@ -281,8 +280,9 @@ expected tokens. It does not change successful results or input consumption.
 ### `optional`
 
 `parser.optional()` always succeeds. It returns `Optional.of(value)` when the
-parser succeeds and `Optional.empty()` without consuming input when the parser
-fails.
+parser succeeds with a non-null value. A successful null value becomes
+`Optional.empty()` at the successful result's input position. A parser failure
+becomes `Optional.empty()` without consuming input.
 
 ### `orElse`
 

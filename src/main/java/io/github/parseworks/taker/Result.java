@@ -100,15 +100,6 @@ public interface Result<A> {
     }
 
     /**
-     * Returns the parsed value when this result succeeded.
-     *
-     * @return the parsed value, or an empty optional for failures
-     */
-    default Optional<A> toOptional() {
-        return matches() ? Optional.of(value()) : Optional.empty();
-    }
-
-    /**
      * Returns the formatted error message when this result failed.
      *
      * @return the formatted error message, or an empty optional for success

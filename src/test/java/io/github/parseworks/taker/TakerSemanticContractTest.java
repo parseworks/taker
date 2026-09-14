@@ -305,6 +305,26 @@ public class TakerSemanticContractTest {
     }
 
     @Test
+    void optionalWrapsNonNullSuccess() {
+        Result<Optional<Character>> result = chr('a').optional().parse("abc");
+
+        assertTrue(result.matches());
+        assertEquals(Optional.of('a'), result.value());
+        assertEquals(1, result.input().position());
+    }
+
+    @Test
+    void optionalMapsNullSuccessToEmptyAndPreservesConsumption() {
+        Taker<String> nullParser = chr('a').as(null);
+
+        Result<Optional<String>> result = nullParser.optional().parse("abc");
+
+        assertTrue(result.matches());
+        assertEquals(Optional.empty(), result.value());
+        assertEquals(1, result.input().position());
+    }
+
+    @Test
     void orElseSucceedsWithoutConsumingInputOnFailure() {
         Result<Character> result = chr('a').orElse('x').parse("b");
 
