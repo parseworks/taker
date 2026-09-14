@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 import static io.github.parseworks.taker.parsers.Chars.alpha;
+import static io.github.parseworks.taker.parsers.Combinators.pure;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class IterativeParsingTest {
@@ -151,6 +152,14 @@ public class IterativeParsingTest {
         assertEquals("test", iterator.next());
         assertFalse(iterator.hasNext());
         assertFalse(iterator.hasNext()); // Multiple calls should return the same result
+    }
+
+    @Test
+    public void testZeroWidthParserIsRejected() {
+        Iterator<String> iterator = pure("value").iterateParse(Input.of("abc"));
+
+        IllegalStateException error = assertThrows(IllegalStateException.class, iterator::hasNext);
+        assertEquals("Parser must consume input during iterative parsing", error.getMessage());
     }
 
     @Test

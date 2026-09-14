@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.parseworks.taker.parsers.Chars.*;
@@ -576,6 +577,27 @@ public class TakerSemanticContractTest {
         assertEquals("3", iterator.next());
         assertFalse(iterator.hasNext());
         assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+    @Test
+    void associativeChainsRejectZeroWidthIterations() {
+        BinaryOperator<Integer> add = Integer::sum;
+        Taker<Integer> element = pure(1);
+        Taker<BinaryOperator<Integer>> operator = pure(add);
+        List<Taker<Integer>> chains = List.of(
+            element.chainLeftZeroOrMore(operator, 0),
+            element.chainLeftOneOrMore(operator),
+            element.chainRightZeroOrMore(operator, 0),
+            element.chainRightOneOrMore(operator)
+        );
+
+        for (Taker<Integer> chain : chains) {
+            Result<Integer> result = chain.parse("abc");
+
+            assertFalse(result.matches());
+            assertEquals(ResultType.NO_MATCH, result.type());
+            assertEquals(0, result.input().position());
+        }
     }
 
     @Test

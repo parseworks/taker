@@ -354,6 +354,7 @@ public class Taker<A> implements Function<Input, Result<A>> {
      *
      * @param input the input to parse
      * @return an iterator that yields parse results one at a time
+     * @throws IllegalStateException if this parser succeeds without advancing input
      * @see Input for input handling
      * @see Result for parse result handling
      */
@@ -378,6 +379,11 @@ public class Taker<A> implements Function<Input, Result<A>> {
                 while (!currentInput.isEof()) {
                     Result<A> result = parser.parse(currentInput, false);
                     if (result.matches()) {
+                        if (result.input().position() <= currentInput.position()) {
+                            throw new IllegalStateException(
+                                "Parser must consume input during iterative parsing"
+                            );
+                        }
                         nextResult = result;
                         return true;
                     }

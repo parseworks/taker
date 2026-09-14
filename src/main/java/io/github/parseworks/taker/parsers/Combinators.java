@@ -523,6 +523,7 @@ public class Combinators {
      * @param identity value returned when no element matches
      * @param <A> result type
      * @return a left-associative chain parser
+     * @apiNote Each successful operator-and-element iteration must advance input.
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
         Objects.requireNonNull(parser, "parser");
@@ -539,6 +540,9 @@ public class Combinators {
 
                 Result<A> nextResult = parser.apply(opResult.input());
                 if (!nextResult.matches()) break;
+                if (nextResult.input().position() <= current.position()) {
+                    return new NoMatch<>(current, "operator and parser to consume input during associative chaining");
+                }
 
                 value = opResult.value().apply(value, nextResult.value());
                 current = nextResult.input();
@@ -554,6 +558,7 @@ public class Combinators {
      * @param op operator parser
      * @param <A> result type
      * @return a left-associative chain parser
+     * @apiNote Each successful operator-and-element iteration must advance input.
      */
     public static <A> Taker<A> chainLeft(Taker<A> parser, Taker<java.util.function.BinaryOperator<A>> op) {
         Objects.requireNonNull(parser, "parser");
@@ -570,6 +575,9 @@ public class Combinators {
 
                 Result<A> nextResult = parser.apply(opResult.input());
                 if (!nextResult.matches()) break;
+                if (nextResult.input().position() <= current.position()) {
+                    return new NoMatch<>(current, "operator and parser to consume input during associative chaining");
+                }
 
                 value = opResult.value().apply(value, nextResult.value());
                 current = nextResult.input();
@@ -587,6 +595,7 @@ public class Combinators {
      * @param identity value returned when {@code elem} matches zero times
      * @param <A> result type
      * @return a chain parser (right-associative)
+     * @apiNote Each successful operator-and-element iteration must advance input.
      */
     public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op, A identity) {
         Objects.requireNonNull(elem, "elem");
@@ -605,6 +614,9 @@ public class Combinators {
 
                 Result<A> next = elem.apply(opResult.input());
                 if (!next.matches()) break;
+                if (next.input().position() <= current.position()) {
+                    return new NoMatch<>(current, "operator and parser to consume input during associative chaining");
+                }
 
                 if (ops == null) {
                     ops = new ArrayList<>();
@@ -636,6 +648,7 @@ public class Combinators {
      * @param op operator parser producing a {@link java.util.function.BinaryOperator}
      * @param <A> result type
      * @return a chain parser (right-associative)
+     * @apiNote Each successful operator-and-element iteration must advance input.
      */
     public static <A> Taker<A> chainRight(Taker<A> elem, Taker<java.util.function.BinaryOperator<A>> op) {
         Objects.requireNonNull(elem, "elem");
@@ -654,6 +667,9 @@ public class Combinators {
 
                 Result<A> next = elem.apply(opResult.input());
                 if (!next.matches()) break;
+                if (next.input().position() <= current.position()) {
+                    return new NoMatch<>(current, "operator and parser to consume input during associative chaining");
+                }
 
                 if (ops == null) {
                     ops = new ArrayList<>();
