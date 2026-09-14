@@ -4,7 +4,7 @@
 
     <groupId>io.github.parseworks</groupId>
     <artifactId>taker</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Taker</name>
     <description>A fluent parser combinator library for Java 21+</description>
@@ -28,7 +28,7 @@
         <connection>scm:git:git@github.com:parseworks/taker.git</connection>
         <developerConnection>scm:git:git@github.com:parseworks/taker.git</developerConnection>
         <url>https://github.com/parseworks/taker/tree/main</url>
-      <tag>v1.0.0</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <issueManagement>
