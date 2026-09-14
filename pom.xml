@@ -116,6 +116,7 @@
                     <autoResolveSnapshots>true</autoResolveSnapshots>
                     <scmCommentPrefix> </scmCommentPrefix>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <releaseProfiles>release</releaseProfiles>
                 </configuration>
             </plugin>
             <plugin>
