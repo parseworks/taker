@@ -27,8 +27,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/parseworks/taker.git</connection>
-        <developerConnection>scm:git:ssh://github.com:parseworks/taker.git</developerConnection>
+        <connection>scm:git:git@github.com:parseworks/taker.git</connection>
+        <developerConnection>scm:git:git@github.com:parseworks/taker.git</developerConnection>
         <url>https://github.com/parseworks/taker/tree/main</url>
     </scm>
 
